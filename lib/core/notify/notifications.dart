@@ -2,6 +2,8 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import '../i18n/i18n.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -17,11 +19,14 @@ enum NotificationKind {
   backupProgress(7, 'backup_progress', 'Backup progress'),
   taskReminder(8, 'tasks', 'Tasks & Site Visits');
 
-  const NotificationKind(this.id, this.channelId, this.channelName);
+  const NotificationKind(this.id, this.channelId, this._channelName);
 
   final int id;
   final String channelId;
-  final String channelName;
+  final String _channelName;
+
+  /// Shown in the phone's notification settings.
+  String get channelName => tr(_channelName);
 }
 
 /// Thin wrapper over flutter_local_notifications. Works in the app and in
@@ -139,7 +144,7 @@ class AppNotifications {
     try {
       await _p.show(
         kind.id,
-        'Backing up to Google Drive · $percent%',
+        tr('Backing up to Google Drive · {percent}%', {'percent': percent}),
         step,
         NotificationDetails(
           android: AndroidNotificationDetails(
