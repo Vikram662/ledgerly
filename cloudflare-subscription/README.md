@@ -19,6 +19,7 @@ subscription state.
    npx wrangler secret put RAZORPAY_PLAN_ID
    npx wrangler secret put RAZORPAY_WEBHOOK_SECRET
    npx wrangler secret put APP_TOKEN_SECRET
+   npx wrangler secret put ADMIN_API_SECRET
    ```
 
 6. `npm run deploy`
@@ -28,6 +29,39 @@ subscription state.
 
 Use Razorpay Test Mode keys first. Configure the Flutter build with
 `--dart-define=SUBSCRIPTION_API_URL=https://<worker>.workers.dev`.
+
+## Complimentary access (owner/admin)
+
+This protected endpoint gives one registered user permanent free access or
+access until a fixed time. Other users and paid Razorpay subscriptions keep the
+existing flow. Keep `ADMIN_API_SECRET` only in Cloudflare and your admin tools;
+never put it in the app or source code.
+
+Send `Authorization: Bearer <ADMIN_API_SECRET>` to
+`POST /v1/admin/complimentary-access`. Identify the user by exact registered
+phone number or by `installId`.
+
+Permanent access:
+
+```json
+{"phone":"+919876543210","mode":"permanent","note":"Owner grant"}
+```
+
+Time-limited access (`expiresAt` is a future Unix timestamp in seconds):
+
+```json
+{"phone":"+919876543210","mode":"until","expiresAt":1798761599,"note":"Free through 31 Dec 2026"}
+```
+
+Remove only the free grant (the paid subscription is left untouched):
+
+```json
+{"phone":"+919876543210","mode":"revoke"}
+```
+
+The app picks up the change when it reopens or refreshes Manage Subscription.
+When a timed grant expires, status automatically falls back to the user's
+normal Razorpay status; no cleanup job is needed.
 
 ## Trigger the app update popup
 

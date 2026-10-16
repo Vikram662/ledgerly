@@ -23,6 +23,11 @@ export default {
         response = await install(request, env);
       } else if (request.method === 'POST' && path === '/v1/notifications/token') {
         response = await updateNotificationToken(request, env);
+      } else if (
+        request.method === 'POST' &&
+        path === '/v1/admin/complimentary-access'
+      ) {
+        response = await setComplimentaryAccess(request, env);
       } else if (request.method === 'POST' && path === '/v1/subscriptions') {
         response = await createSubscription(request, env);
       } else if (
@@ -178,6 +183,14 @@ async function createSubscription(request, env) {
 
 async function subscriptionStatus(request, env) {
   const user = await authenticated(request, env);
+  const complimentary = complimentaryPayload(user);
+  if (complimentary) {
+    return ok({
+      ...complimentary,
+      subscriptionId: user.subscription_id,
+      trialEligible: !user.subscription_created_at,
+    });
+  }
   if (!user.subscription_id) {
     return ok({
       status: 'none',
@@ -197,6 +210,63 @@ async function subscriptionStatus(request, env) {
     subscription.created_at,
   );
   return ok({ ...statusPayload(subscription), trialEligible: false });
+}
+
+async function setComplimentaryAccess(request, env) {
+  await adminAuthenticated(request, env);
+  const body = await bodyJson(request);
+  const installId = optionalString(body.installId, 80);
+  const phone = optionalString(body.phone, 20);
+  if (!installId && !phone) {
+    throw new ApiError(400, 'missing_user', 'installId or phone is required.');
+  }
+
+  const mode = requiredString(body.mode, 'mode', 20);
+  let until = null;
+  if (mode === 'permanent') {
+    until = -1;
+  } else if (mode === 'until') {
+    until = Number(body.expiresAt);
+    if (!Number.isSafeInteger(until) || until <= epoch()) {
+      throw new ApiError(400, 'invalid_expiry',
+        'expiresAt must be a future Unix timestamp in seconds.');
+    }
+  } else if (mode !== 'revoke') {
+    throw new ApiError(400, 'invalid_mode',
+      'mode must be permanent, until, or revoke.');
+  }
+
+  const note = optionalString(body.note, 240);
+  const where = installId ? 'install_id = ?' : 'phone = ?';
+  const identifier = installId || phone;
+  const result = await env.DB.prepare(
+    `UPDATE installs SET complimentary_until = ?, complimentary_note = ?,
+     updated_at = ? WHERE ${where}`,
+  )
+    .bind(until, mode === 'revoke' ? null : note, epoch(), identifier)
+    .run();
+  if (!result.meta?.changes) {
+    throw new ApiError(404, 'user_not_found', 'No matching user was found.');
+  }
+  return ok({
+    updated: result.meta.changes,
+    mode,
+    expiresAt: until === -1 ? null : until,
+  });
+}
+
+function complimentaryPayload(user) {
+  const until = Number(user.complimentary_until);
+  if (until !== -1 && (!Number.isSafeInteger(until) || until <= epoch())) {
+    return null;
+  }
+  return {
+    status: 'active',
+    active: true,
+    accessSource: 'complimentary',
+    complimentaryPermanent: until === -1,
+    complimentaryExpiresAt: until === -1 ? null : until,
+  };
 }
 
 async function linkSubscription(request, env) {
@@ -372,6 +442,14 @@ async function authenticated(request, env) {
     throw new ApiError(401, 'unknown_install', 'Installation was not found.');
   }
   return row;
+}
+
+async function adminAuthenticated(request, env) {
+  const header = request.headers.get('authorization') || '';
+  const expected = `Bearer ${env.ADMIN_API_SECRET || ''}`;
+  if (!env.ADMIN_API_SECRET || !safeEqual(header, expected)) {
+    throw new ApiError(401, 'unauthorized', 'Admin authorization failed.');
+  }
 }
 
 async function razorpay(env, path, method = 'GET', body) {
