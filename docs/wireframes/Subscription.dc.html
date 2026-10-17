@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Thekedaar Pro</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#fff;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column}
+.scr button{font-family:inherit;cursor:pointer}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+.ib{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.body{flex:1;overflow-y:auto;padding:8px 20px 24px;display:flex;flex-direction:column;gap:18px}
+.t2{font-size:13px;font-weight:600;color:#5B6370;margin:0;line-height:1.45}
+.f{display:flex;gap:12px;align-items:flex-start;font-size:15px;font-weight:700}
+.f i{width:24px;height:24px;border-radius:12px;background:#ECFDF5;color:#047857;display:flex;align-items:center;justify-content:center;flex:none}
+.cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cmp div{padding:14px;border-radius:16px;border:1px solid #E3E6EA}
+.foot{padding:12px 20px 20px;background:#fff;border-top:1px solid #E3E6EA;display:flex;flex-direction:column;gap:8px}
+.bp{height:56px;border-radius:16px;background:#F59E0B;color:#15181D;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;text-decoration:none}
+</style>
+</helmet>
+<div class="scr">
+<header class="top">
+<a class="ib" href="Settings.dc.html" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+</header>
+<div class="body">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 10px; background: #FEF3C7; color: #92400E">THEKEDAAR PRO</span>
+<h1 style="margin: 0; font-size: 28px; line-height: 1.15; font-weight: 800; letter-spacing: -0.02em">Try 5 days free,<br>then ₹99/month</h1>
+<p class="t2">Browse the whole app free. Pro lets you add or change records. Cancel any time.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div class="f"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></i>Add sites, attendance, bills, expenses</div>
+<div class="f"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></i>Bill and pay slip PDFs on WhatsApp</div>
+<div class="f"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></i>Works offline up to 7 days</div>
+</div>
+<div class="cmp">
+<div><b style="font-size: 14px">Free mode</b><p class="t2" style="margin-top: 4px">View every screen and report</p></div>
+<div style="border: 2px solid #F59E0B; background: #FFFBEB; padding: 13px"><b style="font-size: 14px">Pro mode</b><p class="t2" style="margin-top: 4px">View + add + edit records</p></div>
+</div>
+<p class="t2" style="font-size: 12px">Payment mandate is set up on day 1 via Razorpay. First ₹99 is charged after 5 days; cancel before then to pay nothing.</p>
+</div>
+<div class="foot">
+<a class="bp" href="Main.dc.html">Start 5-day free trial</a>
+<div style="display: flex; justify-content: space-between">
+<a href="Main.dc.html" style="height: 40px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: #15181D; text-decoration: none">Explore free</a>
+<a href="Subscription.dc.html" style="height: 40px; display: flex; align-items: center; font-size: 14px; font-weight: 700; text-decoration: none">Restore subscription</a>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

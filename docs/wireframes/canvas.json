@@ -1,0 +1,525 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-17T16:30:00Z"
+ },
+ "title": "Thekedaar Wireframes",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "01 · Home",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Attendance.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "02 · Attendance",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Billing.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "03 · Billing",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Khata.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "04 · Khata",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Workers.dc.html": {
+   "x": 0,
+   "y": 1244,
+   "w": 390,
+   "h": 844,
+   "title": "05 · Workers",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "WorkerDetail.dc.html": {
+   "x": 470,
+   "y": 1244,
+   "w": 390,
+   "h": 844,
+   "title": "06 · Worker detail",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "AdvanceEntry.dc.html": {
+   "x": 940,
+   "y": 1244,
+   "w": 390,
+   "h": 844,
+   "title": "07 · Add advance",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "More.dc.html": {
+   "x": 1410,
+   "y": 1244,
+   "w": 390,
+   "h": 844,
+   "title": "08 · More (replaces drawer)",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Welcome.dc.html": {
+   "x": 0,
+   "y": 2488,
+   "w": 390,
+   "h": 844,
+   "title": "A1 · Welcome",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "OnbType.dc.html": {
+   "x": 470,
+   "y": 2488,
+   "w": 390,
+   "h": 844,
+   "title": "A2 · Who will use it",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "OnbBusiness.dc.html": {
+   "x": 940,
+   "y": 2488,
+   "w": 390,
+   "h": 844,
+   "title": "A3 · Business & trades",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "PinCreate.dc.html": {
+   "x": 1410,
+   "y": 2488,
+   "w": 390,
+   "h": 844,
+   "title": "A4 · Create PIN",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Unlock.dc.html": {
+   "x": 1880,
+   "y": 2488,
+   "w": 390,
+   "h": 844,
+   "title": "A5 · Unlock (PIN entry)",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "BillDetail.dc.html": {
+   "x": 0,
+   "y": 3732,
+   "w": 390,
+   "h": 844,
+   "title": "B1 · Bill detail",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "BillEditor.dc.html": {
+   "x": 470,
+   "y": 3732,
+   "w": 390,
+   "h": 844,
+   "title": "B2 · New bill",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "LineEditor.dc.html": {
+   "x": 940,
+   "y": 3732,
+   "w": 390,
+   "h": 844,
+   "title": "B3 · Add line",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Measurement.dc.html": {
+   "x": 1410,
+   "y": 3732,
+   "w": 390,
+   "h": 844,
+   "title": "B4 · Measurement",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "PaymentEntry.dc.html": {
+   "x": 1880,
+   "y": 3732,
+   "w": 390,
+   "h": 844,
+   "title": "B5 · Payment received",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "ClientDetail.dc.html": {
+   "x": 2350,
+   "y": 3732,
+   "w": 390,
+   "h": 844,
+   "title": "B6 · Client detail",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "ClientForm.dc.html": {
+   "x": 2820,
+   "y": 3732,
+   "w": 390,
+   "h": 844,
+   "title": "B7 · New client",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "WorkerForm.dc.html": {
+   "x": 0,
+   "y": 4976,
+   "w": 390,
+   "h": 844,
+   "title": "W1 · Add worker",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "ChangeWage.dc.html": {
+   "x": 470,
+   "y": 4976,
+   "w": 390,
+   "h": 844,
+   "title": "W2 · Change wage",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "PieceWork.dc.html": {
+   "x": 940,
+   "y": 4976,
+   "w": 390,
+   "h": 844,
+   "title": "W3 · Piece work",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Settlement.dc.html": {
+   "x": 1410,
+   "y": 4976,
+   "w": 390,
+   "h": 844,
+   "title": "W4 · Settle worker",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "AttendanceMonth.dc.html": {
+   "x": 1880,
+   "y": 4976,
+   "w": 390,
+   "h": 844,
+   "title": "W5 · Month register",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Expenses.dc.html": {
+   "x": 0,
+   "y": 6220,
+   "w": 390,
+   "h": 844,
+   "title": "E1 · Expenses",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "ExpenseEntry.dc.html": {
+   "x": 470,
+   "y": 6220,
+   "w": 390,
+   "h": 844,
+   "title": "E2 · New expense",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Suppliers.dc.html": {
+   "x": 940,
+   "y": 6220,
+   "w": 390,
+   "h": 844,
+   "title": "E3 · Suppliers",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "SupplierDetail.dc.html": {
+   "x": 1410,
+   "y": 6220,
+   "w": 390,
+   "h": 844,
+   "title": "E4 · Supplier detail",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Jobs.dc.html": {
+   "x": 1880,
+   "y": 6220,
+   "w": 390,
+   "h": 844,
+   "title": "E5 · Jobs / Sites",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "JobDetail.dc.html": {
+   "x": 2350,
+   "y": 6220,
+   "w": 390,
+   "h": 844,
+   "title": "E6 · Job detail",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "JobForm.dc.html": {
+   "x": 2820,
+   "y": 6220,
+   "w": 390,
+   "h": 844,
+   "title": "E7 · New job",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Tasks.dc.html": {
+   "x": 0,
+   "y": 7464,
+   "w": 390,
+   "h": 844,
+   "title": "T1 · Tasks & reminders",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "TaskForm.dc.html": {
+   "x": 470,
+   "y": 7464,
+   "w": 390,
+   "h": 844,
+   "title": "T2 · New task",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Calendar.dc.html": {
+   "x": 940,
+   "y": 7464,
+   "w": 390,
+   "h": 844,
+   "title": "T3 · Calendar",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Dues.dc.html": {
+   "x": 1410,
+   "y": 7464,
+   "w": 390,
+   "h": 844,
+   "title": "T4 · Lena / Dena",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Settings.dc.html": {
+   "x": 0,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S1 · Settings",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "BusinessProfile.dc.html": {
+   "x": 470,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S2 · Business profile",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Rules.dc.html": {
+   "x": 940,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S3 · Work rules",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Trades.dc.html": {
+   "x": 1410,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S4 · Trades",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "AppLockSettings.dc.html": {
+   "x": 1880,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S5 · App lock",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Reminders.dc.html": {
+   "x": 2350,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S6 · Reminders",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Backup.dc.html": {
+   "x": 2820,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S7 · Backup",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Restore.dc.html": {
+   "x": 3290,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S8 · Restore",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Subscription.dc.html": {
+   "x": 3760,
+   "y": 8708,
+   "w": 390,
+   "h": 844,
+   "title": "S9 · Thekedaar Pro",
+   "is_interactive": true,
+   "radius": 28
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Attendance.dc.html",
+  "Billing.dc.html",
+  "Khata.dc.html",
+  "Workers.dc.html",
+  "WorkerDetail.dc.html",
+  "AdvanceEntry.dc.html",
+  "More.dc.html",
+  "Welcome.dc.html",
+  "OnbType.dc.html",
+  "OnbBusiness.dc.html",
+  "PinCreate.dc.html",
+  "Unlock.dc.html",
+  "BillDetail.dc.html",
+  "BillEditor.dc.html",
+  "LineEditor.dc.html",
+  "Measurement.dc.html",
+  "PaymentEntry.dc.html",
+  "ClientDetail.dc.html",
+  "ClientForm.dc.html",
+  "WorkerForm.dc.html",
+  "ChangeWage.dc.html",
+  "PieceWork.dc.html",
+  "Settlement.dc.html",
+  "AttendanceMonth.dc.html",
+  "Expenses.dc.html",
+  "ExpenseEntry.dc.html",
+  "Suppliers.dc.html",
+  "SupplierDetail.dc.html",
+  "Jobs.dc.html",
+  "JobDetail.dc.html",
+  "JobForm.dc.html",
+  "Tasks.dc.html",
+  "TaskForm.dc.html",
+  "Calendar.dc.html",
+  "Dues.dc.html",
+  "Settings.dc.html",
+  "BusinessProfile.dc.html",
+  "Rules.dc.html",
+  "Trades.dc.html",
+  "AppLockSettings.dc.html",
+  "Reminders.dc.html",
+  "Backup.dc.html",
+  "Restore.dc.html",
+  "Subscription.dc.html"
+ ],
+ "notes": {
+  "row1": {
+   "x": 0,
+   "y": -300,
+   "text": "Bottom tabs",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "row2": {
+   "x": 0,
+   "y": 984,
+   "text": "Detail, entry & More",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "row3": {
+   "x": 0,
+   "y": 2228,
+   "text": "Onboarding & app lock",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "row4": {
+   "x": 0,
+   "y": 3472,
+   "text": "Billing",
+   "kind": "title1",
+   "maxW": 3210
+  },
+  "row5": {
+   "x": 0,
+   "y": 4716,
+   "text": "Workers & khata",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "row6": {
+   "x": 0,
+   "y": 5960,
+   "text": "Expenses, suppliers & jobs",
+   "kind": "title1",
+   "maxW": 3210
+  },
+  "row7": {
+   "x": 0,
+   "y": 7204,
+   "text": "Tasks, calendar & reports",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "row8": {
+   "x": 0,
+   "y": 8448,
+   "text": "Settings, backup & Pro",
+   "kind": "title1",
+   "maxW": 4150
+  }
+ },
+ "designSystems": []
+}

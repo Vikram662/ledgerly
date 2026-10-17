@@ -56,6 +56,10 @@ class AppLockController extends ChangeNotifier with WidgetsBindingObserver {
   DateTime? lockedUntil;
   DateTime? _pausedAt;
 
+  /// True while the first PIN is being created (the last onboarding step),
+  /// false for a reset.
+  bool isFirstSetup = false;
+
   /// True while a system sheet we opened (biometric, share, file picker) is
   /// in front, so coming back does not count as leaving the app.
   bool suspendRelock = false;
@@ -72,6 +76,7 @@ class AppLockController extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {
       biometricAvailable = false;
     }
+    isFirstSetup = hash == null;
     status = hash == null ? LockStatus.needsSetup : LockStatus.locked;
     notifyListeners();
   }
@@ -81,6 +86,7 @@ class AppLockController extends ChangeNotifier with WidgetsBindingObserver {
     await _secure.write(SecureStore.pinSalt, base64Encode(salt));
     await _secure.write(SecureStore.pinHash, await hashPin(pin, salt));
     await _resetFailures();
+    isFirstSetup = false;
     status = LockStatus.unlocked;
     notifyListeners();
   }
@@ -154,6 +160,7 @@ class AppLockController extends ChangeNotifier with WidgetsBindingObserver {
 
   /// PIN forgotten and Google account verified (PRD AU-05): set a new PIN.
   void startPinReset() {
+    isFirstSetup = false;
     status = LockStatus.needsSetup;
     notifyListeners();
   }

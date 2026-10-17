@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#F4F5F7;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+.top h1{margin:0;flex:1;font-size:20px;font-weight:800}
+.ib{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.body{flex:1;overflow-y:auto;padding:8px 16px 24px;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid #E3E6EA;border-radius:16px}
+.lbl{margin:4px 0 -6px 4px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#5B6370}
+.s{display:flex;align-items:center;gap:12px;padding:0 16px;min-height:60px;text-decoration:none;color:#15181D}
+.s+.s{border-top:1px solid #EEF0F2}
+.s .t{width:34px;height:34px;border-radius:10px;background:#F4F5F7;display:flex;align-items:center;justify-content:center;flex:none}
+.s b{display:block;font-size:15px;font-weight:700}
+.s small{display:block;font-size:12px;font-weight:600;color:#5B6370}
+</style>
+</helmet>
+<div class="scr">
+<header class="top">
+<a class="ib" href="More.dc.html" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></a>
+<h1>Settings</h1>
+</header>
+<div class="body">
+<h2 class="lbl">Business</h2>
+<div class="card">
+<a class="s" href="BusinessProfile.dc.html"><span class="t"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9 5.5 4h13L20 9M4 9h16v11H4zM9 20v-6h6v6"/></svg></span><span style="flex: 1"><b>Business profile</b><small>Name, logo, UPI, bill numbering</small></span></a>
+<a class="s" href="Trades.dc.html"><span class="t"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 7l3-3 3 3-3 3M17 4v6M4 20l9-9M7 13l4 4"/></svg></span><span style="flex: 1"><b>Trades</b><small>Electrical, Civil</small></span></a>
+<a class="s" href="Rules.dc.html"><span class="t"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/></svg></span><span style="flex: 1"><b>Work rules</b><small>Monthly salary, weekly off</small></span></a>
+</div>
+<h2 class="lbl">Data &amp; security</h2>
+<div class="card">
+<a class="s" href="Backup.dc.html"><span class="t"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/></svg></span><span style="flex: 1"><b>Backup &amp; restore</b><small>Google Drive · [account email]</small></span><span style="width: 8px; height: 8px; border-radius: 4px; background: #059669"></span></a>
+<a class="s" href="AppLockSettings.dc.html"><span class="t"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span style="flex: 1"><b>App lock</b><small>PIN and fingerprint</small></span></a>
+<a class="s" href="Reminders.dc.html"><span class="t"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span><span style="flex: 1"><b>Reminders</b><small>Backup, overdue bills, month end</small></span></a>
+</div>
+<h2 class="lbl">Account</h2>
+<div class="card">
+<a class="s" href="Subscription.dc.html"><span class="t" style="background: #FEF3C7; color: #92400E"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg></span><span style="flex: 1"><b>Thekedaar Pro</b><small>₹99/month subscription</small></span></a>
+<a class="s" href="Settings.dc.html"><span class="t"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h7M7.5 3v2M5 5c0 4 2.5 7 6 8M10 5c-.5 3-2.5 6-6 8M13 21l4-10 4 10M14.5 17h5"/></svg></span><span style="flex: 1"><b>Language</b><small>English · हिन्दी</small></span></a>
+</div>
+<p style="margin: 0; text-align: center; font-size: 12px; font-weight: 600; color: #5B6370">Thekedaar · Version [x.y.z]</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

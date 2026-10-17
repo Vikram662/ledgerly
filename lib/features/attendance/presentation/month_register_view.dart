@@ -12,9 +12,9 @@ import '../../../core/widgets/empty_state.dart';
 import '../data/attendance_repository.dart';
 import 'attendance_widgets.dart';
 
-const _nameWidth = 112.0;
-const _cellWidth = 36.0;
-const _rowHeight = 44.0;
+const _nameWidth = 104.0;
+const _cellWidth = 30.0;
+const _rowHeight = 42.0;
 const _totalWidth = 44.0;
 
 /// All workers × all days of a month. Each cell shows P / ½ / A / Off / L;
@@ -66,31 +66,14 @@ class _MonthRegisterViewState extends ConsumerState<MonthRegisterView> {
 
     return Column(
       children: [
-        Material(
-          color: AppColors.surface,
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: tr('Previous month'),
-                icon: const Icon(Icons.chevron_left),
-                onPressed: () => _shift(-1),
-              ),
-              Expanded(
-                child: Text(
-                  monthFormat.format(_month),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              IconButton(
-                tooltip: tr('Next month'),
-                icon: const Icon(Icons.chevron_right),
-                onPressed: _isCurrentMonth ? null : () => _shift(1),
-              ),
-            ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: MonthSwitcher(
+            month: _month,
+            onShift: _shift,
+            canGoNext: !_isCurrentMonth,
           ),
         ),
-        const _Legend(),
         Expanded(
           child: register.when(
             loading: () => const ListSkeleton(),
@@ -101,24 +84,31 @@ class _MonthRegisterViewState extends ConsumerState<MonthRegisterView> {
                     title: tr('No workers this month'),
                     message: tr('Add workers to see the attendance register.'),
                   )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 32),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _NameColumn(workers: r.workers, month: r.month),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            controller: _horizontal,
-                            scrollDirection: Axis.horizontal,
-                            child: _Grid(register: r, weeklyOff: weeklyOff),
-                          ),
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Panel(
+                      padding: EdgeInsets.zero,
+                      child: SingleChildScrollView(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _NameColumn(workers: r.workers, month: r.month),
+                            Expanded(
+                              child: SingleChildScrollView(
+                                controller: _horizontal,
+                                scrollDirection: Axis.horizontal,
+                                child:
+                                    _Grid(register: r, weeklyOff: weeklyOff),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
           ),
         ),
+        const _Legend(),
       ],
     );
   }
@@ -129,29 +119,46 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 4,
-        children: [
-          for (final s in const [
-            AttendanceStatus.present,
-            AttendanceStatus.half,
-            AttendanceStatus.absent,
-            AttendanceStatus.off,
-            AttendanceStatus.leavePaid,
-          ])
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _Mark(status: s, size: 22),
-                const SizedBox(width: 4),
-                Text(statusStyle(s).label,
-                    style: const TextStyle(fontSize: 12)),
-              ],
-            ),
-        ],
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 6,
+          children: [
+            for (final s in const [
+              AttendanceStatus.present,
+              AttendanceStatus.half,
+              AttendanceStatus.absent,
+              AttendanceStatus.off,
+              AttendanceStatus.leavePaid,
+            ])
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: markColors(s).$1,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    statusStyle(s).label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -176,8 +183,14 @@ class _NameColumn extends StatelessWidget {
               padding: EdgeInsets.only(left: 12),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(tr('Worker'),
-                    style: TextStyle(fontWeight: FontWeight.w700)),
+                child: Text(
+                  tr('Worker'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.muted,
+                  ),
+                ),
               ),
             ),
           ),
@@ -187,21 +200,22 @@ class _NameColumn extends StatelessWidget {
               onTap: () => showWorkerAttendanceSheet(context, w, month),
               child: Container(
                 height: _rowHeight,
-                padding: const EdgeInsets.only(left: 12, right: 4),
+                padding: const EdgeInsets.only(left: 12, right: 6),
                 alignment: Alignment.centerLeft,
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.border)),
+                  border: Border(
+                    top: BorderSide(color: AppColors.divider),
+                    right: BorderSide(color: AppColors.divider),
+                  ),
                 ),
                 child: Text(
                   w.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.blue700,
-                    decoration: TextDecoration.underline,
-                    decorationColor:
-                        w.isActive ? AppColors.blue700 : AppColors.slate600,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: w.isActive ? AppColors.ink : AppColors.muted,
                   ),
                 ),
               ),
@@ -227,11 +241,12 @@ class _Grid extends ConsumerWidget {
         : null;
     final weekLetters = weekdayLetters;
 
-    Widget header(String top, String bottom, {bool highlight = false}) =>
+    Widget header(String top, String bottom,
+            {bool highlight = false, double width = _cellWidth}) =>
         Container(
-          width: _cellWidth,
+          width: width,
           height: _rowHeight,
-          color: highlight ? AppColors.amber100 : null,
+          color: highlight ? AppColors.primarySurface : null,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -240,7 +255,10 @@ class _Grid extends ConsumerWidget {
                       fontSize: 12, fontWeight: FontWeight.w700)),
               Text(bottom,
                   style:
-                      const TextStyle(fontSize: 10, color: AppColors.slate600)),
+                      const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted)),
             ],
           ),
         );
@@ -269,16 +287,16 @@ class _Grid extends ConsumerWidget {
                 weekLetters[DateTime(month.year, month.month, d).weekday - 1],
                 highlight: d == todayDay,
               ),
-            header('P', tr('days')),
-            header('½', tr('days')),
-            header('A', tr('days')),
-            header(tr('Paid'), tr('days')),
+            header('P', tr('days'), width: _totalWidth),
+            header('½', tr('days'), width: _totalWidth),
+            header('A', tr('days'), width: _totalWidth),
+            header(tr('Paid'), tr('days'), width: _totalWidth),
           ],
         ),
         for (final w in register.workers)
           Container(
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border)),
+              border: Border(top: BorderSide(color: AppColors.divider)),
             ),
             child: Row(
               children: [
@@ -341,17 +359,22 @@ class _Cell extends ConsumerWidget {
       child: Container(
         width: _cellWidth,
         height: _rowHeight,
-        color: isToday
-            ? AppColors.amber100
-            : isWeeklyOff
-                ? AppColors.surface2
-                : null,
+        color: isToday ? AppColors.primarySurface : null,
         alignment: Alignment.center,
         child: status != null
-            ? _Mark(status: status!, size: 28)
-            : Text(
-                enabled ? '·' : '',
-                style: const TextStyle(color: AppColors.border, fontSize: 18),
+            ? _Mark(status: status!, size: 26)
+            : Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isWeeklyOff && enabled ? AppColors.divider : null,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  enabled ? '·' : '',
+                  style: const TextStyle(color: AppColors.faint, fontSize: 16),
+                ),
               ),
       ),
     );
@@ -368,23 +391,36 @@ class _Mark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = statusStyle(status);
+    final (bg, fg) = markColors(status);
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: style.color.withAlpha(36),
-        border: Border.all(color: style.color),
-        borderRadius: BorderRadius.circular(6),
+        color: bg,
+        borderRadius: BorderRadius.circular(7),
       ),
       child: Text(
         style.short,
         style: TextStyle(
-          fontSize: style.short.length > 1 ? 9 : 13,
+          fontSize: style.short.length > 1 ? 9 : 11,
           fontWeight: FontWeight.w800,
-          color: style.color,
+          color: fg,
         ),
       ),
     );
   }
 }
+
+/// Soft background and text colour of a register cell.
+(Color, Color) markColors(AttendanceStatus status) => switch (status) {
+      AttendanceStatus.present =>
+        (AppColors.successSurface, AppColors.successText),
+      AttendanceStatus.half => (AppColors.warningSurface, AppColors.warningText),
+      AttendanceStatus.absent => (AppColors.dangerSurface, AppColors.dangerText),
+      AttendanceStatus.leavePaid =>
+        (AppColors.primarySurface, AppColors.primary),
+      AttendanceStatus.leaveUnpaid ||
+      AttendanceStatus.off =>
+        (AppColors.divider, AppColors.muted),
+    };

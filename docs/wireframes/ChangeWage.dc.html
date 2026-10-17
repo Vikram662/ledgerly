@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Change wage</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#fff;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column}
+.scr button{font-family:inherit;cursor:pointer}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+.top h1{margin:0;flex:1;font-size:20px;font-weight:800}
+.ib{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.body{flex:1;overflow-y:auto;padding:8px 16px 24px;display:flex;flex-direction:column;gap:16px}
+.inp{min-height:52px;border-radius:14px;border:1px solid #C9CED6;padding:0 14px;display:flex;align-items:center;gap:8px;background:#fff;box-sizing:border-box}
+.inp input{flex:1;border:0;outline:0;background:transparent;font:700 16px Manrope,system-ui,sans-serif;color:#15181D;min-width:0}
+.fld{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.fld>span{font-size:13px;font-weight:700;color:#3A414B}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:4px;background:#E9ECEF;border-radius:12px}
+.seg button{height:38px;border:0;border-radius:9px;background:transparent;font-size:13px;font-weight:700;color:#5B6370}
+.seg button.on{background:#fff;color:#15181D;box-shadow:0 1px 2px rgba(16,24,40,.08)}
+.sec{margin:6px 0 -4px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#5B6370}
+.t1{font-size:15px;font-weight:700}.t2{font-size:12px;font-weight:600;color:#5B6370}
+.hist{display:flex;gap:12px;align-items:flex-start;padding:10px 0}
+.foot{padding:12px 16px 20px;background:#fff;border-top:1px solid #E3E6EA}
+.bp{height:56px;border-radius:16px;background:#0369A1;color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;text-decoration:none}
+</style>
+</helmet>
+<div class="scr">
+<header class="top">
+<a class="ib" href="WorkerDetail.dc.html" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></a>
+<h1>Change wage</h1>
+</header>
+<div class="body">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; background: #F4F5F7"><span style="width: 40px; height: 40px; border-radius: 20px; background: #E9ECEF; display: flex; align-items: center; justify-content: center; font-weight: 700">RK</span><div><div class="t1">Raju Kumar</div><div class="t2">Now ₹600/day · from 01 Mar 2025</div></div></div>
+<div class="seg" role="tablist" aria-label="Wage type"><button class="on" role="tab" aria-selected="true">Daily</button><button role="tab" aria-selected="false">Monthly</button><button role="tab" aria-selected="false">Piece-rate</button></div>
+<div style="display: flex; gap: 8px">
+<label class="fld"><span>Rate per day</span><span class="inp"><b style="color: #5B6370">₹</b><input value="650" aria-label="Rate per day"></span></label>
+<label class="fld"><span>OT per hour</span><span class="inp"><b style="color: #5B6370">₹</b><input value="90" aria-label="OT rate per hour"></span></label>
+</div>
+<label class="fld"><span>New wage from</span><span class="inp"><input value="01 Nov 2026" aria-label="New wage from"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6370" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span class="t2">Days before this date keep the old rate.</span></label>
+
+<h2 class="sec">History</h2>
+<div>
+<div class="hist"><span style="width: 10px; height: 10px; margin-top: 5px; border-radius: 5px; background: #0369A1; flex: none"></span><div><div class="t1">₹600/day · OT ₹80</div><div class="t2">From 01 Mar 2025 · current</div></div></div>
+<div class="hist"><span style="width: 10px; height: 10px; margin-top: 5px; border-radius: 5px; background: #C9CED6; flex: none"></span><div><div class="t1">₹550/day</div><div class="t2">From 10 Aug 2024</div></div></div>
+</div>
+</div>
+<div class="foot"><a class="bp" href="WorkerDetail.dc.html">Save new wage</a></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

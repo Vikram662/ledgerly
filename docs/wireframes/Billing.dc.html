@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Billing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#F4F5F7;font-family:'Manrope',system-ui,sans-serif;color:#15181D}
+.scr button{font-family:inherit;cursor:pointer}
+.body{position:absolute;top:0;left:0;right:0;bottom:72px;overflow-y:auto;padding:12px 16px 96px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid #E3E6EA;border-radius:16px}
+.muted{color:#5B6370}
+.num{font-variant-numeric:tabular-nums}
+.iconbtn{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D}
+.under{display:flex;gap:20px;border-bottom:1px solid #E3E6EA}
+.under button{height:40px;border:0;background:transparent;padding:0;font-size:14px;font-weight:700;color:#5B6370;border-bottom:2px solid transparent;margin-bottom:-1px}
+.under button.on{color:#15181D;border-bottom-color:#15181D}
+.chip{height:34px;padding:0 14px;border-radius:17px;border:1px solid #E3E6EA;background:#fff;font-size:13px;font-weight:700;color:#3A414B;flex:none}
+.chip.on{background:#15181D;border-color:#15181D;color:#fff}
+.bill{display:flex;flex-direction:column;gap:10px;padding:14px 16px;text-decoration:none;color:inherit}
+.bill + .bill{border-top:1px solid #EEF0F2}
+.pill{font-size:11px;font-weight:800;padding:3px 8px;border-radius:8px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:72px;background:#fff;border-top:1px solid #E3E6EA;display:flex;padding:8px 4px 10px;box-sizing:border-box}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#5B6370;text-decoration:none}
+.tab:hover{color:#15181D}
+.tab .ic{width:56px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center}
+.tab.on{color:#0369A1;font-weight:800}
+.tab.on .ic{background:#E0F2FE}
+</style>
+</helmet>
+<div class="scr">
+<div class="body">
+
+<header style="display: flex; align-items: center; justify-content: space-between; padding-top: 4px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Billing</h1>
+<button class="iconbtn" aria-label="Share statement"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
+</header>
+
+<label style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border-radius: 14px; background: #fff; border: 1px solid #E3E6EA; color: #5B6370">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+<input type="search" placeholder="Search client, bill no." aria-label="Search bills" style="flex: 1; border: 0; outline: 0; font: 600 15px Manrope, system-ui, sans-serif; background: transparent; color: #15181D">
+</label>
+
+<div class="under" role="tablist" aria-label="Billing sections"><button class="on" role="tab" aria-selected="true">Bills</button><button role="tab" aria-selected="false">Quotations</button><button role="tab" aria-selected="false">Clients</button><button role="tab" aria-selected="false">Payments</button></div>
+
+<div class="num" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div class="card" style="padding: 12px 14px"><div class="muted" style="font-size: 12px; font-weight: 700">Unpaid</div><div style="font-size: 20px; font-weight: 800">₹1,24,500</div></div>
+<div class="card" style="padding: 12px 14px"><div class="muted" style="font-size: 12px; font-weight: 700">Received this month</div><div style="font-size: 20px; font-weight: 800; color: #047857">₹86,000</div></div>
+</div>
+
+<div style="display: flex; gap: 8px; overflow-x: auto"><button class="chip on">All · 24</button><button class="chip">Unpaid · 6</button><button class="chip">Overdue · 2</button><button class="chip">Paid</button></div>
+
+<div class="card">
+<a class="bill" href="BillDetail.dc.html">
+<div style="display: flex; justify-content: space-between; gap: 12px"><div><div style="font-size: 15px; font-weight: 800">[Client name]</div><div class="muted" style="font-size: 12px; font-weight: 600">#42 · Flat 302 wiring · 16 Oct</div></div><div class="num" style="font-size: 16px; font-weight: 800">₹18,400</div></div>
+<div style="display: flex; align-items: center; justify-content: space-between"><span class="pill" style="background: #FFFBEB; color: #B45309">Unpaid · due 30 Oct</span><span class="muted num" style="font-size: 12px; font-weight: 600">₹0 received</span></div>
+</a>
+<a class="bill" href="BillDetail.dc.html">
+<div style="display: flex; justify-content: space-between; gap: 12px"><div><div style="font-size: 15px; font-weight: 800">[Client name]</div><div class="muted" style="font-size: 12px; font-weight: 600">#41 · Shop fit-out · 02 Oct</div></div><div class="num" style="font-size: 16px; font-weight: 800">₹52,000</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="height: 6px; border-radius: 3px; background: #EEF0F2; overflow: hidden"><span style="display: block; width: 40%; height: 6px; background: #059669"></span></div>
+<div style="display: flex; align-items: center; justify-content: space-between"><span class="pill" style="background: #E0F2FE; color: #0369A1">Part paid</span><span class="muted num" style="font-size: 12px; font-weight: 600">₹20,800 of ₹52,000</span></div>
+</div>
+</a>
+<a class="bill" href="BillDetail.dc.html">
+<div style="display: flex; justify-content: space-between; gap: 12px"><div><div style="font-size: 15px; font-weight: 800">[Client name]</div><div class="muted" style="font-size: 12px; font-weight: 600">#38 · Bathroom plumbing · 12 Sep</div></div><div class="num" style="font-size: 16px; font-weight: 800">₹32,000</div></div>
+<div style="display: flex; align-items: center; justify-content: space-between"><span class="pill" style="background: #FFF1F2; color: #BE123C">Overdue 17 days</span><button style="height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid #E3E6EA; background: #fff; font-size: 12px; font-weight: 800">Send reminder</button></div>
+</a>
+<a class="bill" href="BillDetail.dc.html">
+<div style="display: flex; justify-content: space-between; gap: 12px"><div><div style="font-size: 15px; font-weight: 800">[Client name]</div><div class="muted" style="font-size: 12px; font-weight: 600">#37 · Office lighting · 05 Sep</div></div><div class="num" style="font-size: 16px; font-weight: 800">₹14,600</div></div>
+<div><span class="pill" style="background: #ECFDF5; color: #047857">Paid</span></div>
+</a>
+</div>
+
+</div>
+
+<a href="BillEditor.dc.html" style="position: absolute; right: 16px; bottom: 88px; height: 56px; padding: 0 20px 0 16px; border-radius: 18px; background: #0369A1; color: #fff; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; text-decoration: none; box-shadow: 0 6px 16px rgba(3,105,161,.25)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New bill</a>
+
+<nav class="tabs" aria-label="Main">
+<a class="tab" href="Main.dc.html"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Home</a>
+<a class="tab" href="Attendance.dc.html"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span>Attendance</a>
+<a class="tab on" href="Billing.dc.html"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>Billing</a>
+<a class="tab" href="Khata.dc.html"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/></svg></span>Khata</a>
+<a class="tab" href="Workers.dc.html"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg></span>Workers</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

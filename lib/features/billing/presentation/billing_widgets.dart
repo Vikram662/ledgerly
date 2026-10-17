@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
@@ -39,44 +40,142 @@ class DocumentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doc = item.document;
-    final showBalance = doc.kind == DocumentKind.invoice &&
-        doc.status != DocumentStatus.cancelled &&
-        item.paidPaise > 0 &&
-        item.balancePaise > 0;
-    return ListTile(
-      minVerticalPadding: 12,
-      title: Text(item.clientName),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Row(
+    final invoice = doc.kind == DocumentKind.invoice;
+    final open = doc.status == DocumentStatus.sent ||
+        doc.status == DocumentStatus.partiallyPaid;
+    final today = dateOnly(DateTime.now());
+    final due = doc.dueDate == null ? null : parseIsoDate(doc.dueDate!);
+    final lateDays = due == null ? 0 : today.difference(due).inDays;
+    final overdue = invoice && open && lateDays > 0;
+    final partPaid = invoice && open && item.paidPaise > 0;
+
+    final (String pill, Color bg, Color fg) = switch (doc.status) {
+      _ when overdue => (
+          trPlural(lateDays, 'Overdue 1 day', 'Overdue {count} days'),
+          AppColors.dangerSurface,
+          AppColors.dangerText,
+        ),
+      DocumentStatus.draft => (tr('Draft'), AppColors.page, AppColors.muted),
+      DocumentStatus.sent when invoice => (
+          due == null
+              ? tr('Unpaid')
+              : tr('Unpaid · due {date}',
+                  {'date': DateFormat('d MMM', uiDateLocale).format(due)}),
+          AppColors.warningSurface,
+          AppColors.warningText,
+        ),
+      DocumentStatus.sent =>
+        (tr('Sent'), AppColors.primaryTint, AppColors.primary),
+      DocumentStatus.partiallyPaid =>
+        (tr('Part paid'), AppColors.primaryTint, AppColors.primary),
+      DocumentStatus.paid =>
+        (tr('Paid'), AppColors.successSurface, AppColors.successText),
+      DocumentStatus.cancelled =>
+        (tr('Cancelled'), AppColors.page, AppColors.muted),
+    };
+
+    const muted = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColors.muted,
+    );
+
+    return InkWell(
+      onTap: () => context.push(Routes.document(doc.id)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            documentStatusChip(doc.status, doc.kind),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                '${doc.number} · ${dayFormat.format(parseIsoDate(doc.date))}',
-                overflow: TextOverflow.ellipsis,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.clientName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        '${doc.number} · ${DateFormat('d MMM', uiDateLocale).format(parseIsoDate(doc.date))}',
+                        style: muted,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  formatPaise(doc.totalPaise),
+                  style: AppText.tabular
+                      .copyWith(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+            if (partPaid && doc.totalPaise > 0) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: item.paidPaise / doc.totalPaise,
+                  minHeight: 6,
+                  color: AppColors.successFill,
+                  backgroundColor: AppColors.divider,
+                ),
               ),
+            ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _Pill(pill, bg, fg),
+                const Spacer(),
+                if (invoice && open)
+                  Text(
+                    partPaid
+                        ? tr('{paid} of {total}', {
+                            'paid': formatPaise(item.paidPaise),
+                            'total': formatPaise(doc.totalPaise),
+                          })
+                        : tr('{amount} received',
+                            {'amount': formatPaise(item.paidPaise)}),
+                    style: AppText.tabular.merge(muted),
+                  ),
+              ],
             ),
           ],
         ),
       ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            formatPaise(doc.totalPaise),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-          ),
-          if (showBalance)
-            Text(
-              tr('Due {amount}', {'amount': formatPaise(item.balancePaise)}),
-              style: const TextStyle(fontSize: 12, color: AppColors.warningText),
-            ),
-        ],
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill(this.text, this.color, this.textColor);
+
+  final String text;
+  final Color color;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppRadius.badge),
       ),
-      onTap: () => context.push(Routes.document(doc.id)),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: textColor,
+        ),
+      ),
     );
   }
 }

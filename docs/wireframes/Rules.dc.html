@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Work rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#F4F5F7;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column}
+.scr button{font-family:inherit;cursor:pointer}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+.top h1{margin:0;flex:1;font-size:20px;font-weight:800}
+.ib{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.body{flex:1;overflow-y:auto;padding:8px 16px 24px;display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border:1px solid #E3E6EA;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.h{margin:0;font-size:16px;font-weight:800}
+.t2{font-size:12px;font-weight:600;color:#5B6370;margin:0;line-height:1.45}
+.d{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.d button{height:40px;border-radius:12px;border:1px solid #E3E6EA;background:#fff;font-size:13px;font-weight:700;color:#3A414B}
+.d button.on{background:#15181D;border-color:#15181D;color:#fff}
+.r{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:1px solid #E3E6EA;background:#fff;text-align:left;width:100%;font-size:14px;font-weight:700;color:#15181D}
+.r.on{border:2px solid #0369A1;background:#F0F9FF;padding:11px}
+.dot{width:20px;height:20px;border-radius:10px;border:2px solid #C9CED6;box-sizing:border-box;flex:none}
+.r.on .dot{border:6px solid #0369A1}
+</style>
+</helmet>
+<div class="scr">
+<header class="top">
+<a class="ib" href="Settings.dc.html" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></a>
+<h1>Work rules</h1>
+</header>
+<div class="body">
+<section class="card">
+<h2 class="h">Weekly off</h2>
+<div class="d" role="radiogroup" aria-label="Weekly off day"><button role="radio" aria-checked="false">None</button><button role="radio" aria-checked="false">Mon</button><button role="radio" aria-checked="false">Tue</button><button role="radio" aria-checked="false">Wed</button><button role="radio" aria-checked="false">Thu</button><button role="radio" aria-checked="false">Fri</button><button role="radio" aria-checked="false">Sat</button><button class="on" role="radio" aria-checked="true">Sun</button></div>
+<p class="t2">On this day "Mark all" marks Off. Weekly off is paid for monthly workers, unpaid for daily workers.</p>
+</section>
+<section class="card">
+<h2 class="h">Monthly salary → per-day rate</h2>
+<div role="radiogroup" aria-label="Per-day rate" style="display: flex; flex-direction: column; gap: 8px">
+<button class="r on" role="radio" aria-checked="true"><span class="dot"></span>Salary ÷ days in month</button>
+<button class="r" role="radio" aria-checked="false"><span class="dot"></span>Salary ÷ 30</button>
+<button class="r" role="radio" aria-checked="false"><span class="dot"></span>Salary ÷ 26</button>
+</div>
+<p class="t2">Used for new monthly workers. Each worker can be changed from their wage screen.</p>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

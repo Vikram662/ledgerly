@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Welcome</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#fff;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column;padding:16px 20px 24px}
+.scr button{font-family:inherit;cursor:pointer}
+.muted{color:#5B6370}
+.lang{display:flex;padding:3px;background:#F4F5F7;border-radius:20px}
+.lang button{height:34px;padding:0 14px;border:0;border-radius:17px;background:transparent;font-size:13px;font-weight:700;color:#5B6370}
+.lang button.on{background:#fff;color:#15181D;box-shadow:0 1px 2px rgba(16,24,40,.1)}
+.feat{display:flex;gap:14px;align-items:flex-start}
+.feat .t{width:44px;height:44px;border-radius:14px;background:#F4F5F7;display:flex;align-items:center;justify-content:center;flex:none}
+.feat b{display:block;font-size:15px;font-weight:800}
+.feat span{display:block;font-size:13px;font-weight:600;color:#5B6370;margin-top:2px}
+</style>
+</helmet>
+<div class="scr">
+
+<div style="display: flex; justify-content: flex-end">
+<div class="lang" role="radiogroup" aria-label="Language">
+<sc-for list="{{langs}}" as="l" hint-placeholder-count="2"><button class="{{l.cls}}" role="radio" aria-checked="{{l.on}}" onClick="{{l.pick}}">{{l.label}}</button></sc-for>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<span style="width: 72px; height: 72px; border-radius: 22px; background: #15181D; display: flex; align-items: center; justify-content: center">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17h18M5 17a7 7 0 0 1 14 0"/><path d="M10 10V6.5a2 2 0 0 1 4 0V10"/><path d="M4 20h16"/></svg>
+</span>
+<div>
+<h1 style="margin: 0; font-size: 30px; line-height: 1.15; font-weight: 800; letter-spacing: -0.02em">{{headline}}</h1>
+<p class="muted" style="margin: 10px 0 0; font-size: 15px; line-height: 1.5; font-weight: 600">{{sub}}</p>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div class="feat"><span class="t"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span><div><b>Attendance &amp; khata</b><span>Mark P / ½ / A, advances and settlements</span></div></div>
+<div class="feat"><span class="t"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><div><b>Bills &amp; quotations</b><span>PDF on WhatsApp, track who paid</span></div></div>
+<div class="feat"><span class="t"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/><path d="m9.5 13.5 2 2 3.5-3.5"/></svg></span><div><b>Your data, your phone</b><span>No server. Auto backup to your Google Drive</span></div></div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<a href="OnbType.dc.html" style="height: 56px; border-radius: 16px; background: #0369A1; color: #fff; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none">{{cta}}</a>
+<a href="Welcome.dc.html" style="height: 52px; border-radius: 16px; border: 1px solid #E3E6EA; color: #15181D; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 8v4l3 2"/></svg>{{restore}}</a>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { lang: 'en' };
+}
+renderVals() {
+var self = this;
+var hi = this.state.lang === 'hi';
+var langs = [{ id: 'en', label: 'English' }, { id: 'hi', label: 'हिन्दी' }].map(function (l) {
+var on = self.state.lang === l.id;
+return { label: l.label, on: on ? 'true' : 'false', cls: on ? 'on' : '', pick: function () { self.setState({ lang: l.id }); } };
+});
+return {
+langs: langs,
+headline: hi ? 'काम, कारीगर और हिसाब — एक जगह' : 'Your work, workers and money in one place',
+sub: hi ? 'हाज़िरी, खाता और बिल — बिना इंटरनेट के भी चलता है।' : 'Attendance, khata and bills. Works even without internet.',
+cta: hi ? 'शुरू करें' : 'Get started',
+restore: hi ? 'बैकअप से वापस लाएँ' : 'Restore from backup'
+};
+}
+}
+</script>
+</body>
+</html>

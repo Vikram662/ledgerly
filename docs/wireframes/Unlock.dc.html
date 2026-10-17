@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Unlock</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#fff;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column;padding:16px 20px 24px}
+.scr button{font-family:inherit;cursor:pointer}
+.muted{color:#5B6370}
+.dot{width:18px;height:18px;border-radius:9px;box-sizing:border-box}
+.key{height:64px;border-radius:16px;border:0;background:#F4F5F7;font-size:28px;font-weight:700;color:#15181D;display:flex;align-items:center;justify-content:center}
+.key:active{background:#E3E6EA}
+</style>
+</helmet>
+<div class="scr">
+
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center">
+<span style="width: 72px; height: 72px; border-radius: 22px; background: #15181D; color: #FBBF24; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800">[B]</span>
+<div>
+<div class="muted" style="font-size: 14px; font-weight: 600">Welcome back</div>
+<h1 style="margin: 2px 0 0; font-size: 22px; font-weight: 800">[Business name]</h1>
+</div>
+<p style="margin: 10px 0 0; font-size: 15px; font-weight: 700; color: {{msgColor}}; min-height: 22px" role="status">{{msg}}</p>
+<div style="display: flex; gap: 18px; padding: 8px 0" aria-label="{{dotsLabel}}">
+<sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span class="dot" style="{{d.style}}"></span></sc-for>
+</div>
+<sc-if value="{{unlocked}}" hint-placeholder-val="{{ false }}">
+<a href="Main.dc.html" style="height: 48px; padding: 0 24px; border-radius: 14px; background: #059669; color: #fff; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Open app</a>
+</sc-if>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+<button class="key" onClick="{{k.press}}" aria-label="{{k.aria}}" style="{{k.style}}">
+<sc-if value="{{k.isBio}}" hint-placeholder-val="{{ false }}"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0369A1" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7M8 9.5a4 4 0 0 1 8 0V13a12 12 0 0 1-.6 3.8M5 12V9.5a7 7 0 0 1 12.5-4.3M19 9.5v2.5a15 15 0 0 1-.5 4"/></svg></sc-if>{{k.label}}
+</button>
+</sc-for>
+</div>
+
+<button onClick="{{openForgot}}" style="margin-top: 14px; height: 44px; border: 0; background: transparent; font-size: 14px; font-weight: 800; color: #0369A1">Forgot PIN?</button>
+
+<sc-if value="{{forgot}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: rgba(21,24,29,.45); display: flex; align-items: flex-end">
+<div role="dialog" aria-label="Reset PIN" style="width: 100%; background: #fff; border-radius: 24px 24px 0 0; padding: 12px 20px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+<span style="align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #E3E6EA"></span>
+<h2 style="margin: 0; font-size: 20px; font-weight: 800">Reset your PIN</h2>
+<p class="muted" style="margin: 0; font-size: 14px; line-height: 1.5; font-weight: 600">Sign in with the Google account your backup uses. Then set a new PIN. Your data stays as it is.</p>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: #F4F5F7; font-size: 14px; font-weight: 700"><span style="width: 32px; height: 32px; border-radius: 16px; background: #fff; border: 1px solid #E3E6EA; display: flex; align-items: center; justify-content: center; font-weight: 800">G</span>[backup account email]</div>
+<a href="PinCreate.dc.html" style="height: 56px; border-radius: 16px; background: #0369A1; color: #fff; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none">Continue with Google</a>
+<button onClick="{{closeForgot}}" style="height: 48px; border: 0; border-radius: 16px; background: transparent; font-size: 15px; font-weight: 700; color: #15181D">Cancel</button>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { pin: '', tries: 0, error: '', unlocked: false, forgot: false };
+}
+press(l) {
+var s = this.state;
+if (s.unlocked) return;
+if (l === 'bio') { this.setState({ unlocked: true, error: '', pin: '' }); return; }
+if (l === 'del') { this.setState({ pin: s.pin.slice(0, -1) }); return; }
+if (s.pin.length >= 4) return;
+var pin = s.pin + l;
+if (pin.length < 4) { this.setState({ pin: pin, error: '' }); return; }
+if (s.tries === 0) {
+this.setState({ pin: '', tries: 1, error: 'Wrong PIN. 4 tries left.' });
+} else {
+this.setState({ pin: pin, unlocked: true, error: '' });
+}
+}
+renderVals() {
+var self = this;
+var s = this.state;
+var dots = [0, 1, 2, 3].map(function (i) {
+var filled = i < s.pin.length;
+var style = filled ? (s.unlocked ? 'background: #059669' : 'background: #15181D') : (s.error ? 'border: 2px solid #E11D48' : 'border: 2px solid #C9CED6');
+if (s.unlocked) style = 'background: #059669';
+return { style: style };
+});
+var labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'bio', '0', 'del'];
+var keys = labels.map(function (l) {
+return {
+label: l === 'del' ? '⌫' : (l === 'bio' ? '' : l),
+isBio: l === 'bio',
+aria: l === 'del' ? 'Delete' : (l === 'bio' ? 'Use fingerprint' : l),
+style: l === 'bio' ? 'background: #F0F9FF' : (l === 'del' ? 'background: transparent; font-size: 24px' : ''),
+press: function () { self.press(l); }
+};
+});
+return {
+msg: s.unlocked ? 'Unlocked' : (s.error || 'Enter your PIN'),
+msgColor: s.unlocked ? '#047857' : (s.error ? '#BE123C' : '#5B6370'),
+dots: dots,
+dotsLabel: s.pin.length + ' of 4 digits entered',
+keys: keys,
+unlocked: s.unlocked,
+forgot: s.forgot,
+openForgot: function () { self.setState({ forgot: true }); },
+closeForgot: function () { self.setState({ forgot: false }); }
+};
+}
+}
+</script>
+</body>
+</html>

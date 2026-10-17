@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · New expense</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#fff;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column}
+.scr button{font-family:inherit;cursor:pointer}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+.top h1{margin:0;flex:1;font-size:18px;font-weight:800}
+.ib{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.t2{font-size:12px;font-weight:600;color:#5B6370}
+.num{font-variant-numeric:tabular-nums}
+.cat{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:14px;border:1px solid #E3E6EA;background:#fff;font-size:12px;font-weight:700;color:#3A414B}
+.cat.on{border:2px solid #0369A1;background:#F0F9FF;color:#15181D;padding:9px 3px}
+.cat i{width:32px;height:32px;border-radius:10px;background:#F4F5F7;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;font-weight:800}
+.mode{height:36px;padding:0 14px;border-radius:18px;border:1px solid #E3E6EA;background:#fff;font-size:13px;font-weight:700;color:#3A414B;flex:none}
+.mode.on{background:#15181D;border-color:#15181D;color:#fff}
+.key{height:54px;border-radius:14px;border:0;background:#F4F5F7;font-size:24px;font-weight:700;color:#15181D}
+.bp{height:56px;border-radius:16px;background:#0369A1;color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;text-decoration:none}
+</style>
+</helmet>
+<div class="scr">
+<header class="top">
+<a class="ib" href="Expenses.dc.html" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+<h1>New expense</h1>
+<button aria-label="Add bill photo" style="height: 40px; padding: 0 12px; border-radius: 20px; border: 1px solid #E3E6EA; background: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Bill photo</button>
+</header>
+<div style="padding: 4px 16px 0; display: flex; flex-direction: column; gap: 12px; flex: 1">
+<div style="text-align: center; padding: 4px 0"><div class="t2">Amount</div><div class="num" style="font-size: 44px; font-weight: 800; letter-spacing: -0.03em">₹1,900</div></div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<button class="cat on"><i>MT</i>Material</button><button class="cat"><i>PT</i>Petrol</button><button class="cat"><i>TL</i>Tools</button><button class="cat"><i>FD</i>Food</button>
+<button class="cat"><i>RN</i>Rent</button><button class="cat"><i>TR</i>Transport</button><button class="cat"><i>PH</i>Phone</button><button class="cat"><i>+</i>New</button>
+</div>
+<div style="display: flex; gap: 8px; align-items: center; overflow-x: auto"><span class="t2" style="flex: none; font-weight: 800">Paid by</span><button class="mode on">Cash</button><button class="mode">PhonePe</button><button class="mode">GPay</button><button class="mode">Bank</button></div>
+<div style="display: flex; gap: 8px">
+<label style="flex: 1; height: 44px; padding: 0 12px; border-radius: 12px; background: #F4F5F7; display: flex; align-items: center"><input placeholder="Note (optional)" aria-label="Note" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: 600 14px Manrope, system-ui, sans-serif"></label>
+<button style="height: 44px; padding: 0 12px; border-radius: 12px; border: 0; background: #F4F5F7; font-size: 13px; font-weight: 700">Job: none</button>
+</div>
+</div>
+<div style="padding: 10px 16px 16px; display: flex; flex-direction: column; gap: 10px">
+<div class="num" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<button class="key">1</button><button class="key">2</button><button class="key">3</button><button class="key">4</button><button class="key">5</button><button class="key">6</button><button class="key">7</button><button class="key">8</button><button class="key">9</button><button class="key">00</button><button class="key">0</button><button class="key" aria-label="Delete" style="background: transparent">⌫</button>
+</div>
+<a class="bp" href="Expenses.dc.html">Save expense</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

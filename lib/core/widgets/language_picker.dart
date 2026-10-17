@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
 import '../i18n/i18n.dart';
 
 /// Always shown in both languages, so it can be found whichever is on.
@@ -56,21 +57,84 @@ Future<void> showLanguagePicker(BuildContext context) async {
   }
 }
 
-/// Compact English | हिंदी switch for the first screens (onboarding).
+/// Compact English | हिंदी pill switch for the first screens (wireframe A1).
 class LanguageToggle extends StatelessWidget {
   const LanguageToggle({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<AppLanguage>(
-      showSelectedIcon: false,
-      style: const ButtonStyle(visualDensity: VisualDensity.compact),
-      segments: [
-        for (final language in AppLanguage.values)
-          ButtonSegment(value: language, label: Text(language.nativeName)),
-      ],
-      selected: {appLanguage.value},
-      onSelectionChanged: (s) => setAppLanguage(s.first),
+    return Semantics(
+      label: _languageTitle,
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: AppColors.page,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final language in AppLanguage.values)
+              _LanguageOption(
+                label: language.nativeName,
+                selected: language == appLanguage.value,
+                onTap: () => setAppLanguage(language),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  const _LanguageOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: selected,
+      button: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(17),
+        onTap: selected ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 34,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(17),
+            boxShadow: selected
+                ? const [
+                    BoxShadow(
+                      color: Color(0x1A101828),
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: selected ? AppColors.ink : AppColors.muted,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

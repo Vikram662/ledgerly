@@ -41,6 +41,7 @@ import '../features/tasks/presentation/task_form_screen.dart';
 import '../features/subscription/presentation/subscription_screen.dart';
 import '../features/subscription/subscription_controller.dart';
 import 'home_shell.dart';
+import 'more_screen.dart';
 
 abstract final class Routes {
   static const onboarding = '/onboarding';
@@ -126,6 +127,7 @@ abstract final class Routes {
   static const addTask = '/tasks/new';
   static String editTask(String id) => '/tasks/$id/edit';
 
+  static const more = '/more';
   static const settings = '/settings';
   static const businessProfile = '/settings/business';
   static const rules = '/settings/rules';
@@ -386,6 +388,10 @@ GoRouter buildRouter({
       GoRoute(
         path: '/tasks/:id/edit',
         builder: (context, state) => TaskFormScreen(taskId: id(state)),
+      ),
+      GoRoute(
+        path: Routes.more,
+        builder: (context, state) => const MoreScreen(),
       ),
       GoRoute(
         path: Routes.settings,

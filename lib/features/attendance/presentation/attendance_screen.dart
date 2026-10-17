@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/app_drawer.dart';
-import '../../../app/theme.dart';
 import '../../../core/i18n/i18n.dart';
+import '../../../core/widgets/common.dart';
 import 'daily_attendance_screen.dart';
 import 'month_register_view.dart';
 
-/// Attendance tab: "Today" to mark, "Month" for every worker's calendar.
+/// Attendance tab: "Mark today" to mark, "Month register" for every
+/// worker's calendar.
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key, this.date, this.showMonth = false});
 
@@ -31,35 +31,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const AppDrawer(),
-      appBar: AppBar(title: Text(tr('Attendance'))),
+      appBar: tabAppBar(tr('Attendance')),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<bool>(
-                showSelectedIcon: false,
-                style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: AppColors.amber500,
-                  selectedForegroundColor: AppColors.slate900,
-                ),
-                segments: [
-                  ButtonSegment(
-                    value: false,
-                    icon: Icon(Icons.edit_calendar),
-                    label: Text(tr('Mark today')),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    icon: Icon(Icons.calendar_month),
-                    label: Text(tr('Month register')),
-                  ),
-                ],
-                selected: {_month},
-                onSelectionChanged: (s) => setState(() => _month = s.first),
-              ),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: SegmentedTabs<bool>(
+              value: _month,
+              options: {
+                false: tr('Mark today'),
+                true: tr('Month register'),
+              },
+              onChanged: (value) => setState(() => _month = value),
             ),
           ),
           Expanded(

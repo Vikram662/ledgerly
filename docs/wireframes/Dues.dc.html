@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Lena Dena</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#F4F5F7;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column}
+.scr button{font-family:inherit;cursor:pointer}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+.top h1{margin:0;flex:1;font-size:20px;font-weight:800}
+.ib{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.body{flex:1;overflow-y:auto;padding:8px 16px 24px;display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border:1px solid #E3E6EA;border-radius:16px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px}
+.row+.row{border-top:1px solid #EEF0F2}
+.t1{font-size:15px;font-weight:700}.t2{font-size:12px;font-weight:600;color:#5B6370}
+.num{font-variant-numeric:tabular-nums}
+.tab{flex:1;padding:12px;border-radius:16px;text-align:left;border:1px solid #E3E6EA;background:#fff}
+.tab.on{border:2px solid #15181D;padding:11px}
+.tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:#F4F5F7;color:#3A414B}
+.mini{height:32px;padding:0 10px;border-radius:10px;border:1px solid #E3E6EA;background:#fff;font-size:12px;font-weight:800;color:#15181D}
+</style>
+</helmet>
+<div class="scr">
+<header class="top">
+<a class="ib" href="More.dc.html" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></a>
+<h1>Lena / Dena</h1>
+<button class="ib" aria-label="Share PDF"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
+</header>
+<div class="body">
+<div role="tablist" aria-label="Dues" style="display: flex; gap: 8px">
+<button class="tab on num" role="tab" aria-selected="true"><span class="t2" style="display: block">Lena (to receive)</span><span style="display: block; font-size: 20px; font-weight: 800; color: #047857">₹1,24,500</span><span style="display: block; font-size: 11px; font-weight: 800; color: #BE123C">₹32,000 overdue</span></button>
+<button class="tab num" role="tab" aria-selected="false"><span class="t2" style="display: block">Dena (to pay)</span><span style="display: block; font-size: 20px; font-weight: 800; color: #BE123C">₹38,200</span><span class="t2" style="display: block; font-size: 11px">Workers + suppliers</span></button>
+</div>
+<div class="card num">
+<div class="row"><div style="flex: 1"><div class="t1">[Client name]</div><div style="display: flex; gap: 6px; margin-top: 4px"><span class="tag">Client</span><span class="tag" style="background: #FFF1F2; color: #BE123C">Overdue ₹32,000</span></div></div><div style="text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end"><b>₹63,200</b><button class="mini">Send reminder</button></div></div>
+<div class="row"><div style="flex: 1"><div class="t1">[Client name]</div><div style="margin-top: 4px"><span class="tag">Client</span></div></div><div style="text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end"><b>₹41,300</b><button class="mini">Send reminder</button></div></div>
+<div class="row"><div style="flex: 1"><div class="t1">[Client name]</div><div style="margin-top: 4px"><span class="tag">Client</span></div></div><div style="text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end"><b>₹18,000</b><button class="mini">Send reminder</button></div></div>
+<div class="row"><div style="flex: 1"><div class="t1">Anil Verma</div><div style="margin-top: 4px"><span class="tag">Worker · advance</span></div></div><b>₹2,000</b></div>
+</div>
+<p class="t2" style="margin: 0; text-align: center">Reminder opens WhatsApp with a ready message.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/db/enums.dart';
@@ -55,7 +56,9 @@ class _DailyAttendanceViewState extends ConsumerState<DailyAttendanceView> {
     if (mounted) {
       showMessage(
         context,
-        count == 0 ? tr('Everyone is already marked') : tr('Marked {count} workers', {'count': count}),
+        count == 0
+            ? tr('Everyone is already marked')
+            : tr('Marked {count} workers', {'count': count}),
       );
     }
   }
@@ -69,7 +72,9 @@ class _DailyAttendanceViewState extends ConsumerState<DailyAttendanceView> {
     if (mounted) {
       showMessage(
         context,
-        count == 0 ? tr('Nothing to copy') : tr('Copied {count} from previous day', {'count': count}),
+        count == 0
+            ? tr('Nothing to copy')
+            : tr('Copied {count} from previous day', {'count': count}),
       );
     }
   }
@@ -79,109 +84,262 @@ class _DailyAttendanceViewState extends ConsumerState<DailyAttendanceView> {
     final rows = ref.watch(attendanceDayProvider(isoDate(_date)));
     final settings = ref.watch(appSettingsProvider).valueOrNull;
     final isWeeklyOff = settings?.weeklyOffDay == _date.weekday;
+    final allStatus =
+        isWeeklyOff ? AttendanceStatus.off : AttendanceStatus.present;
 
-    return Column(
-      children: [
-        Material(
-          color: AppColors.surface,
-          child: Row(
+    final dayPicker = _DayPicker(
+      date: _date,
+      isToday: _isToday,
+      weeklyOff: isWeeklyOff,
+      onShift: _shift,
+      onPick: (picked) => setState(() => _date = dateOnly(picked)),
+    );
+
+    return rows.when(
+      loading: () => const ListSkeleton(),
+      error: (e, _) => Center(child: Text(errorText(e))),
+      data: (list) {
+        int count(AttendanceStatus s) =>
+            list.where((r) => r.attendance?.status == s).length;
+        final marked = list.where((r) => r.attendance != null).length;
+        final left = list.length - marked;
+        if (list.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
             children: [
-              IconButton(
-                tooltip: tr('Previous day'),
-                icon: const Icon(Icons.chevron_left),
-                onPressed: () => _shift(-1),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: () async {
-                    final picked = await pickDate(
-                      context,
-                      initial: _date,
-                      last: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      setState(() => _date = dateOnly(picked));
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Column(
-                      children: [
-                        Text(
-                          _isToday ? tr('Today') : dayFormat.format(_date),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        if (isWeeklyOff)
-                          Text(tr('Weekly off'),
-                              style: TextStyle(color: AppColors.slate600)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: tr('Next day'),
-                icon: const Icon(Icons.chevron_right),
-                onPressed: _isToday ? null : () => _shift(1),
+              dayPicker,
+              EmptyState(
+                icon: Icons.groups,
+                title: tr('No workers on this day'),
+                message: tr('Add workers first, or pick a later date.'),
               ),
             ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(64, AppSizes.tapMin),
-                    textStyle: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
-                  ),
-                  onPressed: () => _markAll(isWeeklyOff
-                      ? AttendanceStatus.off
-                      : AttendanceStatus.present),
-                  icon: const Icon(Icons.done_all),
-                  label:
-                      Text(isWeeklyOff ? tr('Mark all Off') : tr('Mark all present')),
-                ),
-              ),
-              const SizedBox(width: AppSizes.gap),
-              OutlinedButton.icon(
-                onPressed: _copyYesterday,
-                icon: const Icon(Icons.content_copy),
-                label: Text(tr('Copy yesterday')),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: rows.when(
-            loading: () => const ListSkeleton(),
-            error: (e, _) => Center(child: Text(errorText(e))),
-            data: (list) {
-              if (list.isEmpty) {
-                return EmptyState(
-                  icon: Icons.groups,
-                  title: tr('No workers on this day'),
-                  message: tr('Add workers first, or pick a later date.'),
-                );
-              }
-              final marked = list.where((r) => r.attendance != null).length;
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          );
+        }
+        return Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
                 children: [
-                  Text(tr('{marked} of {count} marked', {'marked': marked, 'count': list.length}),
-                      style: const TextStyle(color: AppColors.slate600)),
-                  const SizedBox(height: 8),
-                  for (final row in list)
-                    _AttendanceRowTile(row: row, date: _date),
+                  dayPicker,
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _CountCard(count(AttendanceStatus.present),
+                          tr('Present'), AppColors.successText),
+                      const SizedBox(width: 8),
+                      _CountCard(count(AttendanceStatus.half), tr('Half day'),
+                          AppColors.warningText),
+                      const SizedBox(width: 8),
+                      _CountCard(count(AttendanceStatus.absent), tr('Absent'),
+                          AppColors.dangerText),
+                      const SizedBox(width: 8),
+                      _CountCard(left, tr('Not marked'), AppColors.ink),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SmallOutlinedButton(
+                          icon: Icons.done_all,
+                          label: isWeeklyOff
+                              ? tr('Mark all Off')
+                              : tr('Mark all present'),
+                          onTap: () => _markAll(allStatus),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SmallOutlinedButton(
+                          icon: Icons.content_copy,
+                          label: tr('Copy yesterday'),
+                          onTap: _copyYesterday,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  CardList(
+                    children: [
+                      for (final row in list)
+                        _AttendanceRowTile(row: row, date: _date),
+                    ],
+                  ),
                 ],
-              );
-            },
+              ),
+            ),
+            DecoratedBox(
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                border: Border(top: BorderSide(color: AppColors.border)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tr('{marked} of {count} marked',
+                                {'marked': marked, 'count': list.length}),
+                            style: AppText.tabular.copyWith(
+                                fontSize: 15, fontWeight: FontWeight.w800),
+                          ),
+                          Text(
+                            tr('Saves automatically'),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input),
+                        ),
+                        textStyle: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                      onPressed: left == 0 ? null : () => _markAll(allStatus),
+                      child: Text(isWeeklyOff
+                          ? tr('Mark rest Off')
+                          : tr('Mark rest present')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// White card: previous day, the date (tap to pick), next day.
+class _DayPicker extends StatelessWidget {
+  const _DayPicker({
+    required this.date,
+    required this.isToday,
+    required this.weeklyOff,
+    required this.onShift,
+    required this.onPick,
+  });
+
+  final DateTime date;
+  final bool isToday;
+  final bool weeklyOff;
+  final ValueChanged<int> onShift;
+  final ValueChanged<DateTime> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = dateOnly(DateTime.now());
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    final title = isToday
+        ? tr('Today')
+        : date == yesterday
+            ? tr('Yesterday')
+            : DateFormat('d MMM yyyy', uiDateLocale).format(date);
+    final sub = DateFormat('EEEE, d MMM', uiDateLocale).format(date);
+    return Panel(
+      padding: const EdgeInsets.all(6),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: tr('Previous day'),
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => onShift(-1),
           ),
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.small),
+              onTap: () async {
+                final picked = await pickDate(
+                  context,
+                  initial: date,
+                  last: DateTime.now(),
+                );
+                if (picked != null) onPick(picked);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      weeklyOff ? '$sub · ${tr('Weekly off')}' : sub,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: tr('Next day'),
+            icon: const Icon(Icons.chevron_right),
+            onPressed: isToday ? null : () => onShift(1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CountCard extends StatelessWidget {
+  const _CountCard(this.count, this.label, this.color);
+
+  final int count;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Panel(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        child: Column(
+          children: [
+            Text(
+              '$count',
+              style: AppText.tabular.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.muted,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -198,6 +356,11 @@ class _AttendanceRowTile extends ConsumerWidget {
     final ot = row.attendance?.otMilliHours ?? 0;
     final working =
         current == AttendanceStatus.present || current == AttendanceStatus.half;
+    // Leave and weekly off are set from the long-press sheet.
+    final other = current != null &&
+        current != AttendanceStatus.present &&
+        current != AttendanceStatus.half &&
+        current != AttendanceStatus.absent;
 
     Future<void> mark(AttendanceStatus status) => markAttendance(
           context,
@@ -216,90 +379,121 @@ class _AttendanceRowTile extends ConsumerWidget {
           otMilliHours: milliHours < 0 ? 0 : milliHours,
         );
 
+    final Widget subtitle;
+    if (current == null) {
+      subtitle = Text(
+        tr('Not marked'),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.warningText,
+        ),
+      );
+    } else {
+      subtitle = Text(
+        other ? statusStyle(current).label : (row.roleName ?? ''),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: other ? statusStyle(current).color : AppColors.muted,
+        ),
+      );
+    }
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSizes.gap),
-      child: Panel(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onLongPress: () => showStatusSheet(
-                      context,
-                      ref,
-                      workerId: row.worker.id,
-                      date: date,
-                      current: current,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(row.worker.name,
-                            style: Theme.of(context).textTheme.titleMedium),
-                        Text(
-                          current == null
-                              ? (row.roleName ?? tr('Not marked'))
-                              : statusStyle(current).label,
-                          style: TextStyle(
-                            color: current == null
-                                ? AppColors.slate600
-                                : statusStyle(current).color,
-                          ),
-                        ),
-                      ],
-                    ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              InitialsAvatar(row.worker.name),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onLongPress: () => showStatusSheet(
+                    context,
+                    ref,
+                    workerId: row.worker.id,
+                    date: date,
+                    current: current,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row.worker.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                      subtitle,
+                    ],
                   ),
                 ),
-                for (final status in const [
-                  AttendanceStatus.present,
-                  AttendanceStatus.half,
-                  AttendanceStatus.absent,
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: _StatusButton(
-                      status: status,
-                      selected: current == status,
-                      onTap: () => mark(status),
-                    ),
+              ),
+              for (final status in const [
+                AttendanceStatus.present,
+                AttendanceStatus.half,
+                AttendanceStatus.absent,
+              ])
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: _StatusButton(
+                    status: status,
+                    selected: current == status,
+                    onTap: () => mark(status),
                   ),
-              ],
-            ),
-            if (working)
-              Row(
+                ),
+            ],
+          ),
+          if (working)
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+              decoration: BoxDecoration(
+                color: AppColors.page,
+                borderRadius: BorderRadius.circular(AppRadius.small),
+              ),
+              child: Row(
                 children: [
-                  Text(tr('OT hours')),
+                  Text(
+                    tr('Overtime'),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
                   const Spacer(),
-                  IconButton(
+                  StepButton(
+                    icon: Icons.remove,
                     tooltip: tr('Less OT'),
-                    onPressed: ot <= 0 ? null : () => setOt(ot - 500),
-                    icon: const Icon(Icons.remove_circle_outline),
+                    onTap: ot <= 0 ? null : () => setOt(ot - 500),
                   ),
                   SizedBox(
-                    width: 48,
+                    width: 56,
                     child: Text(
-                      formatMilli(ot),
+                      tr('{hours} h', {'hours': formatMilli(ot)}),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w600),
+                      style: AppText.tabular.copyWith(
+                          fontSize: 15, fontWeight: FontWeight.w800),
                     ),
                   ),
-                  IconButton(
+                  StepButton(
+                    icon: Icons.add,
                     tooltip: tr('More OT'),
-                    onPressed: () => setOt(ot + 500),
-                    icon: const Icon(Icons.add_circle_outline),
+                    onTap: () => setOt(ot + 500),
                   ),
                 ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
 }
 
+/// 44px P / ½ / A key; filled green, amber or red when chosen.
 class _StatusButton extends StatelessWidget {
   const _StatusButton({
     required this.status,
@@ -314,35 +508,37 @@ class _StatusButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = statusStyle(status);
+    final (Color fill, Color text) = switch (status) {
+      AttendanceStatus.present => (AppColors.successFill, Colors.white),
+      AttendanceStatus.half => (AppColors.amber500, AppColors.ink),
+      _ => (AppColors.dangerFill, Colors.white),
+    };
     return Semantics(
       selected: selected,
       label: style.label,
       button: true,
+      excludeSemantics: true,
       child: Material(
-        color: selected ? style.color : AppColors.surface,
+        color: selected ? fill : AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radius),
-          side: BorderSide(color: style.color, width: 1.5),
+          borderRadius: BorderRadius.circular(AppRadius.small),
+          side: BorderSide(color: selected ? fill : AppColors.border),
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppSizes.radius),
+          borderRadius: BorderRadius.circular(AppRadius.small),
           onTap: onTap,
           child: SizedBox(
-            width: 52,
-            height: 52,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(style.icon,
-                    size: 18, color: selected ? Colors.white : style.color),
-                Text(
-                  style.short,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: selected ? Colors.white : style.color,
-                  ),
+            width: 44,
+            height: 44,
+            child: Center(
+              child: Text(
+                style.short,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? text : AppColors.muted,
                 ),
-              ],
+              ),
             ),
           ),
         ),

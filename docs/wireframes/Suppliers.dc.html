@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Suppliers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#F4F5F7;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column}
+.scr button{font-family:inherit;cursor:pointer}
+.top{display:flex;align-items:center;gap:10px;padding:16px 16px 8px}
+.top h1{margin:0;flex:1;font-size:20px;font-weight:800}
+.ib{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.body{flex:1;overflow-y:auto;padding:8px 16px 96px;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid #E3E6EA;border-radius:16px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;text-decoration:none;color:inherit}
+.row+.row{border-top:1px solid #EEF0F2}
+.t1{font-size:15px;font-weight:700}.t2{font-size:12px;font-weight:600;color:#5B6370}
+.num{font-variant-numeric:tabular-nums}
+.ic{width:40px;height:40px;border-radius:12px;background:#F4F5F7;display:flex;align-items:center;justify-content:center;flex:none;font-size:13px;font-weight:800;color:#3A414B}
+.fab{position:absolute;right:16px;bottom:24px;height:56px;padding:0 20px 0 16px;border-radius:18px;background:#0369A1;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;text-decoration:none;box-shadow:0 6px 16px rgba(3,105,161,.25)}
+</style>
+</helmet>
+<div class="scr">
+<header class="top">
+<a class="ib" href="Expenses.dc.html" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></a>
+<h1>Suppliers</h1>
+</header>
+<div class="body">
+<section style="border-radius: 20px; background: #15181D; color: #fff; padding: 18px">
+<div style="font-size: 13px; font-weight: 600; color: #C9CED6">Total to pay suppliers</div>
+<div class="num" style="font-size: 30px; font-weight: 800; letter-spacing: -0.02em">₹12,000</div>
+<div style="font-size: 12px; font-weight: 600; color: #C9CED6; margin-top: 4px">Material bought on credit (udhaar)</div>
+</section>
+<div class="card">
+<a class="row" href="SupplierDetail.dc.html"><span class="ic">GH</span><div style="flex: 1"><div class="t1">[Hardware shop]</div><div class="t2">Last purchase 15 Oct</div></div><div style="text-align: right"><div class="num" style="font-weight: 800; color: #BE123C">₹8,400</div><div class="t2">due</div></div></a>
+<a class="row" href="SupplierDetail.dc.html"><span class="ic">CS</span><div style="flex: 1"><div class="t1">[Cement supplier]</div><div class="t2">Last purchase 12 Oct</div></div><div style="text-align: right"><div class="num" style="font-weight: 800; color: #BE123C">₹3,600</div><div class="t2">due</div></div></a>
+<a class="row" href="SupplierDetail.dc.html"><span class="ic">EW</span><div style="flex: 1"><div class="t1">[Electric wholesale]</div><div class="t2">Paid 05 Oct</div></div><div style="text-align: right"><div class="num" style="font-weight: 800; color: #047857">₹1,000</div><div class="t2">advance</div></div></a>
+<a class="row" href="SupplierDetail.dc.html"><span class="ic">PT</span><div style="flex: 1"><div class="t1">[Paint store]</div><div class="t2">Settled</div></div><div style="text-align: right"><div class="num" style="font-weight: 800">₹0</div></div></a>
+</div>
+</div>
+<a class="fab" href="SupplierDetail.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add supplier</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

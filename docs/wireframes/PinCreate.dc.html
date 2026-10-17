@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thekedaar · Create PIN</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0369A1}a:hover{color:#075985}
+.scr{width:390px;height:844px;box-sizing:border-box;position:relative;overflow:hidden;background:#fff;font-family:'Manrope',system-ui,sans-serif;color:#15181D;display:flex;flex-direction:column;padding:16px 20px 24px}
+.scr button{font-family:inherit;cursor:pointer}
+.muted{color:#5B6370}
+.iconbtn{width:44px;height:44px;border-radius:22px;border:1px solid #E3E6EA;background:#fff;display:flex;align-items:center;justify-content:center;color:#15181D;text-decoration:none;flex:none}
+.dot{width:18px;height:18px;border-radius:9px;box-sizing:border-box}
+.key{height:64px;border-radius:16px;border:0;background:#F4F5F7;font-size:28px;font-weight:700;color:#15181D;display:flex;align-items:center;justify-content:center}
+.key:active{background:#E3E6EA}
+</style>
+</helmet>
+<div class="scr">
+
+<header style="display: flex; align-items: center; gap: 12px">
+<a class="iconbtn" href="OnbBusiness.dc.html" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></a>
+<div style="flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px" aria-label="Step 3 of 3">
+<span style="height: 6px; border-radius: 3px; background: #0369A1"></span><span style="height: 6px; border-radius: 3px; background: #0369A1"></span><span style="height: 6px; border-radius: 3px; background: #0369A1"></span>
+</div>
+<span class="muted" style="font-size: 12px; font-weight: 800">3 / 3</span>
+</header>
+
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center">
+<span style="width: 64px; height: 64px; border-radius: 20px; background: #F0F9FF; color: #0369A1; display: flex; align-items: center; justify-content: center"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+<h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.01em">{{title}}</h1>
+<p style="margin: 0; font-size: 14px; font-weight: 700; color: {{msgColor}}; min-height: 20px">{{msg}}</p>
+<div style="display: flex; gap: 18px; padding: 8px 0" role="status" aria-label="{{dotsLabel}}">
+<sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span class="dot" style="{{d.style}}"></span></sc-for>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{keys}}" as="k" hint-placeholder-count="12"><button class="key" onClick="{{k.press}}" aria-label="{{k.aria}}" style="{{k.style}}">{{k.label}}</button></sc-for>
+</div>
+
+<sc-if value="{{showSheet}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: rgba(21,24,29,.45); display: flex; align-items: flex-end">
+<div role="dialog" aria-label="Use fingerprint" style="width: 100%; background: #fff; border-radius: 24px 24px 0 0; padding: 12px 20px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center">
+<span style="width: 40px; height: 4px; border-radius: 2px; background: #E3E6EA"></span>
+<span style="width: 72px; height: 72px; border-radius: 36px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3a8 8 0 0 1-1.5 4.7M8 9.5a4 4 0 0 1 8 0V13a12 12 0 0 1-.6 3.8M5 12V9.5a7 7 0 0 1 12.5-4.3M19 9.5v2.5a15 15 0 0 1-.5 4"/></svg></span>
+<div><h2 style="margin: 0; font-size: 20px; font-weight: 800">PIN set. Use fingerprint?</h2><p class="muted" style="margin: 6px 0 0; font-size: 14px; font-weight: 600">Unlock the app with fingerprint or face. PIN stays as backup.</p></div>
+<a href="Main.dc.html" style="width: 100%; height: 56px; border-radius: 16px; background: #0369A1; color: #fff; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; text-decoration: none">Use fingerprint</a>
+<a href="Main.dc.html" style="width: 100%; height: 48px; border-radius: 16px; color: #15181D; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">Not now</a>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { phase: 'create', first: '', pin: '', error: '' };
+}
+press(l) {
+var s = this.state;
+if (s.phase === 'done') return;
+if (l === 'del') { this.setState({ pin: s.pin.slice(0, -1), error: '' }); return; }
+if (l === '' || s.pin.length >= 4) return;
+var pin = s.pin + l;
+if (pin.length < 4) { this.setState({ pin: pin, error: '' }); return; }
+var weak = ['0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999', '1234', '4321', '1212', '0123'];
+if (s.phase === 'create') {
+if (weak.indexOf(pin) >= 0) { this.setState({ pin: '', error: 'This PIN is too easy. Choose another.' }); return; }
+this.setState({ phase: 'confirm', first: pin, pin: '', error: '' });
+} else if (pin === s.first) {
+this.setState({ phase: 'done', pin: pin, error: '' });
+} else {
+this.setState({ phase: 'create', first: '', pin: '', error: 'PINs did not match. Start again.' });
+}
+}
+renderVals() {
+var self = this;
+var s = this.state;
+var dots = [0, 1, 2, 3].map(function (i) {
+var filled = i < s.pin.length;
+var err = !!s.error;
+return { style: filled ? 'background: #15181D' : (err ? 'border: 2px solid #E11D48' : 'border: 2px solid #C9CED6') };
+});
+var labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
+var keys = labels.map(function (l) {
+return {
+label: l === 'del' ? '⌫' : l,
+aria: l === 'del' ? 'Delete' : (l === '' ? 'Empty' : l),
+style: l === '' ? 'background: transparent; cursor: default' : (l === 'del' ? 'background: transparent; font-size: 24px' : ''),
+press: function () { self.press(l); }
+};
+});
+var confirm = s.phase !== 'create';
+return {
+title: confirm ? 'Enter the PIN again' : 'Create a 4-digit PIN',
+msg: s.error || (confirm ? 'Same 4 digits, to confirm.' : 'You will use it to open the app.'),
+msgColor: s.error ? '#BE123C' : '#5B6370',
+dots: dots,
+dotsLabel: s.pin.length + ' of 4 digits entered',
+keys: keys,
+showSheet: s.phase === 'done'
+};
+}
+}
+</script>
+</body>
+</html>

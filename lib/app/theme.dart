@@ -150,15 +150,26 @@ ThemeData buildLightTheme() {
       foregroundColor: AppColors.ink,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      scrolledUnderElevation: 1,
+      scrolledUnderElevation: 0,
       centerTitle: false,
+      toolbarHeight: 64,
+      leadingWidth: 68,
+      titleSpacing: 4,
       titleTextStyle: TextStyle(
         fontFamily: AppText.fontFamily,
         fontFamilyFallback: AppText.fallback,
         color: AppColors.ink,
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: FontWeight.w800,
+        letterSpacing: -0.22,
       ),
+    ),
+    // Back and menu buttons are 44px white circles with a hairline border.
+    actionIconTheme: ActionIconThemeData(
+      backButtonIconBuilder: (context) =>
+          const _RoundIcon(Icons.arrow_back),
+      closeButtonIconBuilder: (context) => const _RoundIcon(Icons.close),
+      drawerButtonIconBuilder: (context) => const _RoundIcon(Icons.menu),
     ),
     // White cards with a hairline border on the grey page; no shadow.
     cardTheme: CardThemeData(
@@ -234,10 +245,12 @@ ThemeData buildLightTheme() {
         textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
       ),
     ),
+    // Underlined tabs: the selected one is ink with an ink line.
     tabBarTheme: const TabBarThemeData(
-      labelColor: AppColors.primary,
+      labelColor: AppColors.ink,
       unselectedLabelColor: AppColors.muted,
-      indicatorColor: AppColors.primary,
+      indicatorColor: AppColors.ink,
+      indicatorSize: TabBarIndicatorSize.label,
       dividerColor: AppColors.border,
       labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
       unselectedLabelStyle:
@@ -349,4 +362,24 @@ ThemeData buildLightTheme() {
       ),
     ),
   );
+}
+
+class _RoundIcon extends StatelessWidget {
+  const _RoundIcon(this.icon);
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: AppSizes.iconButton,
+      height: AppSizes.iconButton,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Icon(icon, size: 22, color: AppColors.ink),
+    );
+  }
 }
