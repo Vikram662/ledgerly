@@ -70,10 +70,12 @@ jobs:
 
       - run: flutter pub get
 
-      - name: App icon and splash screen
+      - name: Generate app icon
+        run: bash tool/ci_annotate.sh "App icon" "error|Error|Exception|SEVERE|Unable|Failed" dart run flutter_launcher_icons
+
+      - name: Generate splash screen
         run: |
-          dart run flutter_launcher_icons
-          dart run flutter_native_splash:create
+          bash tool/ci_annotate.sh "Splash" "error|Error|Exception|SEVERE|Unable|Failed" dart run flutter_native_splash:create
           # the splash tool rewrites styles; re-apply the AppCompat themes
           dart run tool/patch_android.dart
 
