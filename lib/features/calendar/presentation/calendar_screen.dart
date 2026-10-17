@@ -230,6 +230,7 @@ class _DayCell extends StatelessWidget {
               '${date.day}',
               style: TextStyle(
                 fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                color: isToday ? AppColors.primary : AppColors.ink,
               ),
             ),
             if (attendance != null && attendance.present + attendance.half > 0)
@@ -287,10 +288,12 @@ class _MonthTotals extends StatelessWidget {
             children: [
               Text(label,
                   style: const TextStyle(
-                      color: AppColors.slate600, fontSize: 12)),
+                      color: AppColors.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
               Text(value,
-                  style: TextStyle(
+                  style: AppText.tabular.copyWith(
                       color: color,
                       fontSize: 16,
                       fontWeight: FontWeight.w800)),
@@ -323,7 +326,11 @@ class _Legend extends StatelessWidget {
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 12)),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.muted)),
           ],
         );
     return Wrap(
@@ -374,7 +381,10 @@ class _DaySheet extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
           Text(_sheetDate.format(date),
-              style: Theme.of(context).textTheme.titleLarge),
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -397,12 +407,17 @@ class _DaySheet extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Material(
-            color: AppColors.surface2,
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              side: const BorderSide(color: AppColors.border),
+            ),
             clipBehavior: Clip.antiAlias,
             child: ListTile(
               tileColor: Colors.transparent,
-              leading: const Icon(Icons.fact_check, color: AppColors.successText),
+              leading: const IconTile(Icons.fact_check_outlined,
+                  color: AppColors.successSurface,
+                  iconColor: AppColors.successText),
               title: Text(tr('Attendance')),
               subtitle: Text(att == null || att.isEmpty
                   ? tr('Not marked')
@@ -424,7 +439,9 @@ class _DaySheet extends StatelessWidget {
               ),
             )
           else
-            for (final e in events) _EventTile(event: e, onOpen: onOpen),
+            CardList(children: [
+              for (final e in events) _EventTile(event: e, onOpen: onOpen),
+            ]),
         ],
       ),
     );
@@ -447,14 +464,15 @@ class _MiniStat extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: color.withAlpha(20),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.small),
         ),
         child: Row(
           children: [
             Text(label, style: TextStyle(color: color)),
             const Spacer(),
             Text(value,
-                style: TextStyle(color: color, fontWeight: FontWeight.w800)),
+                style: AppText.tabular
+                    .copyWith(color: color, fontWeight: FontWeight.w800)),
           ],
         ),
       );
@@ -477,13 +495,8 @@ class _EventTile extends StatelessWidget {
     };
     final route = event.route;
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       tileColor: Colors.transparent,
-      leading: CircleAvatar(
-        backgroundColor: color.withAlpha(28),
-        foregroundColor: color,
-        child: Icon(icon, size: 20),
-      ),
+      leading: IconTile(icon, color: color.withAlpha(28), iconColor: color),
       title: Text(event.title,
           style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: event.subtitle == null || event.subtitle!.isEmpty
@@ -493,8 +506,8 @@ class _EventTile extends StatelessWidget {
           ? (route == null ? null : const Icon(Icons.chevron_right))
           : Text(
               '$sign${formatPaise(amount)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
+              style: AppText.tabular.copyWith(
+                fontWeight: FontWeight.w800,
                 color: switch (event.flow) {
                   MoneyFlow.incoming => AppColors.successText,
                   MoneyFlow.outgoing => AppColors.dangerText,

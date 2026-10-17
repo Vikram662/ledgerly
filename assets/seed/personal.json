@@ -1,10 +1,26 @@
 {
   "roles": [],
   "expenseCategories": [
-    "Rent", "Grocery / Ration", "Milk", "Vegetables / Fruits", "Electricity",
-    "Gas Cylinder", "Mobile / Internet", "Petrol", "EMI / Loan",
-    "School / Tuition Fees", "Medical", "Shopping / Clothes", "Travel",
-    "Eating Out", "Gifts / Shagun", "Other"
+    "Rent",
+    "Grocery / Ration",
+    "Milk",
+    "Vegetables / Fruits",
+    "Electricity",
+    "Gas Cylinder",
+    "Mobile / Internet",
+    "Petrol",
+    "EMI / Loan",
+    "School / Tuition Fees",
+    "Medical",
+    "Shopping / Clothes",
+    "Travel",
+    "Eating Out",
+    "Gifts / Shagun",
+    "Maid / House Help",
+    "Society Maintenance",
+    "Water",
+    "Insurance",
+    "Other"
   ],
   "items": [],
   "templates": []

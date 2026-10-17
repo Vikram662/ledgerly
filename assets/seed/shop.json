@@ -1,11 +1,47 @@
 {
-  "roles": ["Salesman", "Cashier", "Helper", "Tailor", "Delivery Boy"],
-  "expenseCategories": [
-    "Stock Purchase", "Shop Rent", "Staff Salary", "Electricity",
-    "Packing / Bags", "Transport / Bhada", "Food / Chai",
-    "Mobile Recharge", "Repair / Maintenance", "Other"
+  "roles": [
+    "Salesman",
+    "Cashier",
+    "Helper",
+    "Tailor",
+    "Delivery Boy"
   ],
-  "items": [],
+  "expenseCategories": [
+    "Stock Purchase",
+    "Shop Rent",
+    "Staff Salary",
+    "Electricity",
+    "Packing / Bags",
+    "Transport / Bhada",
+    "Food / Chai",
+    "Mobile Recharge",
+    "Repair / Maintenance",
+    "Card Machine / Bank Charges",
+    "Advertising",
+    "Other"
+  ],
+  "items": [
+    {
+      "name": "Delivery charge",
+      "unit": "nos",
+      "kind": "workRate"
+    },
+    {
+      "name": "Packing charge",
+      "unit": "nos",
+      "kind": "workRate"
+    },
+    {
+      "name": "Alteration / Stitching",
+      "unit": "nos",
+      "kind": "labour"
+    },
+    {
+      "name": "Installation charge",
+      "unit": "nos",
+      "kind": "labour"
+    }
+  ],
   "templates": [],
   "defaultTerms": [
     "Goods once sold will not be taken back.",

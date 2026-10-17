@@ -109,6 +109,9 @@ void main() {
     final categories =
         (await db.select(db.expenseCategories).get()).map((c) => c.name);
     expect(categories, contains('Stock Purchase'));
+    final items = (await db.select(db.itemMasters).get()).map((i) => i.name);
+    expect(items, contains('Delivery charge'));
+    expect(items, isNot(contains('Light point')));
     final terms = await (db.select(db.appMeta)
           ..where((m) => m.metaKey.equals('default_terms')))
         .getSingle();

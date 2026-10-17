@@ -14,7 +14,7 @@ Is computer par Flutter install nahi hai. Code GitHub par cloud mein check aur b
    - drift code generate (`build_runner`)
    - `flutter analyze` + saare tests
    - debug APK build
-3. Run khatam hone par **Artifacts → thekedaar-debug-apk** download karein, zip kholein aur `app-debug.apk` phone par install karein.
+3. Run khatam hone par **Artifacts → ledgerly-debug-apk** download karein, zip kholein aur `app-debug.apk` phone par install karein.
 
 ## Poora process (yahan se shuru karein)
 

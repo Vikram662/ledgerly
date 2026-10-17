@@ -6,9 +6,9 @@ Har push par GitHub Actions ye 3 cheezein banata hai (run page → **Artifacts**
 
 | Artifact | Kya hai | Kab use karein |
 |---|---|---|
-| `thekedaar-debug-apk` | Debug APK (~90 MB) | Sirf testing |
-| `thekedaar-release-apk` | Release APK, har CPU ke liye alag (~20 MB) | Phone par seedha install / WhatsApp se bhejna. Zyada tar phones: `app-arm64-v8a-release.apk` |
-| `thekedaar-release-aab` | `app-release.aab` | Google Play Store par upload |
+| `ledgerly-debug-apk` | Debug APK (~90 MB) | Sirf testing |
+| `ledgerly-release-apk` | Release APK, har CPU ke liye alag (~20 MB) | Phone par seedha install / WhatsApp se bhejna. Zyada tar phones: `app-arm64-v8a-release.apk` |
+| `ledgerly-release-aab` | `app-release.aab` | Google Play Store par upload |
 
 ## Signing key (keystore / JKS)
 
@@ -53,5 +53,5 @@ Google Cloud ke **Android OAuth client** mein dono SHA-1 daalne honge:
 1. Google Play Console account banayein (one-time $25 fee).
 2. Naya app banayein. Package name `com.thekedaar.thekedaar` hai, jo PRD D-6 tay hone par badal sakte hain. **Pehla upload ke baad package name kabhi nahi badal sakta.**
 3. **Play App Signing** on rakhein (default).
-4. `thekedaar-release-aab` wali `app-release.aab` upload karein.
+4. `ledgerly-release-aab` wali `app-release.aab` upload karein.
 5. Har naye version se pehle `pubspec.yaml` mein `version: 0.1.0+1` ka `+1` wala number badhayein (`+2`, `+3`…), warna Play Store upload nahi lega.

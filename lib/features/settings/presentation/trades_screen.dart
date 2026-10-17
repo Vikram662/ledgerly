@@ -51,13 +51,17 @@ class _TradesScreenState extends ConsumerState<TradesScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(tr('Trades'))),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           Text(
             tr('Adding a trade adds its roles, items and templates. Removing one keeps all your data.'),
-            style: TextStyle(color: AppColors.slate600),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,

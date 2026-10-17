@@ -19,9 +19,9 @@ Is computer par Flutter install nahi hai. Saara build GitHub par hota hai.
 
 | Artifact | Kis kaam ki |
 |---|---|
-| `thekedaar-debug-apk` | Testing (badi file, ~90 MB) |
-| `thekedaar-release-apk` | Phone par install / WhatsApp par bhejna. Zyada tar phones: `app-arm64-v8a-release.apk` |
-| `thekedaar-release-aab` | Sirf Google Play Store upload |
+| `ledgerly-debug-apk` | Testing (badi file, ~90 MB) |
+| `ledgerly-release-apk` | Phone par install / WhatsApp par bhejna. Zyada tar phones: `app-arm64-v8a-release.apk` |
+| `ledgerly-release-aab` | Sirf Google Play Store upload |
 
 5. Zip download karein → kholein → APK phone par bhejein → install karein ("Install unknown apps" allow karna padega).
 
@@ -108,7 +108,7 @@ Note: Google login sirf **release APK** par chalega. Debug APK ki key har build 
 2. **Create app** → naam, language, App/Free
 3. Package name `com.thekedaar.thekedaar` hoga. ⚠️ Pehle upload ke baad ye **kabhi nahi badalta**, isliye pehle PRD D-6 (app ka naam/package) final kar lein.
 4. **Play App Signing**: on rehne dein (default)
-5. Testing → Internal testing → Create release → `thekedaar-release-aab` wali `app-release.aab` upload
+5. Testing → Internal testing → Create release → `ledgerly-release-aab` wali `app-release.aab` upload
 6. Privacy policy, data safety form, screenshots bharein → review ke liye bhejein
 
 ### Har naye version se pehle

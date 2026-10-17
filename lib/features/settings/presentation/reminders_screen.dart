@@ -57,9 +57,10 @@ class RemindersScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.notifications_off,
-                            color: AppColors.warningText),
-                        SizedBox(width: 8),
+                        const IconTile(Icons.notifications_off_outlined,
+                            color: AppColors.warningSurface,
+                            iconColor: AppColors.warningText),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             tr('Notifications are off for this app'),
@@ -71,7 +72,7 @@ class RemindersScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Text(
                       tr('Turn them on to get the reminders below. If nothing happens, allow notifications in phone Settings → Apps → Ledgerly.'),
-                      style: TextStyle(color: AppColors.slate600),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(

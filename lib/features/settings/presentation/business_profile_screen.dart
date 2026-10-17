@@ -122,8 +122,8 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                                 BorderRadius.circular(AppRadius.input),
                             border: Border.all(color: AppColors.border),
                           ),
-                          child: const Icon(Icons.add_photo_alternate,
-                              color: AppColors.slate600),
+                          child: const Icon(Icons.add_photo_alternate_outlined,
+                              color: AppColors.muted),
                         )
                       : PhotoThumb(
                           key: ValueKey(profile.logoPath),
@@ -137,11 +137,14 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(tr('Logo'),
-                            style: TextStyle(fontWeight: FontWeight.w700)),
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w700)),
                         Text(
                           tr('Printed on bills, quotations and pay slips'),
-                          style: TextStyle(
-                              color: AppColors.slate600, fontSize: 13),
+                          style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
                         ),
                         Wrap(
                           spacing: 4,
@@ -215,7 +218,8 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                         : tr('Enter a UPI ID like name@okaxis'),
               ),
             ),
-            SectionTitle(tr('Numbering')),
+            const SizedBox(height: 6),
+            SectionLabel(tr('Numbering')),
             Row(
               children: [
                 Expanded(
@@ -239,7 +243,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
             const SizedBox(height: 8),
             Text(
               tr('Numbers restart every financial year, e.g. INV/26-27/0001.'),
-              style: TextStyle(color: AppColors.slate600),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),
             ),
           ],
         ),
