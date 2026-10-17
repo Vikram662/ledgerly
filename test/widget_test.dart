@@ -25,6 +25,9 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    // Lay out the scrolled list before tapping, or the tap lands where the
+    // widget was before the jump.
+    await tester.pumpAndSettle();
     await tester.tap(find.text(text));
     await tester.pump();
   }
