@@ -32,60 +32,138 @@ StatusChip jobStatusChip(JobStatus status) => switch (status) {
         ),
     };
 
+enum _JobFilter { active, done, all }
+
 /// PRD JB-01: all jobs / sites, open ones first.
-class JobsScreen extends ConsumerWidget {
+class JobsScreen extends ConsumerStatefulWidget {
   const JobsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<JobsScreen> createState() => _JobsScreenState();
+}
+
+class _JobsScreenState extends ConsumerState<JobsScreen> {
+  _JobFilter _filter = _JobFilter.active;
+
+  @override
+  Widget build(BuildContext context) {
     final jobs = ref.watch(jobsProvider);
     return Scaffold(
       appBar: AppBar(title: Text(tr('Jobs / Sites'))),
-      floatingActionButton: FloatingActionButton.extended(
+      bottomNavigationBar: BottomActionBar(
+        label: tr('New job'),
         onPressed: () => context.push(Routes.addJob()),
-        icon: const Icon(Icons.add_location_alt),
-        label: Text(tr('New job')),
       ),
       body: jobs.when(
         loading: () => const ListSkeleton(),
         error: (e, _) => Center(child: Text(errorText(e))),
-        data: (list) => list.isEmpty
-            ? EmptyState(
-                icon: Icons.location_city,
-                title: tr('No jobs yet'),
-                message: tr('Add a site to track its bills and expenses together.'),
-                actionLabel: tr('New job'),
-                onAction: () => context.push(Routes.addJob()),
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.only(bottom: 96),
-                itemCount: list.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, i) {
-                  final item = list[i];
-                  return ListTile(
-                    minVerticalPadding: 12,
-                    title: Text(item.job.title),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          jobStatusChip(item.job.status),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              item.clientName,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push(Routes.job(item.job.id)),
-                  );
+        data: (list) {
+          if (list.isEmpty) {
+            return EmptyState(
+              icon: Icons.location_city,
+              title: tr('No jobs yet'),
+              message:
+                  tr('Add a site to track its bills and expenses together.'),
+              actionLabel: tr('New job'),
+              onAction: () => context.push(Routes.addJob()),
+            );
+          }
+          final active = list
+              .where((j) => j.job.status != JobStatus.completed)
+              .toList();
+          final done = list
+              .where((j) => j.job.status == JobStatus.completed)
+              .toList();
+          final shown = switch (_filter) {
+            _JobFilter.active => active,
+            _JobFilter.done => done,
+            _JobFilter.all => list,
+          };
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            children: [
+              SegmentedTabs<_JobFilter>(
+                value: _filter,
+                options: {
+                  _JobFilter.active:
+                      tr('Active · {count}', {'count': active.length}),
+                  _JobFilter.done:
+                      tr('Done · {count}', {'count': done.length}),
+                  _JobFilter.all: tr('All'),
                 },
+                onChanged: (f) => setState(() => _filter = f),
               ),
+              const SizedBox(height: 12),
+              if (shown.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text(tr('Nothing here'),
+                        style: const TextStyle(color: AppColors.muted)),
+                  ),
+                ),
+              for (final item in shown) ...[
+                _JobCard(item: item),
+                const SizedBox(height: 8),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _JobCard extends StatelessWidget {
+  const _JobCard({required this.item});
+
+  final JobListItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final job = item.job;
+    final (bg, fg) = switch (job.status) {
+      JobStatus.planned => (AppColors.track, AppColors.inkSoft),
+      JobStatus.inProgress => (AppColors.successSurface, AppColors.successText),
+      JobStatus.completed => (AppColors.primarySurface, AppColors.primary),
+    };
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.push(Routes.job(job.id)),
+      child: Panel(
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  job.title,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  [
+                    item.clientName,
+                    if (job.siteAddress != null) job.siteAddress!,
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TagBadge(jobStatusLabel(job.status), color: bg, textColor: fg),
+          const Icon(Icons.chevron_right, color: AppColors.faint),
+        ],
+      ),
       ),
     );
   }
@@ -204,14 +282,14 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
                   ? null
                   : tr('Enter a valid amount'),
             ),
-            SectionTitle(tr('Status')),
-            SegmentedButton<JobStatus>(
-              segments: [
-                for (final s in JobStatus.values)
-                  ButtonSegment(value: s, label: Text(jobStatusLabel(s))),
-              ],
-              selected: {_status},
-              onSelectionChanged: (s) => setState(() => _status = s.first),
+            const SizedBox(height: 16),
+            SectionLabel(tr('Status')),
+            SegmentedTabs<JobStatus>(
+              value: _status,
+              options: {
+                for (final s in JobStatus.values) s: jobStatusLabel(s),
+              },
+              onChanged: (s) => setState(() => _status = s),
             ),
           ],
         ),
@@ -246,15 +324,16 @@ class JobDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(job.title),
         actions: [
-          IconButton(
+          AppIconButton(
+            icon: Icons.edit_outlined,
             tooltip: tr('Edit'),
-            icon: const Icon(Icons.edit),
             onPressed: () => context.push(Routes.editJob(jobId)),
           ),
+          const SizedBox(width: 12),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           Row(
             children: [

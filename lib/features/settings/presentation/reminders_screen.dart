@@ -46,10 +46,11 @@ class RemindersScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(tr('Reminders'))),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           if (enabled == false)
             Padding(
-              padding: const EdgeInsets.all(AppSizes.gutter),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Panel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,12 +87,13 @@ class RemindersScreen extends ConsumerWidget {
               ),
             ),
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.only(bottom: 12),
             child: Text(
               tr('Reminders come at most once a day, between 9 am and 9 pm.'),
-              style: TextStyle(color: AppColors.slate600),
+              style: const TextStyle(color: AppColors.muted),
             ),
           ),
+          CardList(children: [
           toggle(
             Icons.cloud_off,
             tr('Backup problems'),
@@ -120,9 +122,11 @@ class RemindersScreen extends ConsumerWidget {
             r.holidays,
             (v) => r.copyWith(holidays: v),
           ),
-          const Divider(),
+          ]),
+          const SizedBox(height: 12),
+          CardList(children: [
           ListTile(
-            leading: const Icon(Icons.notifications),
+            leading: const Icon(Icons.notifications_none),
             title: Text(tr('Send a test notification')),
             onTap: () async {
               await AppNotifications.instance.requestPermission();
@@ -135,6 +139,7 @@ class RemindersScreen extends ConsumerWidget {
               if (context.mounted) showMessage(context, tr('Test sent'));
             },
           ),
+          ]),
         ],
       ),
     );

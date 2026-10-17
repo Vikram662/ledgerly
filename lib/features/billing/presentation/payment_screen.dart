@@ -12,7 +12,6 @@ import '../../../core/widgets/amount_pad.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/pickers.dart';
 import '../data/billing_repository.dart';
-import 'billing_widgets.dart';
 
 /// PRD BL-13: payment received from a client, optionally against a bill.
 class PaymentScreen extends ConsumerStatefulWidget {
@@ -74,6 +73,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final clients = ref.watch(clientsProvider).valueOrNull ?? const [];
+    final client = clients.where((c) => c.client.id == _clientId).firstOrNull;
     final bills = _clientId == null
         ? const <DocumentListItem>[]
         : (ref.watch(clientDocumentsProvider(_clientId!)).valueOrNull ?? const [])
@@ -88,77 +89,190 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       _prefilled = true;
       _amount = paiseToInputText(selectedBill.balancePaise);
     }
+    final paise = parseRupeesToPaise(_amount) ?? 0;
+    final fullDue = selectedBill?.balancePaise ?? client?.outstandingPaise;
+
+    Future<void> chooseClient() async {
+      final picked = await showPickerSheet<String>(
+        context,
+        title: tr('Choose client'),
+        options: [for (final c in clients) c.client.id],
+        label: (id) => clients.firstWhere((c) => c.client.id == id).client.name,
+        subtitle: (id) {
+          final due =
+              clients.firstWhere((c) => c.client.id == id).outstandingPaise;
+          return due > 0
+              ? tr('Pending {amount}', {'amount': formatPaise(due)})
+              : '';
+        },
+        selected: _clientId,
+      );
+      if (picked != null) {
+        setState(() {
+          _clientId = picked;
+          _documentId = null;
+        });
+      }
+    }
+
+    Future<void> chooseBill() async {
+      const none = '__none__';
+      final picked = await showPickerSheet<String>(
+        context,
+        title: tr('Choose bill'),
+        options: [none, for (final b in bills) b.document.id],
+        label: (id) {
+          if (id == none) return tr('No specific bill');
+          final b = bills.firstWhere((b) => b.document.id == id);
+          return tr('{number} · due {amount}', {
+            'number': b.document.number,
+            'amount': formatPaise(b.balancePaise),
+          });
+        },
+        selected: _documentId ?? none,
+      );
+      if (picked == null) return;
+      setState(() {
+        _documentId = picked == none ? null : picked;
+        final bill = bills.where((b) => b.document.id == _documentId).firstOrNull;
+        if (bill != null) _amount = paiseToInputText(bill.balancePaise);
+      });
+    }
 
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Payment received'))),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+      appBar: AppBar(
+        leading: const CloseButton(),
+        title: Text(tr('Payment received')),
+      ),
+      body: Column(
         children: [
-          ClientPickerField(
-            clientId: _clientId,
-            onChanged: (id) => setState(() {
-              _clientId = id;
-              _documentId = null;
-            }),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              children: [
+                ChoiceCard(
+                  leading: client == null
+                      ? const IconTile(Icons.person_outline,
+                          color: AppColors.track)
+                      : InitialsAvatar(client.client.name),
+                  title: client?.client.name ?? tr('Choose client'),
+                  subtitle: client == null || client.outstandingPaise <= 0
+                      ? null
+                      : tr('Pending {amount}',
+                          {'amount': formatPaise(client.outstandingPaise)}),
+                  onTap: chooseClient,
+                ),
+                if (_clientId != null) ...[
+                  const SizedBox(height: 8),
+                  ChoiceCard(
+                    leading: const IconTile(Icons.receipt_long_outlined),
+                    overline: tr('Against bill (optional)'),
+                    title: selectedBill == null
+                        ? tr('No specific bill')
+                        : tr('{number} · due {amount}', {
+                            'number': selectedBill.document.number,
+                            'amount': formatPaise(selectedBill.balancePaise),
+                          }),
+                    onTap: chooseBill,
+                  ),
+                ],
+                AmountDisplay(
+                  text: _amount,
+                  color: AppColors.successText,
+                ),
+                if (fullDue != null && fullDue > 0 && paise != fullDue)
+                  Center(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 36),
+                        shape: const StadiumBorder(),
+                        textStyle: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w800),
+                      ),
+                      onPressed: () =>
+                          setState(() => _amount = paiseToInputText(fullDue)),
+                      child: Text(tr('Full due {amount}',
+                          {'amount': formatPaise(fullDue)})),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                PaymentModeChips(
+                  value: _mode,
+                  onChanged: (m) => setState(() => _mode = m),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _remarks,
+                  decoration: InputDecoration(
+                    hintText: _mode == PaymentMode.cheque
+                        ? tr('Cheque no. and bank (optional)')
+                        : tr('Note (optional)'),
+                    isDense: true,
+                    fillColor: AppColors.page,
+                    prefixIcon:
+                        const Icon(Icons.edit_note, color: AppColors.muted),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: TextButton(
+                      onPressed: () async {
+                        final picked = await pickDate(context,
+                            initial: _date, last: DateTime.now());
+                        if (picked != null) {
+                          setState(() => _date = dateOnly(picked));
+                        }
+                      },
+                      child: Text(
+                        _date == dateOnly(DateTime.now())
+                            ? tr('Today')
+                            : dayFormat.format(_date),
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          PickerField(
-            label: tr('Against bill (optional)'),
-            icon: Icons.receipt_long,
-            value: selectedBill == null
-                ? null
-                : tr('{number} · due {amount}', {'number': selectedBill.document.number, 'amount': formatPaise(selectedBill.balancePaise)}),
-            onTap: () async {
-              const none = '__none__';
-              final picked = await showPickerSheet<String>(
-                context,
-                title: tr('Choose bill'),
-                options: [none, for (final b in bills) b.document.id],
-                label: (id) {
-                  if (id == none) return tr('No specific bill');
-                  final b = bills.firstWhere((b) => b.document.id == id);
-                  return tr('{number} · due {amount}', {'number': b.document.number, 'amount': formatPaise(b.balancePaise)});
-                },
-                selected: _documentId ?? none,
-              );
-              if (picked == null) return;
-              setState(() {
-                _documentId = picked == none ? null : picked;
-                final bill =
-                    bills.where((b) => b.document.id == _documentId).firstOrNull;
-                if (bill != null) _amount = paiseToInputText(bill.balancePaise);
-              });
-            },
-          ),
-          AmountDisplay(text: _amount),
-          AmountPad(
-            value: _amount,
-            onChanged: (v) => setState(() => _amount = v),
-          ),
-          PaymentModeChips(
-            value: _mode,
-            onChanged: (m) => setState(() => _mode = m),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _remarks,
-            decoration: InputDecoration(labelText: tr('Note (optional)')),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(dayFormat.format(_date)),
-            trailing: Text(tr('Change')),
-            onTap: () async {
-              final picked =
-                  await pickDate(context, initial: _date, last: DateTime.now());
-              if (picked != null) setState(() => _date = dateOnly(picked));
-            },
+          DecoratedBox(
+            decoration: const BoxDecoration(color: AppColors.surface),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AmountPad(
+                      value: _amount,
+                      onChanged: (v) => setState(() => _amount = v),
+                    ),
+                    const SizedBox(height: 4),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox.square(
+                              dimension: 24,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : Text(paise > 0
+                              ? tr('Save {amount}',
+                                  {'amount': formatPaise(paise)})
+                              : tr('Save')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      bottomNavigationBar:
-          BottomActionBar(label: tr('Save'), busy: _saving, onPressed: _save),
     );
   }
 }

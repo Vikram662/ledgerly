@@ -106,7 +106,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.gutter),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
             Panel(
               padding: const EdgeInsets.all(12),
@@ -118,7 +118,8 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                           height: 72,
                           decoration: BoxDecoration(
                             color: AppColors.surface2,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.input),
                             border: Border.all(color: AppColors.border),
                           ),
                           child: const Icon(Icons.add_photo_alternate,
@@ -169,41 +170,50 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _name,
-              decoration: InputDecoration(labelText: tr('Business name')),
-              validator: requiredField,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: tr('Mobile number'),
-                prefixText: '+91 ',
+            LabeledField(
+              label: tr('Business name'),
+              child: TextFormField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                validator: requiredField,
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty || normalizeIndianPhone(v) != null)
-                      ? null
-                      : tr('Enter a valid 10-digit mobile number'),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _address,
-              maxLines: 2,
-              decoration: InputDecoration(labelText: tr('Address')),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _upi,
-              decoration: InputDecoration(
-                labelText: tr('UPI ID (printed on bills)'),
-                hintText: 'name@bank',
+            LabeledField(
+              label: tr('Mobile number'),
+              child: TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  hintText: tr('10-digit number'),
+                  prefixText: '+91 ',
+                ),
+                validator: (v) => (v == null ||
+                        v.trim().isEmpty ||
+                        normalizeIndianPhone(v) != null)
+                    ? null
+                    : tr('Enter a valid 10-digit mobile number'),
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty || isValidUpiId(v))
-                      ? null
-                      : tr('Enter a UPI ID like name@okaxis'),
+            ),
+            LabeledField(
+              label: tr('Address'),
+              optional: true,
+              child: TextFormField(
+                controller: _address,
+                maxLines: 2,
+                decoration: InputDecoration(hintText: tr('Shown on the bill')),
+              ),
+            ),
+            LabeledField(
+              label: tr('UPI ID (printed on bills)'),
+              optional: true,
+              child: TextFormField(
+                controller: _upi,
+                decoration: const InputDecoration(hintText: 'name@bank'),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty || isValidUpiId(v))
+                        ? null
+                        : tr('Enter a UPI ID like name@okaxis'),
+              ),
             ),
             SectionTitle(tr('Numbering')),
             Row(

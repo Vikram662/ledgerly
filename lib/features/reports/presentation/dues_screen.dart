@@ -164,64 +164,134 @@ class _DueList extends ConsumerWidget {
       );
     }
     final color = receive ? AppColors.warningText : AppColors.successText;
+    final total = items.fold(0, (sum, i) => sum + i.amountPaise);
     return ListView(
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       children: [
-        if (header != null)
-          Container(
-            width: double.infinity,
-            color: AppColors.dangerSurface,
-            padding: const EdgeInsets.all(12),
-            child: Text(
-              header!,
-              style: const TextStyle(
-                color: AppColors.dangerText,
-                fontWeight: FontWeight.w700,
+        Panel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                receive ? tr('Lena (to receive)') : tr('Dena (to pay)'),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted,
+                ),
               ),
-            ),
+              Text(
+                formatPaise(total),
+                style: AppText.tabular.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.56,
+                  color: color,
+                ),
+              ),
+              if (header != null) ...[
+                const SizedBox(height: 6),
+                TagBadge(
+                  header!,
+                  color: AppColors.dangerSurface,
+                  textColor: AppColors.dangerText,
+                ),
+              ],
+            ],
           ),
-        for (final item in items) ...[
-          ListTile(
-            minVerticalPadding: 12,
-            leading: CircleAvatar(
-              backgroundColor: AppColors.amber100,
-              foregroundColor: AppColors.slate900,
-              child: Icon(dueParty(item.party).icon),
-            ),
-            title: Text(item.name),
-            subtitle: Text([
-              dueParty(item.party).label,
-              if (item.overduePaise > 0)
-                tr('Overdue {amount}', {'amount': formatPaise(item.overduePaise)}),
-              if (!receive && item.party == DueParty.client)
-                tr('Advance received'),
-            ].join(' · ')),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  formatPaise(item.amountPaise),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: color,
+        ),
+        const SizedBox(height: 12),
+        CardList(
+          children: [
+            for (final item in items)
+              InkWell(
+                onTap: () => context.push(switch (item.party) {
+                  DueParty.client => Routes.client(item.id),
+                  DueParty.worker => Routes.worker(item.id),
+                  DueParty.supplier => Routes.supplier(item.id),
+                }),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          InitialsAvatar(item.name),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  [
+                                    dueParty(item.party).label,
+                                    if (!receive &&
+                                        item.party == DueParty.client)
+                                      tr('Advance received'),
+                                  ].join(' · '),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                formatPaise(item.amountPaise),
+                                style: AppText.tabular.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: color,
+                                ),
+                              ),
+                              if (item.overduePaise > 0)
+                                TagBadge(
+                                  tr('Overdue {amount}', {
+                                    'amount': formatPaise(item.overduePaise)
+                                  }),
+                                  color: AppColors.dangerSurface,
+                                  textColor: AppColors.dangerText,
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (receive && item.party == DueParty.client) ...[
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: SmallOutlinedButton(
+                            icon: Icons.send_outlined,
+                            label: tr('Send reminder'),
+                            onTap: () => _remind(context, ref, item),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (receive && item.party == DueParty.client)
-                  IconButton(
-                    tooltip: tr('Send reminder'),
-                    icon: const Icon(Icons.send),
-                    onPressed: () => _remind(context, ref, item),
-                  ),
-              ],
-            ),
-            onTap: () => context.push(switch (item.party) {
-              DueParty.client => Routes.client(item.id),
-              DueParty.worker => Routes.worker(item.id),
-              DueParty.supplier => Routes.supplier(item.id),
-            }),
+              ),
+          ],
+        ),
+        if (receive) ...[
+          const SizedBox(height: 12),
+          Text(
+            tr('Reminder opens WhatsApp with a ready message.'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: AppColors.muted),
           ),
-          const Divider(height: 1),
         ],
       ],
     );

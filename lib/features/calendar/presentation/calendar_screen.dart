@@ -56,41 +56,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: AppBar(
         title: Text(tr('Calendar')),
         actions: [
-          TextButton(
-            onPressed: () => setState(() =>
-                _month = DateTime(DateTime.now().year, DateTime.now().month)),
-            child: Text(tr('Today')),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: SmallOutlinedButton(
+              icon: Icons.today_outlined,
+              label: tr('Today'),
+              onTap: () => setState(() => _month =
+                  DateTime(DateTime.now().year, DateTime.now().month)),
+            ),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
+          MonthSwitcher(month: _month, onShift: _shift),
+          const SizedBox(height: 12),
           Panel(
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      tooltip: tr('Previous month'),
-                      onPressed: () => _shift(-1),
-                      icon: const Icon(Icons.chevron_left),
-                    ),
-                    Expanded(
-                      child: Text(
-                        monthFormat.format(_month),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: tr('Next month'),
-                      onPressed: () => _shift(1),
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
                 if (data == null)
                   const SizedBox(
                     height: 320,
@@ -226,7 +211,7 @@ class _DayCell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
           color: isToday
-              ? AppColors.amber100
+              ? AppColors.primaryTint
               : holiday
                   ? const Color(0xFFF3E8FF)
                   : hasAnything
@@ -234,7 +219,7 @@ class _DayCell extends StatelessWidget {
                       : null,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isToday ? AppColors.amber500 : AppColors.border,
+            color: isToday ? AppColors.primary : AppColors.border,
             width: isToday ? 1.5 : 1,
           ),
         ),

@@ -8,6 +8,7 @@ import '../../../core/db/database.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/pickers.dart';
 import '../../jobs/data/jobs_repository.dart';
 import '../data/tasks_repository.dart';
 
@@ -177,7 +178,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? tr('Edit Task / Reminder') : tr('Add Task / Reminder')),
+        leading: const CloseButton(),
+        title: Text(isEdit ? tr('Edit task') : tr('New task')),
         actions: [
           if (isEdit)
             IconButton(
@@ -214,234 +216,166 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             ),
         ],
       ),
+      bottomNavigationBar: BottomActionBar(
+        label: isEdit ? tr('Update Task') : tr('Save task'),
+        busy: _saving,
+        onPressed: _save,
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
-            // Task Type selector
-            Text(
-              tr('Task Category'),
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            LabeledField(
+              label: tr('Task title'),
+              child: TextFormField(
+                controller: _titleController,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText:
+                      tr('e.g. Inspect plaster work, Call client for cheque'),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? tr('Enter a title') : null,
+              ),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: TaskType.values.map((type) {
-                final selected = _taskType == type;
-                return ChoiceChip(
-                  label: Text(type.label),
-                  selected: selected,
-                  selectedColor: AppColors.amber100,
-                  onSelected: (val) {
-                    if (val) setState(() => _taskType = type);
-                  },
+            LabeledField(
+              label: tr('Category'),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final type in TaskType.values)
+                    ChoiceChip(
+                      showCheckmark: false,
+                      label: Text(type.label),
+                      selected: _taskType == type,
+                      onSelected: (_) => setState(() => _taskType = type),
+                    ),
+                ],
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: LabeledField(
+                    label: tr('Date'),
+                    child: TapField(value: df.format(_dueDate), onTap: _pickDate),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: LabeledField(
+                    label: tr('Time'),
+                    child: TapField(
+                      value: _dueTime.format(context),
+                      icon: Icons.access_time,
+                      onTap: _pickTime,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            PickerField(
+              label: tr('Linked site / job (optional)'),
+              icon: Icons.location_city_outlined,
+              value: jobItems
+                      .where((j) => j.job.id == _selectedJobId)
+                      .firstOrNull
+                      ?.job
+                      .title ??
+                  tr('No site linked'),
+              onTap: () async {
+                const none = '__none__';
+                final picked = await showPickerSheet<String>(
+                  context,
+                  title: tr('Linked site / job (optional)'),
+                  options: [none, for (final j in jobItems) j.job.id],
+                  label: (id) => id == none
+                      ? tr('No site linked')
+                      : jobItems.firstWhere((j) => j.job.id == id).job.title,
+                  selected: _selectedJobId ?? none,
                 );
-              }).toList(),
+                if (picked != null) {
+                  setState(() =>
+                      _selectedJobId = picked == none ? null : picked);
+                }
+              },
             ),
-            const SizedBox(height: 16),
-
-            // Title
-            TextFormField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: tr('Task Title *'),
-                hintText: tr('e.g. Inspect plaster work, Call client for cheque'),
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.title),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? tr('Enter a title') : null,
-            ),
-            const SizedBox(height: 16),
-
-            // Linked Site / Job
-            DropdownButtonFormField<String?>(
-              initialValue: _selectedJobId,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: tr('Linked Site / Job (Optional)'),
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_city_outlined),
-              ),
-              items: [
-                DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text(tr('No site linked')),
-                ),
-                ...jobItems.map((item) => DropdownMenuItem<String?>(
-                      value: item.job.id,
-                      child: Text(item.job.title),
-                    )),
-              ],
-              onChanged: (val) => setState(() => _selectedJobId = val),
-            ),
-            const SizedBox(height: 16),
-
-            // Date & Time pickers
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
-                  child: InkWell(
-                    onTap: _pickDate,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: tr('Date'),
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.calendar_today_outlined),
-                      ),
-                      child: Text(
-                        df.format(_dueDate),
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
+                  child: LabeledField(
+                    label: tr('Contact person'),
+                    child: TextFormField(
+                      controller: _personNameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration:
+                          InputDecoration(hintText: tr('e.g. Ramesh Bhai')),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: InkWell(
-                    onTap: _pickTime,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: tr('Time'),
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.access_time_outlined),
-                      ),
-                      child: Text(
-                        _dueTime.format(context),
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
+                  child: LabeledField(
+                    label: tr('Phone'),
+                    child: TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(hintText: '9876543210'),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            // Alert recurrence toggle
-            Card(
-              margin: EdgeInsets.zero,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                side: const BorderSide(color: AppColors.border),
-                borderRadius: BorderRadius.circular(10),
+            Panel(
+              padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  tr('Ring at task time'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(tr('Push notification reminder')),
+                value: _isAlertActive,
+                onChanged: (v) => setState(() => _isAlertActive = v),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        tr('Push Notification Reminder'),
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: Text(
-                        tr('Ring / notify at scheduled time'),
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      value: _isAlertActive,
-                      activeThumbColor: AppColors.amber500,
-                      onChanged: (v) => setState(() => _isAlertActive = v),
-                    ),
-                    if (_isAlertActive) ...[
-                      const Divider(),
-                      Row(
-                        children: [
-                          const Icon(Icons.alarm, size: 20, color: AppColors.slate600),
-                          const SizedBox(width: 8),
-                          Text(tr('Repeat:')),
-                          const Spacer(),
-                          DropdownButton<int?>(
-                            value: _intervalMinutes,
-                            underline: const SizedBox.shrink(),
-                            items: _intervalOptions.map((mins) {
-                              return DropdownMenuItem<int?>(
-                                value: mins,
-                                child: Text(_intervalLabel(mins)),
-                              );
-                            }).toList(),
-                            onChanged: (v) {
-                              setState(() => _intervalMinutes = v);
-                            },
+            ),
+            if (_isAlertActive) ...[
+              const SizedBox(height: 14),
+              LabeledField(
+                label: tr('Repeat'),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final mins in _intervalOptions)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            showCheckmark: false,
+                            label: Text(_intervalLabel(mins)),
+                            selected: _intervalMinutes == mins,
+                            onSelected: (_) =>
+                                setState(() => _intervalMinutes = mins),
                           ),
-                        ],
-                      ),
+                        ),
                     ],
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Contact person details
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _personNameController,
-                    decoration: InputDecoration(
-                      labelText: tr('Contact Person'),
-                      hintText: tr('e.g. Ramesh Bhai'),
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: tr('Phone Number'),
-                      hintText: '9876543210',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.phone_outlined),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Notes
-            TextFormField(
-              controller: _notesController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: tr('Notes / Remarks'),
-                hintText: tr('Enter any additional details or instructions...'),
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
               ),
-            ),
-            const SizedBox(height: 28),
-
-            // Submit Button
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.amber500,
-                foregroundColor: AppColors.slate900,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            ] else
+              const SizedBox(height: 14),
+            LabeledField(
+              label: tr('Notes'),
+              optional: true,
+              child: TextFormField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: tr('Enter any additional details or instructions...'),
                 ),
-              ),
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check_circle_outline),
-              label: Text(
-                _saving ? tr('Saving...') : (isEdit ? tr('Update Task') : tr('Save Task')),
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
               ),
             ),
           ],

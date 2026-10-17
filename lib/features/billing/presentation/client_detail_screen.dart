@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
@@ -38,65 +39,150 @@ class ClientDetailScreen extends ConsumerWidget {
         .where((j) => j.job.clientId == clientId)
         .toList();
 
+    final pending = balance.outstandingPaise;
+    final phone = client.phone;
+    const grey = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColors.muted,
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(client.name),
         actions: [
-          IconButton(
+          if (phone != null) ...[
+            AppIconButton(
+              icon: Icons.call_outlined,
+              tooltip: tr('Call'),
+              onPressed: () => launchUrl(Uri.parse('tel:$phone')),
+            ),
+            const SizedBox(width: 8),
+          ],
+          AppIconButton(
+            icon: Icons.edit_outlined,
             tooltip: tr('Edit'),
-            icon: const Icon(Icons.edit),
             onPressed: () => context.push(Routes.editClient(clientId)),
           ),
+          const SizedBox(width: 12),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          if (client.phone != null) Text(formatIndianPhone(client.phone!)),
-          if (client.address != null) Text(client.address!),
-          const SizedBox(height: 12),
-          Panel(
-            child: Column(
-              children: [
-                AmountRow(label: tr('Billed'), paise: balance.billedPaise),
-                AmountRow(
-                  label: tr('Received'),
-                  paise: balance.receivedPaise,
-                  color: AppColors.successText,
-                ),
-                const Divider(),
-                AmountRow(
-                  label: balance.outstandingPaise >= 0 ? tr('Pending') : tr('Advance with you'),
-                  paise: balance.outstandingPaise.abs(),
-                  bold: true,
-                  color: balance.outstandingPaise > 0
-                      ? AppColors.warningText
-                      : AppColors.successText,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
           Row(
             children: [
+              InitialsAvatar(client.name, size: 56),
+              const SizedBox(width: 14),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(
-                      Routes.newDocument(DocumentKind.invoice, clientId: clientId)),
-                  icon: const Icon(Icons.receipt_long),
-                  label: Text(tr('New bill')),
-                ),
-              ),
-              const SizedBox(width: AppSizes.gap),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () =>
-                      context.push(Routes.payment(clientId: clientId)),
-                  icon: const Icon(Icons.payments),
-                  label: Text(tr('Payment')),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      client.name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.22,
+                      ),
+                    ),
+                    if (phone != null || client.address != null)
+                      Text(
+                        [
+                          if (phone != null) formatIndianPhone(phone),
+                          if (client.address != null) client.address!,
+                        ].join(' · '),
+                        style: grey.copyWith(fontSize: 13),
+                      ),
+                  ],
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Panel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(pending >= 0 ? tr('Pending') : tr('Advance with you'),
+                    style: grey),
+                Text(
+                  formatPaise(pending.abs()),
+                  style: AppText.tabular.copyWith(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.64,
+                    color: pending > 0
+                        ? AppColors.warningText
+                        : AppColors.successText,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(tr('Billed'), style: grey),
+                          Text(
+                            formatPaise(balance.billedPaise),
+                            style: AppText.tabular.copyWith(
+                                fontSize: 16, fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(tr('Received'), style: grey),
+                          Text(
+                            formatPaise(balance.receivedPaise),
+                            style: AppText.tabular.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.successText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, AppSizes.tapSecondary),
+                        ),
+                        onPressed: () => context.push(Routes.newDocument(
+                            DocumentKind.invoice,
+                            clientId: clientId)),
+                        icon: const Icon(Icons.receipt_long_outlined),
+                        label: Text(tr('New bill')),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, AppSizes.tapSecondary),
+                        ),
+                        onPressed: () =>
+                            context.push(Routes.payment(clientId: clientId)),
+                        icon: const Icon(Icons.south_west),
+                        label: Text(tr('Payment')),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           SectionTitle(
             tr('Jobs / sites'),
@@ -109,10 +195,8 @@ class ClientDetailScreen extends ConsumerWidget {
           if (jobs.isEmpty)
             Text(tr('No jobs yet.'), style: TextStyle(color: AppColors.slate600))
           else
-            Panel(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
+            CardList(
+              children: [
                   for (final j in jobs)
                     ListTile(
                       title: Text(j.job.title),
@@ -120,30 +204,19 @@ class ClientDetailScreen extends ConsumerWidget {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.push(Routes.job(j.job.id)),
                     ),
-                ],
-              ),
+              ],
             ),
           SectionTitle(tr('Bills')),
           if (bills.isEmpty)
             Text(tr('No bills yet.'), style: TextStyle(color: AppColors.slate600))
           else
-            Panel(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [for (final b in bills) DocumentTile(item: b)],
-              ),
-            ),
+            CardList(children: [for (final b in bills) DocumentTile(item: b)]),
           SectionTitle(tr('Payments')),
           if (payments.isEmpty)
             Text(tr('No payments yet.'),
                 style: TextStyle(color: AppColors.slate600))
           else
-            Panel(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [for (final p in payments) PaymentTile(item: p)],
-              ),
-            ),
+            CardList(children: [for (final p in payments) PaymentTile(item: p)]),
           const SizedBox(height: 32),
         ],
       ),

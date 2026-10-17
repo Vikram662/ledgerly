@@ -71,7 +71,7 @@ enum WageModel { daily, monthly, piece }
 
 enum AttendanceStatus { present, half, absent, leavePaid, leaveUnpaid, off }
 
-enum PaymentMode { cash, phonePe, paytm, gPay, bank }
+enum PaymentMode { cash, phonePe, paytm, gPay, bank, cheque }
 
 enum LedgerType {
   advance,

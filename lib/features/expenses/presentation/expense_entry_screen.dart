@@ -124,108 +124,230 @@ class _ExpenseEntryScreenState extends ConsumerState<ExpenseEntryScreen> {
     }
   }
 
+  Future<void> _photoSheet() async {
+    final choice = await showPickerSheet<String>(
+      context,
+      title: tr('Bill photo (optional)'),
+      options: [
+        'camera',
+        'gallery',
+        if (_photoName != null) 'view',
+        if (_photoName != null) 'remove',
+      ],
+      label: (o) => switch (o) {
+        'camera' => _photoName == null ? tr('Camera') : tr('Retake'),
+        'gallery' => tr('Gallery'),
+        'view' => tr('View'),
+        _ => tr('Remove photo'),
+      },
+    );
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case 'camera':
+        await _takePhoto(true);
+      case 'gallery':
+        await _takePhoto(false);
+      case 'view':
+        showPhoto(context, _photoName!);
+      default:
+        await deletePhoto(_photoName);
+        setState(() => _photoName = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(expenseCategoriesProvider).valueOrNull ?? const [];
+    final paise = parseRupeesToPaise(_amount) ?? 0;
     return Scaffold(
-      appBar: AppBar(title: Text(tr('New expense'))),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
-        children: [
-          AmountDisplay(text: _amount),
-          AmountPad(
-            value: _amount,
-            onChanged: (v) => setState(() => _amount = v),
+      appBar: AppBar(
+        leading: const CloseButton(),
+        title: Text(tr('New expense')),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _photoName == null
+                ? SmallOutlinedButton(
+                    icon: Icons.photo_camera_outlined,
+                    label: tr('Bill photo'),
+                    onTap: _photoSheet,
+                  )
+                : InkWell(
+                    onTap: _photoSheet,
+                    child: PhotoThumb(name: _photoName!, size: 40),
+                  ),
           ),
-          SectionTitle(
-            tr('Category'),
-            trailing: TextButton.icon(
-              onPressed: _newCategory,
-              icon: const Icon(Icons.add),
-              label: Text(tr('New')),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              children: [
+                AmountDisplay(text: _amount, label: tr('Amount')),
+                GridView.count(
+                  crossAxisCount: 4,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 0.95,
+                  children: [
+                    for (final c in categories)
+                      _CategoryTile(
+                        name: c.name,
+                        selected: _categoryId == c.id,
+                        onTap: () => setState(() => _categoryId = c.id),
+                      ),
+                    _CategoryTile(
+                      name: tr('New'),
+                      icon: Icons.add,
+                      selected: false,
+                      onTap: _newCategory,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SectionLabel(tr('Paid by')),
+                PaymentModeChips(
+                  value: _mode,
+                  onChanged: (m) => setState(() => _mode = m),
+                ),
+                const SizedBox(height: 12),
+                JobPickerField(
+                  jobId: _jobId,
+                  onChanged: (id) => setState(() => _jobId = id),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _note,
+                  decoration: InputDecoration(
+                    hintText: tr('Note (optional)'),
+                    isDense: true,
+                    fillColor: AppColors.page,
+                    prefixIcon:
+                        const Icon(Icons.edit_note, color: AppColors.muted),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: TextButton(
+                      onPressed: () async {
+                        final picked = await pickDate(context,
+                            initial: _date, last: DateTime.now());
+                        if (picked != null) {
+                          setState(() => _date = dateOnly(picked));
+                        }
+                      },
+                      child: Text(
+                        _date == dateOnly(DateTime.now())
+                            ? tr('Today')
+                            : dayFormat.format(_date),
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          Wrap(
-            spacing: AppSizes.gap,
-            runSpacing: AppSizes.gap,
-            children: [
-              for (final c in categories)
-                ChoiceChip(
-                  label: Text(c.name),
-                  selected: _categoryId == c.id,
-                  onSelected: (_) => setState(() => _categoryId = c.id),
-                ),
-            ],
-          ),
-          SectionTitle(tr('Paid by')),
-          PaymentModeChips(
-            value: _mode,
-            onChanged: (m) => setState(() => _mode = m),
-          ),
-          const SizedBox(height: 12),
-          JobPickerField(
-            jobId: _jobId,
-            onChanged: (id) => setState(() => _jobId = id),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _note,
-            decoration: InputDecoration(labelText: tr('Note (optional)')),
-          ),
-          SectionTitle(tr('Bill photo (optional)')),
-          Row(
-            children: [
-              if (_photoName != null) ...[
-                InkWell(
-                  onTap: () => showPhoto(context, _photoName!),
-                  child: PhotoThumb(name: _photoName!, size: 72),
-                ),
-                const SizedBox(width: AppSizes.gap),
-              ],
-              Expanded(
-                child: Wrap(
-                  spacing: AppSizes.gap,
-                  runSpacing: AppSizes.gap,
+          DecoratedBox(
+            decoration: const BoxDecoration(color: AppColors.surface),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _takePhoto(true),
-                      icon: const Icon(Icons.photo_camera),
-                      label: Text(_photoName == null ? tr('Camera') : tr('Retake')),
+                    AmountPad(
+                      value: _amount,
+                      onChanged: (v) => setState(() => _amount = v),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () => _takePhoto(false),
-                      icon: const Icon(Icons.photo_library),
-                      label: Text(tr('Gallery')),
+                    const SizedBox(height: 4),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox.square(
+                              dimension: 24,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : Text(paise > 0
+                              ? tr('Save {amount}',
+                                  {'amount': formatPaise(paise)})
+                              : tr('Save expense')),
                     ),
-                    if (_photoName != null)
-                      IconButton(
-                        tooltip: tr('Remove photo'),
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async {
-                          await deletePhoto(_photoName);
-                          setState(() => _photoName = null);
-                        },
-                      ),
                   ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({
+    required this.name,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String name;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.ink : AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.small),
+        side: BorderSide(color: selected ? AppColors.ink : AppColors.border),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.small),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              icon != null
+                  ? Icon(icon, color: AppColors.muted)
+                  : Text(
+                      twoInitials(name),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: selected ? Colors.white : AppColors.inkSoft,
+                      ),
+                    ),
+              const SizedBox(height: 4),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.white : AppColors.ink,
                 ),
               ),
             ],
           ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(dayFormat.format(_date)),
-            trailing: Text(tr('Change')),
-            onTap: () async {
-              final picked =
-                  await pickDate(context, initial: _date, last: DateTime.now());
-              if (picked != null) setState(() => _date = dateOnly(picked));
-            },
-          ),
-        ],
+        ),
       ),
-      bottomNavigationBar:
-          BottomActionBar(label: tr('Save'), busy: _saving, onPressed: _save),
     );
   }
 }

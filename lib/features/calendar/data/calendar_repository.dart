@@ -348,6 +348,7 @@ String _mode(Object? name) {
     PaymentMode.paytm => 'Paytm',
     PaymentMode.gPay => 'GPay',
     PaymentMode.bank => tr('Bank'),
+    PaymentMode.cheque => tr('Cheque'),
     null => '-',
   };
 }

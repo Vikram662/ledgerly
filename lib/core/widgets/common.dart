@@ -480,6 +480,78 @@ class TapField extends StatelessWidget {
   }
 }
 
+/// White card showing a choice (client, bill, worker) with "Change".
+class ChoiceCard extends StatelessWidget {
+  const ChoiceCard({
+    super.key,
+    required this.leading,
+    required this.title,
+    required this.onTap,
+    this.overline,
+    this.subtitle,
+  });
+
+  final Widget leading;
+  final String title;
+  final String? overline;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const grey = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColors.muted,
+    );
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              leading,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (overline != null) Text(overline!, style: grey),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.tabular
+                          .copyWith(fontSize: 15, fontWeight: FontWeight.w800),
+                    ),
+                    if (subtitle != null)
+                      Text(subtitle!, style: AppText.tabular.merge(grey)),
+                  ],
+                ),
+              ),
+              Text(
+                tr('Change'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Big screen heading with an optional muted line under it.
 class ScreenHeading extends StatelessWidget {
   const ScreenHeading(this.title, {super.key, this.subtitle});

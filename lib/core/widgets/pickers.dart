@@ -137,6 +137,7 @@ String paymentModeLabel(PaymentMode mode) => switch (mode) {
       PaymentMode.paytm => tr('Paytm'),
       PaymentMode.gPay => tr('GPay'),
       PaymentMode.bank => tr('Bank'),
+      PaymentMode.cheque => tr('Cheque'),
     };
 
 /// Payment mode chips (PRD KH-01).

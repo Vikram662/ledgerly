@@ -16,9 +16,11 @@ class AppLockSettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(tr('App lock'))),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
+          CardList(children: [
           ListTile(
-            leading: const Icon(Icons.pin),
+            leading: const Icon(Icons.pin_outlined),
             title: Text(tr('Change PIN')),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
@@ -65,6 +67,7 @@ class AppLockSettingsScreen extends ConsumerWidget {
             subtitle: Text(tr('The app also locks after 2 minutes in the background')),
             onTap: lock.lockNow,
           ),
+          ]),
         ],
       ),
     );

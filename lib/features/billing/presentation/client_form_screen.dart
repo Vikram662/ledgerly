@@ -66,45 +66,59 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.clientId == null ? tr('New Client') : tr('Edit Client')),
+        leading: const CloseButton(),
+        title: Text(
+            widget.clientId == null ? tr('New client') : tr('Edit client')),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.gutter),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            TextFormField(
-              controller: _name,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: tr('Name')),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? tr('Enter name') : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: tr('Mobile number (optional)'),
-                prefixText: '+91 ',
+            LabeledField(
+              label: tr('Name'),
+              child: TextFormField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(hintText: tr('Client name')),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? tr('Enter name') : null,
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty || normalizeIndianPhone(v) != null)
-                      ? null
-                      : tr('Enter a valid 10-digit mobile number'),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _address,
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(labelText: tr('Address (optional)')),
+            LabeledField(
+              label: tr('Mobile number'),
+              optional: true,
+              help: tr('Used for WhatsApp bills and payment reminders.'),
+              child: TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  hintText: tr('10-digit number'),
+                  prefixText: '+91 ',
+                ),
+                validator: (v) => (v == null ||
+                        v.trim().isEmpty ||
+                        normalizeIndianPhone(v) != null)
+                    ? null
+                    : tr('Enter a valid 10-digit mobile number'),
+              ),
+            ),
+            LabeledField(
+              label: tr('Address'),
+              optional: true,
+              child: TextFormField(
+                controller: _address,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(hintText: tr('Shown on the bill')),
+              ),
             ),
           ],
         ),
       ),
       bottomNavigationBar:
-          BottomActionBar(label: tr('Save'), busy: _saving, onPressed: _save),
+          BottomActionBar(
+          label: tr('Save client'), busy: _saving, onPressed: _save),
     );
   }
 }

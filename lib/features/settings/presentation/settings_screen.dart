@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
+import '../../../app/theme.dart';
 import '../../../core/backup/backup_providers.dart';
 import '../../../core/config.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/db/providers.dart';
 import '../../../core/i18n/i18n.dart';
+import '../../../core/widgets/common.dart';
 import '../../../core/widgets/language_picker.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -21,51 +23,69 @@ class SettingsScreen extends ConsumerWidget {
     final type = ref.watch(userTypeProvider);
 
     Widget tile(IconData icon, String title, String? subtitle, String route) =>
-        ListTile(
-          leading: Icon(icon),
-          title: Text(title),
-          subtitle: subtitle == null ? null : Text(subtitle),
-          trailing: const Icon(Icons.chevron_right),
+        SettingRow(
+          icon: icon,
+          label: title,
+          subtitle: subtitle == null || subtitle.isEmpty ? null : subtitle,
           onTap: () => context.push(route),
         );
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('Settings'))),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          const LanguageTile(),
-          tile(
-              Icons.store,
-              type == UserType.personal
-                  ? tr('My profile')
-                  : tr('Business profile'),
-              profile?.name,
-              Routes.businessProfile),
-          if (type.usesTrades)
-            tile(Icons.handyman, tr('Trades'),
-                trades.map((t) => t.label).join(', '), Routes.trades),
-          if (type != UserType.personal)
-            tile(Icons.rule, tr('Work rules'), tr('Monthly salary, weekly off'),
-                Routes.rules),
-          tile(
-            Icons.cloud_upload,
-            tr('Backup & restore'),
-            backup == null || !backup.configured
-                ? tr('Not set up')
-                : tr('Google Drive · {email}', {'email': backup.email ?? ''}),
-            Routes.backup,
+          SectionLabel(tr('Business')),
+          CardList(
+            children: [
+              tile(
+                  Icons.storefront_outlined,
+                  type == UserType.personal
+                      ? tr('My profile')
+                      : tr('Business profile'),
+                  profile?.name,
+                  Routes.businessProfile),
+              if (type.usesTrades)
+                tile(Icons.handyman_outlined, tr('Trades'),
+                    trades.map((t) => t.label).join(', '), Routes.trades),
+              if (type != UserType.personal)
+                tile(Icons.rule, tr('Work rules'),
+                    tr('Monthly salary, weekly off'), Routes.rules),
+            ],
           ),
-          if (!type.isFree)
-            tile(Icons.workspace_premium, tr('Thekedaar Pro'),
-                tr('₹99/month subscription'), Routes.subscription),
-          tile(Icons.lock, tr('App lock'), tr('PIN and fingerprint'), Routes.appLock),
-          tile(Icons.notifications, tr('Reminders'),
-              tr('Backup, overdue bills, month end'), Routes.reminders),
-          const Divider(),
-          ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text(tr('Thekedaar')),
-            subtitle: Text(tr('Version {appVersion}', {'appVersion': AppConfig.appVersion})),
+          const SizedBox(height: 16),
+          SectionLabel(tr('Data & security')),
+          CardList(
+            children: [
+              tile(
+                Icons.cloud_upload_outlined,
+                tr('Backup & restore'),
+                backup == null || !backup.configured
+                    ? tr('Not set up')
+                    : tr('Google Drive · {email}', {'email': backup.email ?? ''}),
+                Routes.backup,
+              ),
+              tile(Icons.lock_outline, tr('App lock'), tr('PIN and fingerprint'),
+                  Routes.appLock),
+              tile(Icons.notifications_none, tr('Reminders'),
+                  tr('Backup, overdue bills, month end'), Routes.reminders),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SectionLabel(tr('Account')),
+          CardList(
+            children: [
+              if (!type.isFree)
+                tile(Icons.workspace_premium_outlined, tr('Thekedaar Pro'),
+                    tr('₹99/month subscription'), Routes.subscription),
+              const LanguageTile(),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            '${tr('Thekedaar')} · ${tr('Version {appVersion}', {'appVersion': AppConfig.appVersion})}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: AppColors.faint),
           ),
         ],
       ),

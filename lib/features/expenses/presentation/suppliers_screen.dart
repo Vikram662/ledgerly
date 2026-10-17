@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
@@ -25,10 +26,9 @@ class SuppliersScreen extends ConsumerWidget {
     final suppliers = ref.watch(suppliersProvider);
     return Scaffold(
       appBar: AppBar(title: Text(tr('Suppliers'))),
-      floatingActionButton: FloatingActionButton.extended(
+      bottomNavigationBar: BottomActionBar(
+        label: tr('Add supplier'),
         onPressed: () => context.push(Routes.addSupplier),
-        icon: const Icon(Icons.add_business),
-        label: Text(tr('Supplier')),
       ),
       body: suppliers.when(
         loading: () => const ListSkeleton(),
@@ -48,48 +48,87 @@ class SuppliersScreen extends ConsumerWidget {
             (sum, s) => s.duePaise > 0 ? sum + s.duePaise : sum,
           );
           return ListView(
-            padding: const EdgeInsets.only(bottom: 96),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSizes.gutter),
-                child: Panel(
-                  child: AmountRow(
-                    label: tr('Total to pay suppliers'),
-                    paise: totalDue,
-                    bold: true,
-                    color: AppColors.successText,
-                  ),
+              Panel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('Total to pay suppliers'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    Text(
+                      formatPaise(totalDue),
+                      style: AppText.tabular.copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.56,
+                        color: totalDue > 0
+                            ? AppColors.warningText
+                            : AppColors.ink,
+                      ),
+                    ),
+                    Text(
+                      tr('Material bought on credit (udhaar)'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              for (final s in list) ...[
-                ListTile(
-                  minVerticalPadding: 12,
-                  leading: const CircleAvatar(
-                    backgroundColor: AppColors.amber100,
-                    foregroundColor: AppColors.slate900,
-                    child: Icon(Icons.store),
-                  ),
-                  title: Text(s.supplier.name),
-                  subtitle: s.supplier.phone == null
-                      ? null
-                      : Text(formatIndianPhone(s.supplier.phone!)),
-                  trailing: Text(
-                    s.duePaise == 0
-                        ? tr('Settled')
-                        : s.duePaise > 0
-                            ? formatPaise(s.duePaise)
-                            : tr('Advance {amount}', {'amount': formatPaise(-s.duePaise)}),
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: s.duePaise > 0
-                          ? AppColors.successText
-                          : AppColors.slate600,
+              const SizedBox(height: 12),
+              CardList(
+                children: [
+                  for (final s in list)
+                    ListTile(
+                      leading: InitialsAvatar(s.supplier.name),
+                      title: Text(
+                        s.supplier.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: s.supplier.phone == null
+                          ? null
+                          : Text(formatIndianPhone(s.supplier.phone!)),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            formatPaise(s.duePaise.abs()),
+                            style: AppText.tabular.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: s.duePaise > 0
+                                  ? AppColors.warningText
+                                  : AppColors.ink,
+                            ),
+                          ),
+                          Text(
+                            s.duePaise == 0
+                                ? tr('Settled')
+                                : s.duePaise > 0
+                                    ? tr('due')
+                                    : tr('advance'),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      onTap: () => context.push(Routes.supplier(s.supplier.id)),
                     ),
-                  ),
-                  onTap: () => context.push(Routes.supplier(s.supplier.id)),
-                ),
-                const Divider(height: 1),
-              ],
+                ],
+              ),
             ],
           );
         },
@@ -217,78 +256,127 @@ class SupplierDetailScreen extends ConsumerWidget {
         const [];
     final due = balance.duePaise;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(balance.supplier.name),
-        actions: [
-          IconButton(
-            tooltip: tr('Edit'),
-            icon: const Icon(Icons.edit),
-            onPressed: () => context.push(Routes.editSupplier(supplierId)),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
-        children: [
-          if (balance.supplier.phone != null)
-            Text(formatIndianPhone(balance.supplier.phone!)),
-          const SizedBox(height: 8),
-          Panel(
-            child: Column(
-              children: [
-                AmountRow(label: tr('Purchased'), paise: balance.purchasedPaise),
-                AmountRow(label: tr('Paid'), paise: balance.paidPaise),
-                const Divider(),
-                AmountRow(
-                  label: due >= 0 ? tr('Due to supplier') : tr('Advance with supplier'),
-                  paise: due.abs(),
-                  bold: true,
-                  color: due > 0 ? AppColors.successText : AppColors.slate600,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
+    final phone = balance.supplier.phone;
+    const grey = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColors.muted,
+    );
+    Widget figure(String label, int paise, Color color) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(Routes.supplierEntry(
-                      supplierId, SupplierEntryType.purchase)),
-                  icon: const Icon(Icons.shopping_cart),
-                  label: Text(tr('Purchase')),
-                ),
-              ),
-              const SizedBox(width: AppSizes.gap),
-              Expanded(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(64, AppSizes.tapMin),
-                  ),
-                  onPressed: () => context.push(Routes.supplierEntry(
-                      supplierId, SupplierEntryType.payment)),
-                  icon: const Icon(Icons.payments),
-                  label: Text(tr('Payment')),
+              Text(label, style: grey),
+              Text(
+                formatPaise(paise),
+                style: AppText.tabular.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: color,
                 ),
               ),
             ],
           ),
-          SectionTitle(tr('Entries')),
+        );
+
+    return Scaffold(
+      appBar: AppBar(
+        actions: [
+          if (phone != null) ...[
+            AppIconButton(
+              icon: Icons.call_outlined,
+              tooltip: tr('Call'),
+              onPressed: () => launchUrl(Uri.parse('tel:$phone')),
+            ),
+            const SizedBox(width: 8),
+          ],
+          AppIconButton(
+            icon: Icons.edit_outlined,
+            tooltip: tr('Edit'),
+            onPressed: () => context.push(Routes.editSupplier(supplierId)),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => context.push(Routes.supplierEntry(
+                      supplierId, SupplierEntryType.purchase)),
+                  child: Text(tr('+ Purchase (udhaar)')),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => context.push(Routes.supplierEntry(
+                      supplierId, SupplierEntryType.payment)),
+                  child: Text(tr('+ Payment')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        children: [
+          Row(
+            children: [
+              InitialsAvatar(balance.supplier.name, size: 56),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      balance.supplier.name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.22,
+                      ),
+                    ),
+                    if (phone != null)
+                      Text(formatIndianPhone(phone),
+                          style: grey.copyWith(fontSize: 13)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Panel(
+            child: Row(
+              children: [
+                figure(tr('Purchased'), balance.purchasedPaise, AppColors.ink),
+                figure(tr('Paid'), balance.paidPaise, AppColors.successText),
+                figure(
+                  due >= 0 ? tr('Due') : tr('Advance'),
+                  due.abs(),
+                  due > 0 ? AppColors.warningText : AppColors.ink,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SectionLabel(tr('Entries')),
           if (entries.isEmpty)
             Text(tr('No entries yet.'),
                 style: TextStyle(color: AppColors.slate600))
           else
-            Panel(
-              padding: EdgeInsets.zero,
-              child: Column(
+            CardList(
                 children: [
                   for (final e in entries)
                     ListTile(
-                      leading: Icon(
+                      leading: IconTile(
                         e.entryType == SupplierEntryType.purchase
-                            ? Icons.shopping_cart
-                            : Icons.payments,
+                            ? Icons.shopping_cart_outlined
+                            : Icons.currency_rupee,
                       ),
                       title: Text(e.entryType == SupplierEntryType.purchase
                           ? (e.billNo == null
@@ -322,7 +410,6 @@ class SupplierDetailScreen extends ConsumerWidget {
                       },
                     ),
                 ],
-              ),
             ),
           const SizedBox(height: 32),
         ],

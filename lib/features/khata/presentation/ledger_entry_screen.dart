@@ -157,6 +157,7 @@ class _LedgerEntryScreenState extends ConsumerState<LedgerEntryScreen> {
     final canPayUpi = _type == LedgerType.advance &&
         _mode != PaymentMode.cash &&
         _mode != PaymentMode.bank &&
+        _mode != PaymentMode.cheque &&
         workerUpi != null &&
         isValidUpiId(workerUpi);
     final isToday = DateUtils.isSameDay(_at, DateTime.now());
