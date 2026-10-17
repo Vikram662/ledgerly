@@ -64,25 +64,24 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withAlpha(26),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(AppRadius.badge),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 14, color: color),
+            Icon(icon, size: 13, color: color),
             const SizedBox(width: 4),
           ],
           Text(
             label,
             style: TextStyle(
               color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -149,7 +148,7 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-/// White rounded card with a light border.
+/// White rounded card with a hairline border, flat (no shadow).
 class Panel extends StatelessWidget {
   const Panel({super.key, required this.child, this.padding});
 
@@ -164,17 +163,90 @@ class Panel extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F0F172A),
-            blurRadius: 12,
-            offset: Offset(0, 2),
-          ),
-        ],
       ),
       child: child,
+    );
+  }
+}
+
+/// A card of rows separated by hairlines (lists of workers, bills, entries).
+class CardList extends StatelessWidget {
+  const CardList({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Panel(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const Divider(height: 1),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 44px round icon button with a hairline border (back, menu, bell).
+class AppIconButton extends StatelessWidget {
+  const AppIconButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon, size: 22),
+      style: IconButton.styleFrom(
+        fixedSize: const Size.square(AppSizes.iconButton),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.ink,
+        side: const BorderSide(color: AppColors.border),
+      ),
+    );
+  }
+}
+
+/// Round avatar with up to two initials ("Raju Kumar" → "RK").
+class InitialsAvatar extends StatelessWidget {
+  const InitialsAvatar(this.name, {super.key, this.size = 40});
+
+  final String name;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: AppColors.track,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        twoInitials(name),
+        style: TextStyle(
+          fontSize: size * 0.35,
+          fontWeight: FontWeight.w700,
+          color: AppColors.inkSoft,
+        ),
+      ),
     );
   }
 }
@@ -196,24 +268,30 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (top != null) top!,
-            FilledButton(
-              onPressed: busy ? null : onPressed,
-              child: busy
-                  ? const SizedBox.square(
-                      dimension: 24,
-                      child: CircularProgressIndicator(strokeWidth: 3),
-                    )
-                  : Text(label),
-            ),
-          ],
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (top != null) top!,
+              FilledButton(
+                onPressed: busy ? null : onPressed,
+                child: busy
+                    ? const SizedBox.square(
+                        dimension: 24,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      )
+                    : Text(label),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -223,4 +301,11 @@ class BottomActionBar extends StatelessWidget {
 String initials(String name) {
   final trimmed = name.trim();
   return trimmed.isEmpty ? '?' : trimmed.characters.first.toUpperCase();
+}
+
+/// First letters of the first two words, upper case.
+String twoInitials(String name) {
+  final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+  if (words.isEmpty) return '?';
+  return words.take(2).map((w) => w.characters.first.toUpperCase()).join();
 }

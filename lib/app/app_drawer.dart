@@ -43,8 +43,6 @@ class AppDrawer extends ConsumerWidget {
         subtitle: subtitle == null ? null : Text(subtitle),
         trailing: trailing,
         selected: selected,
-        selectedTileColor: AppColors.amber100,
-        selectedColor: AppColors.slate900,
         onTap: () {
           Navigator.of(context).pop(); // close the drawer
           openRoute(context, route);
