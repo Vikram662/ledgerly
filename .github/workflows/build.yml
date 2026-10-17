@@ -35,7 +35,7 @@ jobs:
       - name: Install SQLite (for database tests)
         run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
 
-      # android/ is not committed yet; generate it (existing files are never overwritten).
+      # android/ is generated for the com.ledgerly.app package in CI.
       - name: Generate Android platform files
         run: flutter create . --platforms=android --org com.ledgerly --project-name app
 
