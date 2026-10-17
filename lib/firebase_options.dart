@@ -54,7 +54,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyC0fnXJOsdCI0sqwQAxSfZRedqKe7aiaWE',
-    appId: '1:642325949684:android:2462abb559d496a29f42a1',
+    appId: '1:642325949684:android:4ae74d61cbda35299f42a1',
     messagingSenderId: '642325949684',
     projectId: 'thekedaar-ff80c',
     storageBucket: 'thekedaar-ff80c.firebasestorage.app',
