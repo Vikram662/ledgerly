@@ -216,7 +216,6 @@ class _BackupSetupFlowState extends ConsumerState<_BackupSetupFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final error = _error == null
         ? const SizedBox.shrink()
         : Padding(
@@ -228,7 +227,7 @@ class _BackupSetupFlowState extends ConsumerState<_BackupSetupFlow> {
       0 => [
           const Icon(Icons.cloud_upload, size: 56),
           const SizedBox(height: 12),
-          Text(tr('Protect your data'), style: textTheme.titleLarge),
+          Text(tr('Protect your data'), style: AppText.titleLarge),
           const SizedBox(height: 8),
           Text(
             tr('Your data is saved only on this phone. Connect your Google Drive and the app backs up automatically 4 times a day, and as soon as internet is back. The app can see only its own backup files in your Drive.'),
@@ -246,7 +245,7 @@ class _BackupSetupFlowState extends ConsumerState<_BackupSetupFlow> {
           ),
         ],
       1 => [
-          Text(tr('Set a Backup Password'), style: textTheme.titleLarge),
+          Text(tr('Set a Backup Password'), style: AppText.titleLarge),
           const SizedBox(height: 8),
           Text(tr('Connected: {email}', {'email': _email})),
           const SizedBox(height: 8),
@@ -270,7 +269,7 @@ class _BackupSetupFlowState extends ConsumerState<_BackupSetupFlow> {
           FilledButton(onPressed: _checkPassword, child: Text(tr('Next'))),
         ],
       2 => [
-          Text(tr('Your Recovery Key'), style: textTheme.titleLarge),
+          Text(tr('Your Recovery Key'), style: AppText.titleLarge),
           const SizedBox(height: 8),
           Text(
             tr('If you forget the password, this key opens your backups. Write it on paper and keep it safe. Without the password AND this key, backups can never be opened.'),
@@ -316,7 +315,7 @@ class _BackupSetupFlowState extends ConsumerState<_BackupSetupFlow> {
           ),
         ],
       _ => [
-          Text(tr('Almost done'), style: textTheme.titleLarge),
+          Text(tr('Almost done'), style: AppText.titleLarge),
           const SizedBox(height: 12),
           RadioListTile<bool>(
             contentPadding: EdgeInsets.zero,
@@ -663,9 +662,8 @@ class _BackupDashboard extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.schedule),
                 title: Text(tr('Auto backup times')),
-                subtitle: Text(settings.backupSlots
-                    .map((h) => '${h.toString().padLeft(2, '0')}:00')
-                    .join(' · ')),
+                subtitle: Text(tr(
+                    "Daily 9 PM · when internet comes back · after big changes")),
                 trailing: SizedBox(
                   width: 110,
                   child: SegmentedTabs<int>(
@@ -730,7 +728,7 @@ class _BackupDashboard extends ConsumerWidget {
                     color: switch (log.status) {
                       BackupStatus.success => AppColors.successText,
                       BackupStatus.failed => AppColors.dangerText,
-                      BackupStatus.skipped => AppColors.slate600,
+                      BackupStatus.skipped => AppColors.muted,
                     },
                   ),
                   title: Text(

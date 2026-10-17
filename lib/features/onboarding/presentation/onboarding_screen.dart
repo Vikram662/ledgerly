@@ -140,7 +140,6 @@ class _Welcome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -171,7 +170,7 @@ class _Welcome extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
                     Text(tr('Your work, workers and money in one place'),
-                        style: textTheme.headlineMedium),
+                        style: AppText.headlineMedium),
                     const SizedBox(height: 10),
                     Text(
                       tr('Attendance, khata and bills. Works even without internet.'),

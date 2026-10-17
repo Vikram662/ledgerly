@@ -21,7 +21,6 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.gutter * 2),
@@ -40,11 +39,11 @@ class EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.gutter),
             Text(title,
-                style: textTheme.titleMedium, textAlign: TextAlign.center),
+                style: AppText.titleMedium, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.gap),
             Text(
               message,
-              style: textTheme.bodyMedium?.copyWith(
+              style: AppText.bodyMedium.copyWith(
                   color: AppColors.muted, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),

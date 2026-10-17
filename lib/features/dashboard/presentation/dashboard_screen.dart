@@ -652,7 +652,7 @@ class _TodayCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(tr("Today's attendance"),
-                        style: Theme.of(context).textTheme.titleMedium),
+                        style: AppText.titleMedium),
                     const SizedBox(height: 2),
                     Text(
                       total == 0
@@ -790,7 +790,7 @@ class _SectionHead extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+            child: Text(title, style: AppText.titleMedium),
           ),
           if (link != null)
             InkWell(

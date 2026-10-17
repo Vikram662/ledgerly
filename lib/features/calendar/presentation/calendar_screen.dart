@@ -16,7 +16,7 @@ DateFormat get _sheetDate => DateFormat('EEEE, d MMMM yyyy', uiDateLocale);
 /// Icon and colour for each kind of event.
 (IconData, Color) eventStyle(CalendarEventKind kind) => switch (kind) {
       CalendarEventKind.bill => (Icons.receipt_long, AppColors.blue700),
-      CalendarEventKind.quotation => (Icons.request_quote, AppColors.slate600),
+      CalendarEventKind.quotation => (Icons.request_quote, AppColors.muted),
       CalendarEventKind.paymentIn =>
         (Icons.call_received, AppColors.successText),
       CalendarEventKind.workerPaid => (Icons.payments, AppColors.dangerText),
@@ -25,9 +25,10 @@ DateFormat get _sheetDate => DateFormat('EEEE, d MMMM yyyy', uiDateLocale);
       CalendarEventKind.pieceWork => (Icons.construction, AppColors.warningText),
       CalendarEventKind.settlement => (Icons.task_alt, AppColors.dangerText),
       CalendarEventKind.expense => (Icons.shopping_cart, AppColors.dangerText),
-      CalendarEventKind.purchase => (Icons.local_shipping, AppColors.slate600),
+      CalendarEventKind.purchase => (Icons.local_shipping, AppColors.muted),
       CalendarEventKind.supplierPaid => (Icons.store, AppColors.dangerText),
-      CalendarEventKind.holiday => (Icons.celebration, Color(0xFF7C3AED)),
+      CalendarEventKind.holiday =>
+        (Icons.celebration, AppColors.warningText),
     };
 
 /// Business calendar: every bill, payment, khata entry, expense, supplier
@@ -86,6 +87,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     data: data,
                     onTap: (date) => _showDay(context, data, date),
                   ),
+                if (data != null) ...[
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  const _Legend(),
+                ],
               ],
             ),
           ),
@@ -93,8 +100,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             const SizedBox(height: 12),
             _MonthTotals(data: data),
           ],
-          const SizedBox(height: 12),
-          const _Legend(),
         ],
       ),
     );
@@ -147,7 +152,7 @@ class _MonthGrid extends StatelessWidget {
                 child: Center(
                   child: Text(d,
                       style: const TextStyle(
-                          color: AppColors.slate600,
+                          color: AppColors.muted,
                           fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -160,7 +165,7 @@ class _MonthGrid extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 4,
           crossAxisSpacing: 4,
-          childAspectRatio: 0.78,
+          childAspectRatio: 0.92,
           children: [
             for (var i = 1; i < firstWeekday; i++) const SizedBox(),
             for (var day = 1; day <= days; day++)
@@ -203,6 +208,8 @@ class _DayCell extends StatelessWidget {
         if (e.kind != CalendarEventKind.holiday) e.kind,
     }.take(4).toList();
     final hasAnything = events.isNotEmpty || attendance != null;
+    final today = DateTime.now();
+    final isFuture = date.isAfter(DateTime(today.year, today.month, today.day));
 
     return InkWell(
       borderRadius: BorderRadius.circular(10),
@@ -211,17 +218,16 @@ class _DayCell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
           color: isToday
-              ? AppColors.primaryTint
+              ? AppColors.ink
               : holiday
-                  ? const Color(0xFFF3E8FF)
+                  ? AppColors.warningSurface
                   : hasAnything
-                      ? AppColors.surface2
+                      ? AppColors.page
                       : null,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isToday ? AppColors.primary : AppColors.border,
-            width: isToday ? 1.5 : 1,
-          ),
+          border: holiday
+              ? Border.all(color: AppColors.amber100)
+              : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -230,7 +236,13 @@ class _DayCell extends StatelessWidget {
               '${date.day}',
               style: TextStyle(
                 fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                color: isToday ? AppColors.primary : AppColors.ink,
+                color: isToday
+                    ? Colors.white
+                    : holiday
+                        ? AppColors.warningText
+                        : isFuture
+                            ? AppColors.faint
+                            : AppColors.ink,
               ),
             ),
             if (attendance != null && attendance.present + attendance.half > 0)
@@ -339,12 +351,8 @@ class _Legend extends StatelessWidget {
       children: [
         dot(AppColors.successText, tr('Money in')),
         dot(AppColors.dangerText, tr('Money out')),
-        dot(AppColors.blue700, tr('Bill')),
-        dot(AppColors.warningText, tr('Khata / work')),
-        dot(AppColors.slate600, tr('Quotation / purchase')),
-        dot(const Color(0xFF7C3AED), tr('Holiday')),
-        Text(tr('P = workers present'),
-            style: TextStyle(fontSize: 12, color: AppColors.slate600)),
+        dot(AppColors.primary, tr('Bill / quote')),
+        dot(AppColors.warningText, tr('Holiday')),
       ],
     );
   }
@@ -435,7 +443,7 @@ class _DaySheet extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(tr('No bills, payments or expenses on this day'),
-                    style: TextStyle(color: AppColors.slate600)),
+                    style: TextStyle(color: AppColors.muted)),
               ),
             )
           else

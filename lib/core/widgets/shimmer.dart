@@ -192,7 +192,7 @@ class PercentProgress extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             detail!,
-            style: const TextStyle(color: AppColors.slate600, fontSize: 13),
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
         ],
       ],

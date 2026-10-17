@@ -37,7 +37,7 @@ class _PaywallSheet extends StatelessWidget {
                 size: 52, color: AppColors.amber500),
             const SizedBox(height: 12),
             Text(tr('Ledgerly Pro'),
-                style: Theme.of(context).textTheme.headlineSmall),
+                style: AppText.headlineSmall),
             const SizedBox(height: 8),
             Text(
               trialEligible
@@ -88,7 +88,7 @@ class ProRouteGate extends ConsumerWidget {
                 size: 64, color: AppColors.amber500),
             const SizedBox(height: 16),
             Text(tr('Record data with Pro'),
-                style: Theme.of(context).textTheme.headlineSmall),
+                style: AppText.headlineSmall),
             const SizedBox(height: 8),
             Text(
               access?.trialEligible != false
@@ -259,98 +259,218 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     final value = ref.watch(subscriptionControllerProvider);
     final access = value.valueOrNull;
     final active = access?.canWrite == true;
+    final trialEligible = access?.trialEligible != false;
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Ledgerly Pro'))),
+      appBar: AppBar(
+        leading: AppIconButton(
+          icon: Icons.close,
+          tooltip: tr("Close"),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(tr("Ledgerly Pro")),
+      ),
       body: RefreshIndicator(
         onRefresh: ref.read(subscriptionControllerProvider.notifier).refresh,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
           children: [
-            Center(
-              child: TagBadge(tr('LEDGERLY PRO')),
-            ),
-            const SizedBox(height: 12),
-            Icon(active ? Icons.verified : Icons.workspace_premium,
-                size: 56,
-                color: active ? AppColors.successText : AppColors.amber500),
-            const SizedBox(height: 12),
+            Center(child: TagBadge(tr("LEDGERLY PRO"))),
+            const SizedBox(height: 16),
             Text(
-                access?.isTrial == true
-                    ? tr('5-day free trial is active')
-                    : active
-                        ? tr('Pro is active')
-                        : tr('Explore free'),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall),
+              active
+                  ? (access?.isTrial == true
+                      ? tr("5-day free trial is active")
+                      : tr("Pro is active"))
+                  : tr("Try 5 days free, then ₹99/month"),
+              textAlign: TextAlign.center,
+              style: AppText.headlineSmall,
+            ),
             const SizedBox(height: 8),
             Text(
-              access?.isTrial == true
-                  ? tr('Your mandate is ready. ₹99 will be charged after the trial unless you cancel first.')
-                  : active
-                      ? tr('You can record all business data.') +
-                          (access?.kind == AccessKind.offlineGrace
-                              ? '\n${access?.message}'
-                              : '')
-                      : tr('Browse the complete app free. Start your free trial when you want to add or change records.'),
+              active
+                  ? tr("You can record all business data.")
+                  : tr("Browse the whole app free. Pro lets you add or change records. Cancel any time."),
               textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted, height: 1.45),
             ),
             const SizedBox(height: 24),
-            if (value.isLoading)
+            if (!active) ...[
+              _FeatureRow(
+                icon: Icons.domain_add_outlined,
+                text: tr("Add sites, attendance, bills, expenses"),
+              ),
+              _FeatureRow(
+                icon: Icons.picture_as_pdf_outlined,
+                text: tr("Bill and pay slip PDFs on WhatsApp"),
+              ),
+              _FeatureRow(
+                icon: Icons.cloud_off_outlined,
+                text: tr("Works offline up to 7 days"),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PlanCard(
+                      title: tr("Free"),
+                      price: tr("₹0 forever"),
+                      lines: [tr("View every screen and report")],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _PlanCard(
+                      title: tr("Pro"),
+                      price: tr("₹99 / month"),
+                      highlighted: true,
+                      lines: [tr("View + add + edit records")],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                tr("Payment mandate is set up on day 1 via Razorpay. First ₹99 is charged after 5 days; cancel before then to pay nothing."),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+            ] else ...[
+              Panel(
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified, color: AppColors.successText),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        access?.isTrial == true
+                            ? tr("Your mandate is ready. ₹99 will be charged after the trial unless you cancel first.")
+                            : tr("You can record all business data."),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (value.isLoading) ...[
+              const SizedBox(height: 20),
               const Center(child: CircularProgressIndicator()),
+            ],
+            if (access?.status != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                tr("Status: {status}", {"status": access!.status}),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.muted),
+              ),
+            ],
+          ],
+        ),
+      ),
+      bottomNavigationBar: BottomActionBar(
+        label: active
+            ? tr("Cancel subscription")
+            : trialEligible
+                ? tr("Start 5-day free trial")
+                : tr("Subscribe · ₹99/month"),
+        busy: _opening || value.isLoading,
+        onPressed: active ? _cancel : _subscribe,
+        top: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             if (!active)
-              FilledButton.icon(
-                onPressed: _opening ? null : _subscribe,
-                icon: const Icon(Icons.payment),
-                label: Text(access?.trialEligible == false
-                    ? tr('Subscribe · ₹99/month')
-                    : tr('Try 5 days free · then ₹99/month')),
+              TextButton(
+                onPressed: () => context.pop(),
+                child: Text(tr("Explore free")),
               ),
-            if (active)
-              OutlinedButton.icon(
-                onPressed: _cancel,
-                icon: const Icon(Icons.cancel_outlined),
-                label: Text(tr('Cancel subscription')),
-              ),
-            TextButton.icon(
+            TextButton(
               onPressed: _restore,
-              icon: const Icon(Icons.restore),
-              label: Text(tr('Restore with Subscription ID')),
+              child: Text(tr("Restore subscription")),
             ),
-            const SizedBox(height: 20),
-            CardList(children: [
-            ListTile(
-              leading: Icon(Icons.hourglass_top),
-              title: Text(tr('5-day free trial')),
-              subtitle: Text(
-                  tr('Mandate is authorised on day 1. First ₹99 charge is after 5 days; cancel before then to avoid the charge.')),
-            ),
-            ListTile(
-              leading: Icon(Icons.visibility_outlined),
-              title: Text(tr('Free mode')),
-              subtitle: Text(tr('View menus, screens and existing/demo records.')),
-            ),
-            ListTile(
-              leading: Icon(Icons.edit_note),
-              title: Text(tr('Pro mode')),
-              subtitle: Text(
-                  tr('Add sites, attendance, bills, expenses and daily records.')),
-            ),
-            ListTile(
-              leading: Icon(Icons.cloud_off_outlined),
-              title: Text(tr('Offline grace')),
-              subtitle:
-                  Text(tr('Active members can work offline for up to 7 days.')),
-            ),
-            ]),
-            if (access?.status != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(tr('Status: {status}', {'status': access!.status}),
-                    textAlign: TextAlign.center),
-              ),
           ],
         ),
       ),
     );
   }
+
+}
+
+class _FeatureRow extends StatelessWidget {
+  const _FeatureRow({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          children: [
+            IconTile(
+              icon,
+              color: AppColors.successSurface,
+              iconColor: AppColors.successText,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const Icon(Icons.check_circle, color: AppColors.successText, size: 20),
+          ],
+        ),
+      );
+}
+
+class _PlanCard extends StatelessWidget {
+  const _PlanCard({
+    required this.title,
+    required this.price,
+    required this.lines,
+    this.highlighted = false,
+  });
+
+  final String title;
+  final String price;
+  final List<String> lines;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: highlighted ? AppColors.primarySurface : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+            color: highlighted ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: AppText.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              price,
+              style: AppText.tabular.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: highlighted ? AppColors.primary : AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (final line in lines)
+              Text(
+                line,
+                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              ),
+          ],
+        ),
+      );
 }

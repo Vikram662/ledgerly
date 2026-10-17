@@ -34,9 +34,9 @@ StatusStyle statusStyle(AttendanceStatus status) => switch (status) {
       AttendanceStatus.leavePaid => StatusStyle(
           'PL', tr('Paid leave'), Icons.beach_access, AppColors.blue700),
       AttendanceStatus.leaveUnpaid => StatusStyle(
-          'UL', tr('Unpaid leave'), Icons.event_busy, AppColors.slate600),
+          'UL', tr('Unpaid leave'), Icons.event_busy, AppColors.muted),
       AttendanceStatus.off => StatusStyle(
-          'Off', tr('Weekly off'), Icons.weekend, AppColors.slate600),
+          'Off', tr('Weekly off'), Icons.weekend, AppColors.muted),
     };
 
 /// Sets one worker's status for one day, showing lock errors as a message.
@@ -83,7 +83,7 @@ Future<void> showStatusSheet(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(dayFormat.format(date),
-              style: Theme.of(context).textTheme.titleMedium),
+              style: AppText.titleMedium),
           for (final status in AttendanceStatus.values)
             ListTile(
               leading: Icon(statusStyle(status).icon,
@@ -170,7 +170,7 @@ class _AttendanceCalendarState extends ConsumerState<AttendanceCalendar> {
                 child: Text(
                   monthFormat.format(_month),
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: AppText.titleMedium,
                 ),
               ),
               IconButton(
@@ -186,7 +186,7 @@ class _AttendanceCalendarState extends ConsumerState<AttendanceCalendar> {
                 Expanded(
                   child: Center(
                     child: Text(d,
-                        style: const TextStyle(color: AppColors.slate600)),
+                        style: const TextStyle(color: AppColors.muted)),
                   ),
                 ),
             ],
@@ -241,7 +241,7 @@ class _MonthTotals extends StatelessWidget {
     }
     if (counts.isEmpty) {
       return Text(tr('Nothing marked this month'),
-          style: TextStyle(color: AppColors.slate600));
+          style: TextStyle(color: AppColors.muted));
     }
     return Wrap(
       spacing: 8,
@@ -289,7 +289,7 @@ Future<void> showWorkerAttendanceSheet(
                 Expanded(
                   child: Text(
                     worker.name,
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: AppText.titleLarge,
                   ),
                 ),
                 TextButton(
@@ -305,7 +305,7 @@ Future<void> showWorkerAttendanceSheet(
             const SizedBox(height: 4),
             Text(
               tr('Tap a day to change it.'),
-              style: TextStyle(color: AppColors.slate600),
+              style: TextStyle(color: AppColors.muted),
             ),
             const SizedBox(height: 12),
             AttendanceCalendar(worker: worker, initialMonth: month),

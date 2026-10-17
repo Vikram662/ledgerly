@@ -8,17 +8,11 @@ What is listed here is left for later.
 
 | Screen | What is missing | Needs |
 |---|---|---|
-| Subscription | Feature list, Free vs Pro comparison cards, "Explore free" button | only lightly restyled so far |
-| Restore | Google account email inside the Drive tile | pass the email from backup state |
-| Backup | Auto backup text "Daily 9 PM · when internet comes back · after big changes" | currently the 3× / 4× slot control |
-| Calendar | Grid cells and legend chips only partly match the wireframe | finish |
 | Expense entry | Wireframe has a "Job: none" chip; the app uses the job picker field | optional |
 
-To find other leftover old styling, search `lib/` for `AppColors.slate600`, `SectionTitle(` and `Theme.of(context).textTheme`.
-
-Done since the merge: job cards show Billed / Expense / Profit, and supplier
-rows show "Last purchase {date}" or "Paid {date}". Not yet checked on a phone,
-and there is no repository test for these two yet.
+Done since the merge: job cards show Billed / Expense / Profit, supplier rows
+show "Last purchase {date}" or "Paid {date}", and both calculations now have
+repository tests. These screens have not yet been checked on a phone.
 
 ## 2. Ledgerly rename: still on the old name
 

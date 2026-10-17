@@ -209,7 +209,7 @@ class _ChangeWageScreenState extends ConsumerState<ChangeWageScreen> {
               ),
             ),
             if (history.isNotEmpty) ...[
-              SectionTitle(tr('History')),
+              SectionLabel(tr('History')),
               Panel(
                 child: Column(
                   children: [

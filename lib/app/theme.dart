@@ -87,6 +87,26 @@ abstract final class AppText {
   static const tabular = TextStyle(
     fontFeatures: [FontFeature.tabularFigures()],
   );
+
+  static const headlineMedium = TextStyle(
+    fontSize: 30,
+    height: 1.15,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.6,
+  );
+
+  static const headlineSmall = TextStyle(
+    fontSize: 26,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.52,
+  );
+
+  static const titleLarge =
+      TextStyle(fontSize: 20, fontWeight: FontWeight.w800);
+  static const titleMedium =
+      TextStyle(fontSize: 16, fontWeight: FontWeight.w800);
+  static const bodyMedium =
+      TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
 }
 
 ThemeData buildLightTheme() {

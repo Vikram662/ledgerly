@@ -185,7 +185,7 @@ class ClientDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
-          SectionTitle(
+          SectionLabel(
             tr('Jobs / sites'),
             trailing: TextButton.icon(
               onPressed: () => context.push(Routes.addJob(clientId: clientId)),
@@ -194,7 +194,7 @@ class ClientDetailScreen extends ConsumerWidget {
             ),
           ),
           if (jobs.isEmpty)
-            Text(tr('No jobs yet.'), style: TextStyle(color: AppColors.slate600))
+            Text(tr('No jobs yet.'), style: TextStyle(color: AppColors.muted))
           else
             CardList(
               children: [
@@ -207,15 +207,15 @@ class ClientDetailScreen extends ConsumerWidget {
                     ),
               ],
             ),
-          SectionTitle(tr('Bills')),
+          SectionLabel(tr('Bills')),
           if (bills.isEmpty)
-            Text(tr('No bills yet.'), style: TextStyle(color: AppColors.slate600))
+            Text(tr('No bills yet.'), style: TextStyle(color: AppColors.muted))
           else
             CardList(children: [for (final b in bills) DocumentTile(item: b)]),
-          SectionTitle(tr('Payments')),
+          SectionLabel(tr('Payments')),
           if (payments.isEmpty)
             Text(tr('No payments yet.'),
-                style: TextStyle(color: AppColors.slate600))
+                style: TextStyle(color: AppColors.muted))
           else
             CardList(children: [for (final p in payments) PaymentTile(item: p)]),
           const SizedBox(height: 32),

@@ -271,7 +271,7 @@ class LedgerTile extends ConsumerWidget {
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: item.reversed
-                  ? AppColors.slate600
+                  ? AppColors.muted
                   : isMoneyOut
                       ? AppColors.warningText
                       : AppColors.slate900,
