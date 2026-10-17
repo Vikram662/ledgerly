@@ -118,7 +118,7 @@ Future<Uint8List> encodeBackup({
   if (file.length < 10) throw const BackupFormatException('File is too small');
   for (var i = 0; i < _magic.length; i++) {
     if (file[i] != _magic[i]) {
-      throw const BackupFormatException('Not a Thekedaar backup file');
+      throw const BackupFormatException('Not a Ledgerly backup file');
     }
   }
   if (file[5] != _formatVersion) {

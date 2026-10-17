@@ -223,7 +223,7 @@ class BrandSplash extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              tr('Thekedaar'),
+              tr('Ledgerly'),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 26,

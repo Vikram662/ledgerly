@@ -133,7 +133,7 @@ class AppLockController extends ChangeNotifier with WidgetsBindingObserver {
     suspendRelock = true;
     try {
       final ok = await _localAuth.authenticate(
-        localizedReason: reason ?? tr('Unlock Thekedaar'),
+        localizedReason: reason ?? tr('Unlock Ledgerly'),
         biometricOnly: true,
         persistAcrossBackgrounding: true,
       );

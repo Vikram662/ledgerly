@@ -70,7 +70,7 @@ class RemindersScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      tr('Turn them on to get the reminders below. If nothing happens, allow notifications in phone Settings → Apps → Thekedaar.'),
+                      tr('Turn them on to get the reminders below. If nothing happens, allow notifications in phone Settings → Apps → Ledgerly.'),
                       style: TextStyle(color: AppColors.slate600),
                     ),
                     const SizedBox(height: 12),
@@ -132,7 +132,7 @@ class RemindersScreen extends ConsumerWidget {
               await AppNotifications.instance.requestPermission();
               await AppNotifications.instance.show(
                 NotificationKind.monthEnd,
-                tr('Thekedaar'),
+                tr('Ledgerly'),
                 tr('Reminders are working.'),
               );
               ref.invalidate(_notificationsEnabledProvider);

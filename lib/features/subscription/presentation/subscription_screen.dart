@@ -9,6 +9,7 @@ import '../../../app/theme.dart';
 import '../../../core/config.dart';
 import '../../../core/db/providers.dart';
 import '../../../core/i18n/i18n.dart';
+import '../../../core/widgets/common.dart';
 import '../subscription_controller.dart';
 
 Future<bool> requirePro(BuildContext context, WidgetRef ref) async {
@@ -35,7 +36,7 @@ class _PaywallSheet extends StatelessWidget {
             const Icon(Icons.workspace_premium,
                 size: 52, color: AppColors.amber500),
             const SizedBox(height: 12),
-            Text(tr('Thekedaar Pro'),
+            Text(tr('Ledgerly Pro'),
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
@@ -78,7 +79,7 @@ class ProRouteGate extends ConsumerWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Thekedaar Pro required'))),
+      appBar: AppBar(title: Text(tr('Ledgerly Pro required'))),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -151,7 +152,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         _razorpay.open({
           'key': session.keyId,
           'subscription_id': session.subscriptionId,
-          'name': 'Thekedaar Pro',
+          'name': 'Ledgerly Pro',
           'description': '5-day free trial, then ₹99/month',
           'prefill': {'name': profile.name, 'contact': profile.phone ?? ''},
           'theme': {'color': '#B45309'},
@@ -163,7 +164,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         _razorpay.open({
           'key': session.keyId,
           'subscription_id': session.subscriptionId,
-          'name': 'Thekedaar Pro',
+          'name': 'Ledgerly Pro',
           'description': '5-day free trial, then ₹99/month',
           'prefill': {'name': profile.name, 'contact': profile.phone ?? ''},
           'theme': {'color': '#B45309'},
@@ -259,14 +260,18 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     final access = value.valueOrNull;
     final active = access?.canWrite == true;
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Thekedaar Pro'))),
+      appBar: AppBar(title: Text(tr('Ledgerly Pro'))),
       body: RefreshIndicator(
         onRefresh: ref.read(subscriptionControllerProvider.notifier).refresh,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            Center(
+              child: TagBadge(tr('LEDGERLY PRO')),
+            ),
+            const SizedBox(height: 12),
             Icon(active ? Icons.verified : Icons.workspace_premium,
-                size: 72,
+                size: 56,
                 color: active ? AppColors.successText : AppColors.amber500),
             const SizedBox(height: 12),
             Text(
@@ -311,7 +316,8 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               icon: const Icon(Icons.restore),
               label: Text(tr('Restore with Subscription ID')),
             ),
-            const Divider(height: 36),
+            const SizedBox(height: 20),
+            CardList(children: [
             ListTile(
               leading: Icon(Icons.hourglass_top),
               title: Text(tr('5-day free trial')),
@@ -335,6 +341,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               subtitle:
                   Text(tr('Active members can work offline for up to 7 days.')),
             ),
+            ]),
             if (access?.status != null)
               Padding(
                 padding: const EdgeInsets.only(top: 12),

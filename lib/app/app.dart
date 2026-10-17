@@ -123,7 +123,7 @@ class _ThekedaarAppState extends ConsumerState<ThekedaarApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: tr('Thekedaar'),
+      title: tr('Ledgerly'),
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(),
       locale: appLanguage.value.locale,

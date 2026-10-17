@@ -76,14 +76,14 @@ class SettingsScreen extends ConsumerWidget {
           CardList(
             children: [
               if (!type.isFree)
-                tile(Icons.workspace_premium_outlined, tr('Thekedaar Pro'),
+                tile(Icons.workspace_premium_outlined, tr('Ledgerly Pro'),
                     tr('₹99/month subscription'), Routes.subscription),
               const LanguageTile(),
             ],
           ),
           const SizedBox(height: 24),
           Text(
-            '${tr('Thekedaar')} · ${tr('Version {appVersion}', {'appVersion': AppConfig.appVersion})}',
+            '${tr('Ledgerly')} · ${tr('Version {appVersion}', {'appVersion': AppConfig.appVersion})}',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, color: AppColors.faint),
           ),

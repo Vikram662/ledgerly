@@ -132,8 +132,8 @@ const hindiStrings = <String, String>{
       'आज तक का हिसाब हो चुका है। अभी नया हिसाब करने को कुछ नहीं।',
   'Already settled up to {date}. Nothing new to settle yet.':
       '{date} तक का हिसाब हो चुका है। अभी नया हिसाब करने को कुछ नहीं।',
-  'Already using Thekedaar?':
-      'पहले से ठेकेदार इस्तेमाल करते हैं?',
+  'Already using Ledgerly?':
+      'पहले से Ledgerly इस्तेमाल करते हैं?',
   'Amount':
       'रकम',
   'Amount must be more than 0':
@@ -912,8 +912,8 @@ const hindiStrings = <String, String>{
       'अभी कोई सप्लायर नहीं',
   'No tasks scheduled':
       'कोई काम तय नहीं',
-  'No Thekedaar backups found in this Google account':
-      'इस गूगल अकाउंट में ठेकेदार का कोई बैकअप नहीं मिला',
+  'No Ledgerly backups found in this Google account':
+      'इस गूगल अकाउंट में Ledgerly का कोई बैकअप नहीं मिला',
   'No UPI app found on this phone':
       'इस फ़ोन में कोई UPI ऐप नहीं मिला',
   'No wage set':
@@ -930,8 +930,8 @@ const hindiStrings = <String, String>{
       'कोई नहीं',
   'Nos':
       'नग',
-  'Not a Thekedaar backup file':
-      'यह ठेकेदार की बैकअप फ़ाइल नहीं है',
+  'Not a Ledgerly backup file':
+      'यह Ledgerly की बैकअप फ़ाइल नहीं है',
   'Not available on this phone':
       'इस फ़ोन में उपलब्ध नहीं',
   'Not marked':
@@ -980,8 +980,8 @@ const hindiStrings = <String, String>{
       'बदलाव पर',
   'On this day "Mark all" marks Off. Weekly off is paid for monthly workers, unpaid for daily workers.':
       'इस दिन "सबको मार्क करें" छुट्टी लगाएगा। साप्ताहिक छुट्टी महीने वाले मज़दूरों के लिए पैसे वाली और रोज़ वाले मज़दूरों के लिए बिना पैसे की होती है।',
-  'On Xiaomi, Oppo, Vivo, Realme and some other phones, turn off battery saving for this app so auto backup is not stopped:\nSettings → Apps → Thekedaar → Battery → No restrictions.':
-      'Xiaomi, Oppo, Vivo, Realme और कुछ दूसरे फ़ोन में इस ऐप के लिए बैटरी सेविंग बंद करें ताकि ऑटो बैकअप न रुके:\nसेटिंग्स → ऐप्स → Thekedaar → बैटरी → कोई पाबंदी नहीं।',
+  'On Xiaomi, Oppo, Vivo, Realme and some other phones, turn off battery saving for this app so auto backup is not stopped:\nSettings → Apps → Ledgerly → Battery → No restrictions.':
+      'Xiaomi, Oppo, Vivo, Realme और कुछ दूसरे फ़ोन में इस ऐप के लिए बैटरी सेविंग बंद करें ताकि ऑटो बैकअप न रुके:\nसेटिंग्स → ऐप्स → Ledgerly → बैटरी → कोई पाबंदी नहीं।',
   'Only the latest settlement can be reversed':
       'सिर्फ़ सबसे नया हिसाब ही उलटा जा सकता है',
   'Open client':
@@ -1404,14 +1404,14 @@ const hindiStrings = <String, String>{
       'आपकी जोड़ी गई छुट्टी से एक दिन पहले',
   'The period will be unlocked so it can be corrected. Money already paid stays recorded as a payment.':
       'यह अवधि अनलॉक हो जाएगी ताकि सुधार हो सके। जो पैसे दिए जा चुके हैं वे भुगतान के रूप में दर्ज रहेंगे।',
-  'Thekedaar':
-      'ठेकेदार',
-  'Thekedaar backup file. Keep it safe; it opens only with your Backup Password or Recovery Key.':
-      'ठेकेदार बैकअप फ़ाइल। इसे सुरक्षित रखें; यह सिर्फ़ आपके बैकअप पासवर्ड या रिकवरी की से खुलेगी।',
-  'Thekedaar Pro':
-      'ठेकेदार प्रो',
-  'Thekedaar Pro required':
-      'ठेकेदार प्रो ज़रूरी है',
+  'Ledgerly':
+      'Ledgerly',
+  'Ledgerly backup file. Keep it safe; it opens only with your Backup Password or Recovery Key.':
+      'Ledgerly बैकअप फ़ाइल। इसे सुरक्षित रखें; यह सिर्फ़ आपके बैकअप पासवर्ड या रिकवरी की से खुलेगी।',
+  'Ledgerly Pro':
+      'Ledgerly प्रो',
+  'Ledgerly Pro required':
+      'Ledgerly प्रो ज़रूरी है',
   'This backup is from a newer app version. Please update the app first.':
       'यह बैकअप ऐप के नए वर्ज़न का है। कृपया पहले ऐप अपडेट करें।',
   'This build is missing SUBSCRIPTION_API_URL.':
@@ -1476,8 +1476,8 @@ const hindiStrings = <String, String>{
       'अलर्ट चालू करें',
   'Turn on notifications':
       'नोटिफ़िकेशन चालू करें',
-  'Turn them on to get the reminders below. If nothing happens, allow notifications in phone Settings → Apps → Thekedaar.':
-      'नीचे दिए रिमाइंडर पाने के लिए इन्हें चालू करें। कुछ न हो तो फ़ोन की सेटिंग्स → ऐप्स → Thekedaar में नोटिफ़िकेशन की अनुमति दें।',
+  'Turn them on to get the reminders below. If nothing happens, allow notifications in phone Settings → Apps → Ledgerly.':
+      'नीचे दिए रिमाइंडर पाने के लिए इन्हें चालू करें। कुछ न हो तो फ़ोन की सेटिंग्स → ऐप्स → Ledgerly में नोटिफ़िकेशन की अनुमति दें।',
   'Udhaar purchases & payments':
       'उधार खरीद और भुगतान',
   'Unit':
@@ -1486,8 +1486,8 @@ const hindiStrings = <String, String>{
       'अनलॉक करें',
   'Unlock the app with fingerprint or face.':
       'फ़िंगरप्रिंट या चेहरे से ऐप अनलॉक करें।',
-  'Unlock Thekedaar':
-      'ठेकेदार अनलॉक करें',
+  'Unlock Ledgerly':
+      'Ledgerly अनलॉक करें',
   'Unlock with fingerprint / face':
       'फ़िंगरप्रिंट / चेहरे से अनलॉक करें',
   'Unlocking with your key':
@@ -1710,8 +1710,8 @@ const hindiStrings = <String, String>{
       'रिमाइंडर',
   'Salary, home expenses and savings':
       'तनख़्वाह, घर का ख़र्च और बचत',
-  'Set up Thekedaar':
-      'ठेकेदार ऐप सेट करें',
+  'Set up Ledgerly':
+      'Ledgerly ऐप सेट करें',
   'Shop name':
       'दुकान का नाम',
   'Shopkeeper':
@@ -1731,6 +1731,7 @@ const hindiStrings = <String, String>{
   'Your name':
       'आपका नाम',
   // New design (wireframes).
+  'LEDGERLY PRO': 'Ledgerly PRO',
   'Account': 'खाता',
   'Business': 'कारोबार',
   'Data & security': 'डेटा और सुरक्षा',

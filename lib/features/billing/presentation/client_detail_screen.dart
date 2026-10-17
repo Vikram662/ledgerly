@@ -7,6 +7,7 @@ import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
+import '../../../core/utils/money.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
 import '../../jobs/data/jobs_repository.dart';

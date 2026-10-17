@@ -336,7 +336,7 @@ class _BackupSetupFlowState extends ConsumerState<_BackupSetupFlow> {
           const SizedBox(height: 12),
           Panel(
             child: Text(
-              tr('On Xiaomi, Oppo, Vivo, Realme and some other phones, turn off battery saving for this app so auto backup is not stopped:\nSettings → Apps → Thekedaar → Battery → No restrictions.'),
+              tr('On Xiaomi, Oppo, Vivo, Realme and some other phones, turn off battery saving for this app so auto backup is not stopped:\nSettings → Apps → Ledgerly → Battery → No restrictions.'),
             ),
           ),
           const SizedBox(height: 16),
@@ -397,7 +397,7 @@ class _BackupDashboard extends ConsumerWidget {
     try {
       await SharePlus.instance.share(ShareParams(
         files: [XFile(file.path)],
-        text: tr('Thekedaar backup file. Keep it safe; it opens only with your Backup Password or Recovery Key.'),
+        text: tr('Ledgerly backup file. Keep it safe; it opens only with your Backup Password or Recovery Key.'),
       ));
     } finally {
       lock.suspendRelock = false;

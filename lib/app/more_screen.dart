@@ -194,7 +194,7 @@ class MoreScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            profile?.name ?? tr('Thekedaar'),
+                            profile?.name ?? tr('Ledgerly'),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -279,7 +279,7 @@ class MoreScreen extends ConsumerWidget {
               if (!type.isFree)
                 SettingRow(
                   icon: Icons.workspace_premium_outlined,
-                  label: tr('Thekedaar Pro'),
+                  label: tr('Ledgerly Pro'),
                   value: tr('₹99 / month'),
                   onTap: () => go(Routes.subscription),
                 ),

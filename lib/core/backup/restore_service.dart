@@ -77,7 +77,7 @@ class RestoreService {
     final id = await store.findFolder(DriveStore.rootFolderName);
     if (id == null) {
       throw RestoreException(
-        tr('No Thekedaar backups found in this Google account'),
+        tr('No Ledgerly backups found in this Google account'),
       );
     }
     return id;

@@ -127,7 +127,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     final lock = ref.read(appLockProvider);
     if (!lock.biometricEnabled) return;
     final ok = await lock.authenticateBiometric(
-      reason: widget.reason ?? tr('Unlock Thekedaar'),
+      reason: widget.reason ?? tr('Unlock Ledgerly'),
       unlock: !widget.confirmOnly,
     );
     if (ok && mounted) _done();
