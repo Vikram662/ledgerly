@@ -77,88 +77,152 @@ class _ChangeWageScreenState extends ConsumerState<ChangeWageScreen> {
   Widget build(BuildContext context) {
     final history =
         ref.watch(wageHistoryProvider(widget.workerId)).valueOrNull ?? const [];
+    final worker = ref.watch(workerProvider(widget.workerId)).valueOrNull;
     final today = isoDate(DateTime.now());
-    _fill(history.where((w) => w.effectiveFrom.compareTo(today) <= 0).firstOrNull);
+    final current =
+        history.where((w) => w.effectiveFrom.compareTo(today) <= 0).firstOrNull;
+    _fill(current);
+    final amountStyle =
+        AppText.tabular.copyWith(fontSize: 17, fontWeight: FontWeight.w700);
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('Change wage'))),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.gutter),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            SegmentedButton<WageModel>(
-              segments: [
-                ButtonSegment(value: WageModel.daily, label: Text(tr('Daily'))),
-                ButtonSegment(value: WageModel.monthly, label: Text(tr('Monthly'))),
-                ButtonSegment(value: WageModel.piece, label: Text(tr('Piece-rate'))),
-              ],
-              selected: {_model},
-              onSelectionChanged: (s) => setState(() => _model = s.first),
-            ),
-            const SizedBox(height: 12),
-            if (_model != WageModel.piece)
-              TextFormField(
-                controller: _rate,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 20),
-                decoration: InputDecoration(
-                  labelText: _model == WageModel.daily
-                      ? tr('Rate per day')
-                      : tr('Salary per month'),
-                  prefixText: '₹ ',
+            if (worker != null)
+              Panel(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    InitialsAvatar(worker.worker.name),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            worker.worker.name,
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
+                          if (current != null)
+                            Text(
+                              tr('Now {wage} · from {date}', {
+                                'wage': wageLabel(current),
+                                'date': dayFormat
+                                    .format(parseIsoDate(current.effectiveFrom)),
+                              }),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                validator: (v) {
-                  final p = parseRupeesToPaise(v ?? '');
-                  return p == null || p <= 0 ? tr('Enter amount') : null;
+              ),
+            const SizedBox(height: 16),
+            SegmentedTabs<WageModel>(
+              value: _model,
+              options: {
+                WageModel.daily: tr('Daily'),
+                WageModel.monthly: tr('Monthly'),
+                WageModel.piece: tr('Piece-rate'),
+              },
+              onChanged: (model) => setState(() => _model = model),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_model != WageModel.piece) ...[
+                  Expanded(
+                    child: LabeledField(
+                      label: _model == WageModel.daily
+                          ? tr('Rate per day')
+                          : tr('Salary per month'),
+                      child: TextFormField(
+                        controller: _rate,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        style: amountStyle,
+                        decoration: const InputDecoration(prefixText: '₹ '),
+                        validator: (v) {
+                          final p = parseRupeesToPaise(v ?? '');
+                          return p == null || p <= 0 ? tr('Enter amount') : null;
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: LabeledField(
+                    label: tr('OT per hour'),
+                    optional: true,
+                    child: TextFormField(
+                      controller: _otRate,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      style: amountStyle,
+                      decoration: const InputDecoration(prefixText: '₹ '),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (_model == WageModel.monthly)
+              LabeledField(
+                label: tr('Per-day rate for monthly salary'),
+                child: Wrap(
+                  spacing: AppSizes.gap,
+                  children: [
+                    for (final (value, label) in [
+                      (30, '÷ 30'),
+                      (26, '÷ 26'),
+                      (0, tr('÷ days in month')),
+                    ])
+                      ChoiceChip(
+                        showCheckmark: false,
+                        label: Text(label),
+                        selected: _divisor == value,
+                        onSelected: (_) => setState(() => _divisor = value),
+                      ),
+                  ],
+                ),
+              ),
+            LabeledField(
+              label: tr('New wage from'),
+              help: tr('Days before this date keep the old rate.'),
+              child: TapField(
+                value: dayFormat.format(_from),
+                onTap: () async {
+                  final picked = await pickDate(context, initial: _from);
+                  if (picked != null) setState(() => _from = dateOnly(picked));
                 },
               ),
-            if (_model == WageModel.monthly) ...[
-              SectionTitle(tr('Per-day rate for monthly salary')),
-              Wrap(
-                spacing: AppSizes.gap,
-                children: [
-                  for (final (value, label) in [
-                    (30, '÷ 30'),
-                    (26, '÷ 26'),
-                    (0, tr('÷ days in month')),
-                  ])
-                    ChoiceChip(
-                      label: Text(label),
-                      selected: _divisor == value,
-                      onSelected: (_) => setState(() => _divisor = value),
-                    ),
-                ],
+            ),
+            if (history.isNotEmpty) ...[
+              SectionTitle(tr('History')),
+              Panel(
+                child: Column(
+                  children: [
+                    for (var i = 0; i < history.length; i++)
+                      _HistoryRow(
+                        wage: history[i],
+                        current: history[i].id == current?.id,
+                        last: i == history.length - 1,
+                      ),
+                  ],
+                ),
               ),
             ],
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _otRate,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: tr('OT rate per hour (optional)'),
-                prefixText: '₹ ',
-              ),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event),
-              title: Text(tr('New wage from')),
-              subtitle: Text(dayFormat.format(_from)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final picked = await pickDate(context, initial: _from);
-                if (picked != null) setState(() => _from = dateOnly(picked));
-              },
-            ),
-            SectionTitle(tr('History')),
-            for (final w in history)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(wageLabel(w)),
-                subtitle: Text(tr('From {date}', {'date': dayFormat.format(parseIsoDate(w.effectiveFrom))})),
-              ),
           ],
         ),
       ),
@@ -166,6 +230,79 @@ class _ChangeWageScreenState extends ConsumerState<ChangeWageScreen> {
         label: tr('Save new wage'),
         busy: _saving,
         onPressed: _save,
+      ),
+    );
+  }
+}
+
+/// One step of the wage timeline: a dot, a line down, rate and date.
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({
+    required this.wage,
+    required this.current,
+    required this.last,
+  });
+
+  final WageHistory wage;
+  final bool current;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) {
+    final rate = wage.otRatePaise > 0
+        ? '${wageLabel(wage)} · ${tr('OT {amount}', {'amount': formatPaise(wage.otRatePaise)})}'
+        : wageLabel(wage);
+    final from =
+        tr('From {date}', {'date': dayFormat.format(parseIsoDate(wage.effectiveFrom))});
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 20,
+            child: Column(
+              children: [
+                const SizedBox(height: 4),
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: current ? AppColors.primary : AppColors.inputBorder,
+                  ),
+                ),
+                if (!last)
+                  Expanded(
+                    child: Container(width: 2, color: AppColors.divider),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: last ? 0 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    rate,
+                    style: AppText.tabular
+                        .copyWith(fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    current ? '$from · ${tr('current')}' : from,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

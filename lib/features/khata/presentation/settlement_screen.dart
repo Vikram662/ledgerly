@@ -170,59 +170,125 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
       body: summary == null
           ? const ListSkeleton()
           : ListView(
-              padding: const EdgeInsets.all(AppSizes.gutter),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.date_range),
-                  title: Text('${dayFormat.format(summary.periodFrom)} – '
-                      '${dayFormat.format(summary.periodTo)}'),
-                  subtitle: Text(tr('Settle up to this date')),
-                  trailing: Text(tr('Change')),
-                  onTap: () async {
-                    final picked = await pickDate(
-                      context,
-                      initial: _periodTo ?? DateTime.now(),
-                      first: summary.periodFrom,
-                      last: DateTime.now(),
-                    );
-                    if (picked != null) await _load(to: dateOnly(picked));
-                  },
-                ),
-                _Breakdown(summary: summary),
-                SectionTitle(tr('Payment')),
-                TextField(
-                  controller: _paid,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(fontSize: 24),
-                  decoration: InputDecoration(
-                    labelText: tr('Paid now'),
-                    prefixText: '₹ ',
+                Panel(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      const IconTile(Icons.date_range),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tr('Settle up to this date'),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                            Text(
+                              '${dayFormat.format(summary.periodFrom)} – '
+                              '${dayFormat.format(summary.periodTo)}',
+                              style: const TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await pickDate(
+                            context,
+                            initial: _periodTo ?? DateTime.now(),
+                            first: summary.periodFrom,
+                            last: DateTime.now(),
+                          );
+                          if (picked != null) await _load(to: dateOnly(picked));
+                        },
+                        child: Text(tr('Change')),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
+                _Breakdown(summary: summary),
+                const SizedBox(height: 16),
+                LabeledField(
+                  label: tr('Paid now'),
+                  child: TextField(
+                    controller: _paid,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: AppText.tabular
+                        .copyWith(fontSize: 22, fontWeight: FontWeight.w800),
+                    decoration: const InputDecoration(prefixText: '₹ '),
+                  ),
+                ),
                 PaymentModeChips(
                   value: _mode,
                   onChanged: (m) => setState(() => _mode = m),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 Builder(builder: (context) {
                   final paid = parseRupeesToPaise(_paid.text) ?? 0;
                   final carry = summary.balancePaise - paid;
-                  return Panel(
-                    child: AmountRow(
-                      label: carry >= 0
-                          ? tr('Carry forward (to worker)')
-                          : tr('Carry forward (worker owes)'),
-                      paise: carry.abs(),
-                      bold: true,
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
                       color: carry >= 0
-                          ? AppColors.successText
-                          : AppColors.dangerText,
+                          ? AppColors.successSurface
+                          : AppColors.dangerSurface,
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            carry >= 0
+                                ? tr('Carry forward (to worker)')
+                                : tr('Carry forward (worker owes)'),
+                            style: const TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Text(
+                          formatPaise(carry.abs()),
+                          style: AppText.tabular.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: carry >= 0
+                                ? AppColors.successText
+                                : AppColors.dangerText,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.lock_outline,
+                        size: 16, color: AppColors.muted),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        tr('Attendance and entries in this period will be locked. A pay slip PDF is ready to share after.'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
       bottomNavigationBar: summary == null

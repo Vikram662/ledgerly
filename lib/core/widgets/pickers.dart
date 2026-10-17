@@ -70,17 +70,62 @@ class PickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radius),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: icon == null ? null : Icon(icon),
-          suffixIcon: const Icon(Icons.arrow_drop_down),
-        ),
-        isEmpty: value == null,
-        child: Text(value ?? '', style: const TextStyle(fontSize: 16)),
+    return Semantics(
+      button: true,
+      label: label,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.inkSoft,
+              ),
+            ),
+          ),
+          Material(
+            color: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              side: const BorderSide(color: AppColors.inputBorder),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              onTap: onTap,
+              child: SizedBox(
+                height: AppSizes.tapSecondary,
+                child: Row(
+                  children: [
+                    const SizedBox(width: 14),
+                    if (icon != null) ...[
+                      Icon(icon, size: 20, color: AppColors.muted),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(
+                      child: Text(
+                        value ?? tr('Choose'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: value == null ? AppColors.faint : AppColors.ink,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.expand_more, color: AppColors.muted),
+                    const SizedBox(width: 10),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -107,17 +152,22 @@ class PaymentModeChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSizes.gap,
-      runSpacing: AppSizes.gap,
-      children: [
-        for (final mode in PaymentMode.values)
-          ChoiceChip(
-            label: Text(paymentModeLabel(mode)),
-            selected: value == mode,
-            onSelected: (_) => onChanged(mode),
-          ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final mode in PaymentMode.values)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSizes.gap),
+              child: ChoiceChip(
+                showCheckmark: false,
+                label: Text(paymentModeLabel(mode)),
+                selected: value == mode,
+                onSelected: (_) => onChanged(mode),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

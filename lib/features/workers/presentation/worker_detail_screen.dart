@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
@@ -85,16 +87,28 @@ class WorkerDetailScreen extends ConsumerWidget {
         .where((s) => s.status == SettlementStatus.locked)
         .firstOrNull;
 
+    final since = DateFormat('MMM yyyy', uiDateLocale)
+        .format(parseIsoDate(worker.joinDate));
+    final phone = worker.phone;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(worker.name),
         actions: [
-          IconButton(
+          if (phone != null) ...[
+            AppIconButton(
+              icon: Icons.call_outlined,
+              tooltip: tr('Call worker'),
+              onPressed: () => launchUrl(Uri.parse('tel:$phone')),
+            ),
+            const SizedBox(width: 8),
+          ],
+          AppIconButton(
+            icon: Icons.edit_outlined,
             tooltip: tr('Edit'),
-            icon: const Icon(Icons.edit),
             onPressed: () => context.push(Routes.editWorker(workerId)),
           ),
           PopupMenuButton<String>(
+            tooltip: tr('More options'),
             onSelected: (value) {
               switch (value) {
                 case 'wage':
@@ -107,98 +121,127 @@ class WorkerDetailScreen extends ConsumerWidget {
               PopupMenuItem(value: 'wage', child: Text(tr('Change wage'))),
               PopupMenuItem(
                 value: 'active',
-                child: Text(worker.isActive ? tr('Mark as left') : tr('Make active')),
+                child: Text(
+                    worker.isActive ? tr('Mark as left') : tr('Make active')),
               ),
             ],
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: AppColors.amber100,
-                foregroundColor: AppColors.slate900,
-                child: Text(initials(worker.name),
-                    style: const TextStyle(fontSize: 22)),
+              Container(
+                width: 64,
+                height: 64,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.track,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Text(
+                  twoInitials(worker.name),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.inkSoft,
+                  ),
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      worker.name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.22,
+                      ),
+                    ),
+                    Text(
                       [
                         if (item.roleName != null) item.roleName!,
                         wageLabel(item.wage),
+                        tr('since {date}', {'date': since}),
                       ].join(' · '),
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: AppText.tabular.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.muted,
+                      ),
                     ),
-                    if (worker.phone != null)
-                      Text(formatIndianPhone(worker.phone!)),
+                    if (phone != null)
+                      Text(
+                        formatIndianPhone(phone),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                      ),
                     if (!worker.isActive)
-                      Text(tr('Inactive (left)'),
-                          style: TextStyle(color: AppColors.dangerText)),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: TagBadge(
+                          tr('Inactive (left)'),
+                          color: AppColors.dangerSurface,
+                          textColor: AppColors.dangerText,
+                        ),
+                      ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSizes.gutter),
+          const SizedBox(height: 16),
           summary.when(
             loading: () => const LinearProgressIndicator(),
-            error: (e, _) => Text(tr('Could not calculate: {e}', {'e': errorText(e)})),
-            data: (s) => WorkerSummaryCard(summary: s),
+            error: (e, _) =>
+                Text(tr('Could not calculate: {e}', {'e': errorText(e)})),
+            data: (s) => WorkerSummaryCard(
+              summary: s,
+              onAdvance: () => context.push(Routes.ledgerEntry(
+                  workerId: workerId, type: LedgerType.advance)),
+              onSettle: () => context.push(Routes.settle(workerId)),
+            ),
           ),
-          const SizedBox(height: AppSizes.gap),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () => context.push(Routes.ledgerEntry(
-                      workerId: workerId, type: LedgerType.advance)),
-                  icon: const Icon(Icons.add),
-                  label: Text(tr('Advance')),
-                ),
-              ),
-              const SizedBox(width: AppSizes.gap),
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(64, AppSizes.tapPrimary),
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final (label, onTap) in [
+                  (
+                    tr('+ Piece work'),
+                    () => context.push(Routes.pieceWork(workerId))
                   ),
-                  onPressed: () => context.push(Routes.settle(workerId)),
-                  icon: const Icon(Icons.task_alt),
-                  label: Text(tr('Settle')),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.gap),
-          Wrap(
-            spacing: AppSizes.gap,
-            children: [
-              ActionChip(
-                avatar: const Icon(Icons.square_foot, size: 18),
-                label: Text(tr('Piece work')),
-                onPressed: () => context.push(Routes.pieceWork(workerId)),
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.card_giftcard, size: 18),
-                label: Text(tr('Bonus')),
-                onPressed: () => context.push(Routes.ledgerEntry(
-                    workerId: workerId, type: LedgerType.bonus)),
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.remove_circle_outline, size: 18),
-                label: Text(tr('Deduction')),
-                onPressed: () => context.push(Routes.ledgerEntry(
-                    workerId: workerId, type: LedgerType.deduction)),
-              ),
-            ],
+                  (
+                    tr('+ Bonus'),
+                    () => context.push(Routes.ledgerEntry(
+                        workerId: workerId, type: LedgerType.bonus))
+                  ),
+                  (
+                    tr('− Deduction'),
+                    () => context.push(Routes.ledgerEntry(
+                        workerId: workerId, type: LedgerType.deduction))
+                  ),
+                  (
+                    tr('Change wage'),
+                    () => context.push(Routes.changeWage(workerId))
+                  ),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ActionChip(label: Text(label), onPressed: onTap),
+                  ),
+              ],
+            ),
           ),
           SectionTitle(tr('Attendance')),
           AttendanceCalendar(worker: worker),

@@ -91,6 +91,8 @@ class ListSkeleton extends StatelessWidget {
     return Shimmer(
       child: ListView.separated(
         physics: const NeverScrollableScrollPhysics(),
+        // Also used inside another list while one section loads.
+        shrinkWrap: true,
         padding: const EdgeInsets.all(AppSizes.gutter),
         itemCount: rows,
         separatorBuilder: (_, __) => const SizedBox(height: 12),

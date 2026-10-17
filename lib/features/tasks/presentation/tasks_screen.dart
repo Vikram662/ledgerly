@@ -4,12 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../app/app_drawer.dart';
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
-import '../../../core/utils/phone.dart';
+import '../../../core/utils/dates.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../data/tasks_repository.dart';
@@ -24,15 +23,17 @@ IconData taskTypeIcon(TaskType type) => switch (type) {
     };
 
 Color taskTypeColor(TaskType type) => switch (type) {
-      TaskType.siteVisit => AppColors.blue700,
-      TaskType.clientMeeting => AppColors.amber500,
-      TaskType.materialProcurement => Colors.teal,
+      TaskType.siteVisit => AppColors.primary,
+      TaskType.clientMeeting => AppColors.warningText,
+      TaskType.materialProcurement => AppColors.inkSoft,
       TaskType.workerPayment => AppColors.successText,
-      TaskType.engineerReview => AppColors.blue700,
-      TaskType.other => AppColors.slate600,
+      TaskType.engineerReview => AppColors.primary,
+      TaskType.other => AppColors.muted,
     };
 
-/// PRD C8: Site Tasks, Visits & Reminders Screen
+enum _Filter { upcoming, completed, all }
+
+/// PRD C8: site tasks, visits and reminders, grouped by day.
 class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
 
@@ -41,385 +42,380 @@ class TasksScreen extends ConsumerStatefulWidget {
 }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
-  int _filterIndex = 0; // 0 = Upcoming, 1 = All, 2 = Completed
+  _Filter _filter = _Filter.upcoming;
+
+  Future<void> _confirmDelete(String id) async {
+    final ok = await confirmDialog(
+      context,
+      title: tr('Delete task?'),
+      message: tr('This will cancel all scheduled reminder alarms.'),
+      confirmLabel: tr('Delete'),
+      destructive: true,
+    );
+    if (ok) await ref.read(tasksRepositoryProvider).deleteTask(id);
+  }
 
   @override
   Widget build(BuildContext context) {
     final tasksAsync = ref.watch(tasksProvider);
+    final isTab = Routes.isTab(Routes.tasks);
+    final calendar = AppIconButton(
+      icon: Icons.calendar_month_outlined,
+      tooltip: tr('Calendar'),
+      onPressed: () => context.push(Routes.calendar),
+    );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('Tasks & Reminders')),
-      ),
-      drawer: const AppDrawer(),
+      appBar: isTab
+          ? tabAppBar(tr('Tasks & reminders'), actions: [calendar])
+          : AppBar(
+              title: Text(tr('Tasks & reminders')),
+              actions: [calendar, const SizedBox(width: 8)],
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(Routes.addTask),
         icon: const Icon(Icons.add_alarm),
         label: Text(tr('New task')),
       ),
-      body: Column(
-        children: [
-          // Filter segmented tabs
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                _filterChip(tr('Upcoming'), 0),
-                const SizedBox(width: 8),
-                _filterChip(tr('All'), 1),
-                const SizedBox(width: 8),
-                _filterChip(tr('Completed'), 2),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: tasksAsync.when(
-              loading: () => const ListSkeleton(),
-              error: (e, _) => Center(child: Text(tr('Error loading tasks: {e}', {'e': errorText(e)}))),
-              data: (list) {
-                final filtered = list.where((item) {
-                  if (_filterIndex == 0) return !item.task.isCompleted;
-                  if (_filterIndex == 2) return item.task.isCompleted;
-                  return true;
-                }).toList();
+      body: tasksAsync.when(
+        loading: () => const ListSkeleton(),
+        error: (e, _) => Center(
+          child: Text(tr('Error loading tasks: {e}', {'e': errorText(e)})),
+        ),
+        data: (list) {
+          final upcoming = list.where((t) => !t.task.isCompleted).toList();
+          final filtered = switch (_filter) {
+            _Filter.upcoming => upcoming,
+            _Filter.completed => list.where((t) => t.task.isCompleted).toList(),
+            _Filter.all => list,
+          };
+          final groups = _group(filtered);
 
-                if (filtered.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.notifications_none_outlined,
-                    title: _filterIndex == 2
-                        ? tr('No completed tasks')
-                        : tr('No tasks scheduled'),
-                    message:
-                        tr('Schedule client meetings, site visits, or material follow-ups.'),
-                    actionLabel: tr('New task'),
-                    onAction: () => context.push(Routes.addTask),
-                  );
-                }
-
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, i) {
-                    final item = filtered[i];
-                    return _TaskCard(
-                      item: item,
-                      onToggleAlert: (active) => ref
-                          .read(tasksRepositoryProvider)
-                          .toggleAlert(item.task.id, active),
-                      onToggleCompleted: (completed) => ref
-                          .read(tasksRepositoryProvider)
-                          .toggleCompleted(item.task.id, completed),
-                      onDelete: () => _confirmDelete(context, item.task.id),
-                      onEdit: () => context.push(Routes.editTask(item.task.id)),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+            children: [
+              SegmentedTabs<_Filter>(
+                value: _filter,
+                options: {
+                  _Filter.upcoming:
+                      tr('Upcoming · {count}', {'count': upcoming.length}),
+                  _Filter.completed: tr('Completed'),
+                  _Filter.all: tr('All'),
+                },
+                onChanged: (f) => setState(() => _filter = f),
+              ),
+              if (filtered.isEmpty)
+                EmptyState(
+                  icon: Icons.notifications_none_outlined,
+                  title: _filter == _Filter.completed
+                      ? tr('No completed tasks')
+                      : tr('No tasks scheduled'),
+                  message: tr(
+                      'Schedule client meetings, site visits, or material follow-ups.'),
+                  actionLabel: tr('New task'),
+                  onAction: () => context.push(Routes.addTask),
+                )
+              else
+                for (final group in groups) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+                    child: Text(
+                      group.label.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: group.overdue
+                            ? AppColors.dangerText
+                            : AppColors.muted,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      border: Border.all(
+                        color: group.overdue
+                            ? const Color(0xFFFECDD3)
+                            : AppColors.border,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < group.items.length; i++) ...[
+                          if (i > 0) const Divider(height: 1),
+                          _TaskRow(
+                            item: group.items[i],
+                            overdue: group.overdue,
+                            onToggleCompleted: (done) => ref
+                                .read(tasksRepositoryProvider)
+                                .toggleCompleted(group.items[i].task.id, done),
+                            onToggleAlert: (on) => ref
+                                .read(tasksRepositoryProvider)
+                                .toggleAlert(group.items[i].task.id, on),
+                            onEdit: () => context
+                                .push(Routes.editTask(group.items[i].task.id)),
+                            onDelete: () =>
+                                _confirmDelete(group.items[i].task.id),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _filterChip(String label, int index) {
-    final selected = _filterIndex == index;
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => setState(() => _filterIndex = index),
-      selectedColor: AppColors.amber500,
-      labelStyle: TextStyle(
-        color: selected ? AppColors.slate900 : AppColors.slate600,
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-      ),
-    );
-  }
-
-  Future<void> _confirmDelete(BuildContext context, String id) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(tr('Delete task?')),
-        content: Text(tr('This will cancel all scheduled reminder alarms.')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(tr('Cancel')),
-          ),
-          FilledButton(
-            style:
-                FilledButton.styleFrom(backgroundColor: AppColors.dangerFill),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(tr('Delete')),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await ref.read(tasksRepositoryProvider).deleteTask(id);
+  /// Overdue first, then one group per day.
+  List<({String label, bool overdue, List<TaskReminderItem> items})> _group(
+    List<TaskReminderItem> tasks,
+  ) {
+    final now = DateTime.now();
+    final today = dateOnly(now);
+    final sorted = [...tasks]..sort((a, b) => a.dueAt.compareTo(b.dueAt));
+    final overdue = <TaskReminderItem>[];
+    final byDay = <DateTime, List<TaskReminderItem>>{};
+    for (final t in sorted) {
+      if (!t.task.isCompleted && t.dueAt.isBefore(now)) {
+        overdue.add(t);
+      } else {
+        byDay.putIfAbsent(dateOnly(t.dueAt), () => []).add(t);
+      }
     }
+    String label(DateTime day) {
+      final date = DateFormat('EEE d MMM', uiDateLocale).format(day);
+      final diff = day.difference(today).inDays;
+      if (diff == 0) return '${tr('Today')} · $date';
+      if (diff == 1) return '${tr('Tomorrow')} · $date';
+      return date;
+    }
+
+    return [
+      if (overdue.isNotEmpty)
+        (label: tr('Overdue'), overdue: true, items: overdue),
+      for (final entry in byDay.entries)
+        (label: label(entry.key), overdue: false, items: entry.value),
+    ];
   }
 }
 
-class _TaskCard extends StatelessWidget {
-  const _TaskCard({
+class _TaskRow extends StatelessWidget {
+  const _TaskRow({
     required this.item,
-    required this.onToggleAlert,
+    required this.overdue,
     required this.onToggleCompleted,
-    required this.onDelete,
+    required this.onToggleAlert,
     required this.onEdit,
+    required this.onDelete,
   });
 
   final TaskReminderItem item;
-  final ValueChanged<bool> onToggleAlert;
+  final bool overdue;
   final ValueChanged<bool> onToggleCompleted;
-  final VoidCallback onDelete;
+  final ValueChanged<bool> onToggleAlert;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final task = item.task;
-    final scheduledDate = DateTime.fromMillisecondsSinceEpoch(task.scheduledAt);
-    final isOverdue =
-        !task.isCompleted && scheduledDate.isBefore(DateTime.now());
+    final due = item.dueAt;
+    final done = task.isCompleted;
+    final time = DateFormat('h:mm a', uiDateLocale).format(due);
+    final when = overdue
+        ? '${DateFormat('EEE d MMM', uiDateLocale).format(due)} · $time'
+        : time;
+    final detail = [
+      when,
+      if (task.intervalMinutes != null)
+        tr('repeat every {intervalMinutes}m',
+            {'intervalMinutes': task.intervalMinutes}),
+      if (task.personName != null) task.personName!,
+    ].join(' · ');
+    final phone = task.phone;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: task.isCompleted
-              ? AppColors.border
-              : isOverdue
-                  ? AppColors.dangerFill.withOpacity(0.5)
-                  : AppColors.border,
-          width: isOverdue ? 1.5 : 1,
-        ),
-      ),
+    return InkWell(
+      onTap: onEdit,
+      onLongPress: onDelete,
       child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
+        padding: const EdgeInsets.fromLTRB(8, 10, 4, 12),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: Type chip, Date & Alert toggle
-            Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: taskTypeColor(task.taskType).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        taskTypeIcon(task.taskType),
-                        size: 14,
-                        color: taskTypeColor(task.taskType),
+            Semantics(
+              checked: done,
+              label: tr('Mark done'),
+              child: InkResponse(
+                onTap: () => onToggleCompleted(!done),
+                radius: 24,
+                child: SizedBox(
+                  width: 48,
+                  height: 40,
+                  child: Center(
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: done ? AppColors.successFill : AppColors.surface,
+                        border: Border.all(
+                          color:
+                              done ? AppColors.successFill : AppColors.inputBorder,
+                          width: 2,
+                        ),
                       ),
-                      const SizedBox(width: 5),
+                      child: done
+                          ? const Icon(Icons.check,
+                              size: 16, color: Colors.white)
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        decoration: done ? TextDecoration.lineThrough : null,
+                        color: done ? AppColors.muted : AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      detail,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: overdue ? FontWeight.w700 : FontWeight.w600,
+                        color: overdue ? AppColors.dangerText : AppColors.muted,
+                      ),
+                    ),
+                    if (task.notes != null && task.notes!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
                       Text(
-                        task.taskType.label,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                        task.notes!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.muted),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _Tag(
+                          task.taskType.label,
+                          icon: taskTypeIcon(task.taskType),
                           color: taskTypeColor(task.taskType),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                // Bell alert toggle
-                IconButton(
-                  icon: Icon(
-                    task.isAlertActive
-                        ? Icons.notifications_active
-                        : Icons.notifications_off_outlined,
-                    color: task.isAlertActive
-                        ? AppColors.amber500
-                        : AppColors.slate600.withOpacity(0.5),
-                    size: 22,
-                  ),
-                  tooltip:
-                      task.isAlertActive ? tr('Turn off alert') : tr('Turn on alert'),
-                  onPressed: () => onToggleAlert(!task.isAlertActive),
-                ),
-                // Edit & Delete menu
-                PopupMenuButton<String>(
-                  onSelected: (val) {
-                    if (val == 'edit') onEdit();
-                    if (val == 'delete') onDelete();
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(value: 'edit', child: Text(tr('Edit'))),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(tr('Delete'),
-                          style: TextStyle(color: AppColors.dangerText)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Title & Completed Checkbox
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Checkbox(
-                  value: task.isCompleted,
-                  onChanged: (v) => onToggleCompleted(v ?? false),
-                  activeColor: AppColors.successFill,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
-                          color: task.isCompleted
-                              ? AppColors.slate600
-                              : AppColors.slate900,
-                        ),
-                      ),
-                      if (item.jobTitle != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            tr('Site: {jobTitle}', {'jobTitle': item.jobTitle}),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.blue700,
-                              fontWeight: FontWeight.w600,
+                        if (item.jobTitle != null) _Tag(item.jobTitle!),
+                        if (phone != null) ...[
+                          _MiniButton(
+                            label: tr('Call'),
+                            onTap: () => launchUrl(Uri.parse('tel:$phone')),
+                          ),
+                          _MiniButton(
+                            label: tr('WhatsApp'),
+                            onTap: () => launchUrl(
+                              Uri.parse('https://wa.me/$phone?text=Hello'),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            // Time & Date row
-            Padding(
-              padding: const EdgeInsets.only(left: 48, top: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color:
-                        isOverdue ? AppColors.dangerText : AppColors.slate600,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    DateFormat('d MMM yyyy, h:mm a', uiDateLocale).format(scheduledDate),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isOverdue ? FontWeight.w700 : FontWeight.w500,
-                      color:
-                          isOverdue ? AppColors.dangerText : AppColors.slate600,
+                        ],
+                      ],
                     ),
-                  ),
-                  if (task.intervalMinutes != null)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        tr('• Repeat every {intervalMinutes}m', {'intervalMinutes': task.intervalMinutes}),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.slate600,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // Person & Phone action if available
-            if (task.personName != null || task.phone != null) ...[
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 48),
-                child: Row(
-                  children: [
-                    if (task.personName != null)
-                      Text(
-                        task.personName!,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    if (task.phone != null) ...[
-                      const SizedBox(width: 10),
-                      InkWell(
-                        onTap: () => launchUrl(Uri.parse('tel:${task.phone}')),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.phone,
-                                size: 13, color: AppColors.blue700),
-                            const SizedBox(width: 4),
-                            Text(
-                              formatIndianPhone(task.phone!),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.blue700,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.chat_bubble_outline,
-                            size: 16, color: Colors.green),
-                        tooltip: tr('WhatsApp'),
-                        onPressed: () => launchUrl(
-                          Uri.parse('https://wa.me/${task.phone}?text=Hello'),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-            ],
-
-            // Notes
-            if (task.notes != null && task.notes!.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.only(left: 48),
-                child: Text(
-                  task.notes!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.slate600.withValues(alpha: 0.8),
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
+            ),
+            IconButton(
+              icon: Icon(
+                task.isAlertActive
+                    ? Icons.notifications_active
+                    : Icons.notifications_off_outlined,
+                size: 20,
+                color: task.isAlertActive ? AppColors.warningText : AppColors.faint,
               ),
-            ],
+              tooltip: task.isAlertActive
+                  ? tr('Turn off alert')
+                  : tr('Turn on alert'),
+              onPressed: () => onToggleAlert(!task.isAlertActive),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _Tag extends StatelessWidget {
+  const _Tag(this.text, {this.icon, this.color = AppColors.inkSoft});
+
+  final String text;
+  final IconData? icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.page,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniButton extends StatelessWidget {
+  const _MiniButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+      ),
+      onPressed: onTap,
+      child: Text(label),
     );
   }
 }

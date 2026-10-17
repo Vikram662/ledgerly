@@ -187,8 +187,9 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final isInvoice = _kind == DocumentKind.invoice;
-    final title = widget.documentId == null
-        ? (isInvoice ? tr('New Bill') : tr('New Quotation'))
+    final isNew = widget.documentId == null;
+    final title = isNew
+        ? (isInvoice ? tr('New bill') : tr('New quotation'))
         : tr('Edit {number}', {'number': _number ?? ''});
     if (_loading) {
       return Scaffold(
@@ -199,10 +200,21 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
     final totals = _draft().totals;
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(leading: const CloseButton(), title: Text(title)),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
+          if (isNew) ...[
+            SegmentedTabs<DocumentKind>(
+              value: _kind,
+              options: {
+                DocumentKind.invoice: tr('Bill'),
+                DocumentKind.quotation: tr('Quotation'),
+              },
+              onChanged: (kind) => setState(() => _kind = kind),
+            ),
+            const SizedBox(height: 14),
+          ],
           ClientPickerField(
             clientId: _clientId,
             onChanged: (id) => setState(() {
@@ -210,112 +222,128 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
               _clientId = id;
             }),
           ),
+          const SizedBox(height: 14),
           if (_clientId != null) ...[
-            const SizedBox(height: 12),
             JobPickerField(
               clientId: _clientId,
               jobId: _jobId,
               onChanged: (id) => setState(() => _jobId = id),
             ),
+            const SizedBox(height: 14),
           ],
-          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: PickerField(
+                child: LabeledField(
                   label: tr('Date'),
-                  icon: Icons.event,
-                  value: dayFormat.format(_date),
-                  onTap: () async {
-                    final picked = await pickDate(context, initial: _date);
-                    if (picked != null) setState(() => _date = dateOnly(picked));
-                  },
+                  bottomGap: 0,
+                  child: TapField(
+                    value: dayFormat.format(_date),
+                    onTap: () async {
+                      final picked = await pickDate(context, initial: _date);
+                      if (picked != null) {
+                        setState(() => _date = dateOnly(picked));
+                      }
+                    },
+                  ),
                 ),
               ),
               if (isInvoice) ...[
-                const SizedBox(width: AppSizes.gap),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: PickerField(
+                  child: LabeledField(
                     label: tr('Due date'),
-                    value: _dueDate == null ? null : dayFormat.format(_dueDate!),
-                    onTap: () async {
-                      final picked =
-                          await pickDate(context, initial: _dueDate ?? _date);
-                      if (picked != null) {
-                        setState(() => _dueDate = dateOnly(picked));
-                      }
-                    },
+                    bottomGap: 0,
+                    child: TapField(
+                      value:
+                          _dueDate == null ? null : dayFormat.format(_dueDate!),
+                      placeholder: tr('None'),
+                      onTap: () async {
+                        final picked = await pickDate(context,
+                            initial: _dueDate ?? _date);
+                        if (picked != null) {
+                          setState(() => _dueDate = dateOnly(picked));
+                        }
+                      },
+                    ),
                   ),
                 ),
               ],
             ],
           ),
-          SectionTitle(
+          const SizedBox(height: 8),
+          SectionLabel(
             tr('Items & work'),
             trailing: _lines.isEmpty
-                ? TextButton.icon(
+                ? TextButton(
                     onPressed: _useTemplate,
-                    icon: const Icon(Icons.auto_awesome_motion),
-                    label: Text(tr('Template')),
+                    child: Text(tr('Start from template')),
                   )
                 : null,
           ),
-          if (_lines.isEmpty)
-            Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text(tr('No lines yet.'),
-                  style: TextStyle(color: AppColors.slate600)),
+          if (_lines.isNotEmpty)
+            CardList(
+              children: [
+                for (var i = 0; i < _lines.length; i++)
+                  _LineRow(line: _lines[i], onTap: () => _editLine(i)),
+              ],
             ),
-          for (var i = 0; i < _lines.length; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSizes.gap),
-              child: _LineCard(
-                index: i + 1,
-                line: _lines[i],
-                onTap: () => _editLine(i),
-              ),
-            ),
-          OutlinedButton.icon(
-            onPressed: _addLine,
-            icon: const Icon(Icons.add),
-            label: Text(tr('Add line')),
+          const SizedBox(height: 8),
+          _DashedButton(
+            icon: Icons.add,
+            label: tr('Add line'),
+            onTap: _addLine,
           ),
-          SectionTitle(tr('Discount & total')),
-          Row(
-            children: [
-              SegmentedButton<bool>(
-                showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: false, label: Text('₹')),
-                  ButtonSegment(value: true, label: Text('%')),
-                ],
-                selected: {_percentDiscount},
-                onSelectionChanged: (s) =>
-                    setState(() => _percentDiscount = s.first),
-              ),
-              const SizedBox(width: AppSizes.gap),
-              Expanded(
-                child: TextField(
-                  controller: _discount,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: _percentDiscount ? tr('Discount %') : tr('Discount ₹'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(tr('Round off to nearest rupee')),
-            value: _roundOff,
-            onChanged: (v) => setState(() => _roundOff = v),
-          ),
+          const SizedBox(height: 8),
+          SectionLabel(tr('Discount & total')),
           Panel(
             child: Column(
               children: [
                 AmountRow(label: tr('Subtotal'), paise: totals.subtotalPaise),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tr('Discount'),
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 92,
+                      child: SegmentedTabs<bool>(
+                        value: _percentDiscount,
+                        options: const {false: '₹', true: '%'},
+                        onChanged: (v) => setState(() => _percentDiscount = v),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 96,
+                      child: TextField(
+                        controller: _discount,
+                        textAlign: TextAlign.end,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: AppText.tabular.copyWith(
+                            fontSize: 15, fontWeight: FontWeight.w700),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          hintText: '0',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  tileColor: Colors.transparent,
+                  title: Text(tr('Round off to nearest rupee')),
+                  value: _roundOff,
+                  onChanged: (v) => setState(() => _roundOff = v ?? false),
+                ),
                 if (totals.discountPaise != 0)
                   AmountRow(
                     label: tr('Discount'),
@@ -325,72 +353,120 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
                 if (totals.roundOffPaise != 0)
                   AmountRow(label: tr('Round off'), paise: totals.roundOffPaise),
                 const Divider(),
-                AmountRow(label: tr('Total'), paise: totals.totalPaise, bold: true),
+                AmountRow(
+                    label: tr('Total'), paise: totals.totalPaise, bold: true),
               ],
             ),
           ),
-          SectionTitle(tr('Notes & terms')),
+          const SizedBox(height: 8),
+          SectionLabel(tr('Notes & terms')),
           TextField(
             controller: _notes,
             maxLines: 2,
-            decoration: InputDecoration(labelText: tr('Notes (optional)')),
+            decoration: InputDecoration(hintText: tr('Notes (optional)')),
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _terms,
-            maxLines: 5,
-            decoration: InputDecoration(
-              labelText: tr('Terms & conditions (one per line)'),
-            ),
+          LabeledField(
+            label: tr('Terms & conditions (one per line)'),
+            child: TextField(controller: _terms, maxLines: 5),
           ),
-          const SizedBox(height: 32),
         ],
       ),
       bottomNavigationBar: BottomActionBar(
         label: tr('Save {amount}', {'amount': formatPaise(totals.totalPaise)}),
         busy: _saving,
         onPressed: _save,
+        summaryLabel: tr('Total'),
+        summaryValue: formatPaise(totals.totalPaise),
       ),
     );
   }
 }
 
-class _LineCard extends StatelessWidget {
-  const _LineCard({
-    required this.index,
-    required this.line,
-    required this.onTap,
-  });
+class _LineRow extends StatelessWidget {
+  const _LineRow({required this.line, required this.onTap});
 
-  final int index;
   final DraftLine line;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final incomplete = line.qtyMilli <= 0 || line.ratePaise <= 0;
+    final incomplete = line.lineType != LineType.lumpSum &&
+        (line.qtyMilli <= 0 || line.ratePaise <= 0);
     final detail = line.lineType == LineType.lumpSum
         ? tr('Lump-sum')
         : '${formatMilli(line.qtyMilli)} ${line.unitCode ?? ''} × '
             '${formatPaise(line.ratePaise)}';
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radius),
-        side: BorderSide(
-          color: incomplete ? AppColors.warningFill : AppColors.border,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    line.name,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    incomplete ? tr('Tap to enter quantity and rate') : detail,
+                    style: AppText.tabular.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          incomplete ? AppColors.warningText : AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              incomplete ? '—' : formatPaise(line.amountPaise),
+              style: AppText.tabular.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: incomplete ? AppColors.faint : AppColors.ink,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, size: 20, color: AppColors.faint),
+          ],
         ),
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(radius: 14, child: Text('$index')),
-        title: Text(line.name),
-        subtitle: Text(incomplete ? tr('Tap to enter quantity and rate') : detail),
-        trailing: Text(
-          formatPaise(line.amountPaise),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
+    );
+  }
+}
+
+/// 52px button with a dashed-looking grey border ("+ Add line").
+class _DashedButton extends StatelessWidget {
+  const _DashedButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(AppSizes.tapSecondary),
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.inputBorder, width: 1.5),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
       ),
+      onPressed: onTap,
+      icon: Icon(icon),
+      label: Text(label),
     );
   }
 }

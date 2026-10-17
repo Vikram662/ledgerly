@@ -145,9 +145,14 @@ class _LedgerEntryScreenState extends ConsumerState<LedgerEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final worker = _workerId == null
+    final workers = ref.watch(activeWorkersProvider).valueOrNull ?? const [];
+    final item = _workerId == null
         ? null
-        : ref.watch(workerProvider(_workerId!)).valueOrNull?.worker;
+        : ref.watch(workerProvider(_workerId!)).valueOrNull;
+    final worker = item?.worker;
+    final balance = _workerId == null
+        ? null
+        : ref.watch(workerSummaryProvider(_workerId!)).valueOrNull?.balancePaise;
     final workerUpi = worker?.upiId?.trim();
     final canPayUpi = _type == LedgerType.advance &&
         _mode != PaymentMode.cash &&
@@ -155,66 +160,191 @@ class _LedgerEntryScreenState extends ConsumerState<LedgerEntryScreen> {
         workerUpi != null &&
         isValidUpiId(workerUpi);
     final isToday = DateUtils.isSameDay(_at, DateTime.now());
+
+    // Advance and deduction lower what is owed to the worker; bonus adds.
+    final paise = parseRupeesToPaise(_amount) ?? 0;
+    final newBalance = balance == null
+        ? null
+        : _type == LedgerType.bonus
+            ? balance + paise
+            : balance - paise;
+    String balanceText(int b) => b >= 0
+        ? tr('{amount} to pay', {'amount': formatPaise(b)})
+        : tr('{amount} owed to you', {'amount': formatPaise(-b)});
+
+    Future<void> choose() async {
+      final picked = await pickWorker(context, workers, item);
+      if (picked != null) setState(() => _workerId = picked.worker.id);
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text(tr('New {type}', {'type': ledgerTypeLabel(_type).toLowerCase()}))),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+      appBar: AppBar(
+        leading: const CloseButton(),
+        title: Text(tr('Add {type}', {'type': ledgerTypeLabel(_type).toLowerCase()})),
+      ),
+      body: Column(
         children: [
-          WorkerPickerField(
-            workerId: _workerId,
-            onChanged: (w) => setState(() => _workerId = w.worker.id),
-          ),
-          const SizedBox(height: 12),
-          SegmentedButton<LedgerType>(
-            segments: [
-              for (final t in _types)
-                ButtonSegment(value: t, label: Text(ledgerTypeLabel(t))),
-            ],
-            selected: {_type},
-            onSelectionChanged: (s) => setState(() => _type = s.first),
-          ),
-          AmountDisplay(text: _amount),
-          AmountPad(
-            value: _amount,
-            onChanged: (v) => setState(() => _amount = v),
-          ),
-          if (_type == LedgerType.advance) ...[
-            const SizedBox(height: 4),
-            PaymentModeChips(
-              value: _mode,
-              onChanged: (m) => setState(() => _mode = m),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              children: [
+                Material(
+                  color: AppColors.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    onTap: choose,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          worker == null
+                              ? const IconTile(Icons.person_outline,
+                                  color: AppColors.track)
+                              : InitialsAvatar(worker.name),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  worker?.name ?? tr('Choose worker'),
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800),
+                                ),
+                                if (balance != null)
+                                  Text(
+                                    tr('Balance {balance}',
+                                        {'balance': balanceText(balance)}),
+                                    style: AppText.tabular.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            worker == null ? tr('Choose') : tr('Change'),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SegmentedTabs<LedgerType>(
+                  value: _type,
+                  options: {for (final t in _types) t: ledgerTypeLabel(t)},
+                  onChanged: (t) => setState(() => _type = t),
+                ),
+                AmountDisplay(
+                  text: _amount,
+                  color: _type == LedgerType.bonus
+                      ? AppColors.successText
+                      : _type == LedgerType.advance
+                          ? AppColors.warningText
+                          : AppColors.ink,
+                  caption: newBalance == null || paise == 0
+                      ? null
+                      : tr('New balance {balance}',
+                          {'balance': balanceText(newBalance)}),
+                ),
+                if (_type == LedgerType.advance) ...[
+                  PaymentModeChips(
+                    value: _mode,
+                    onChanged: (m) => setState(() => _mode = m),
+                  ),
+                  if (canPayUpi) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _saving
+                          ? null
+                          : () => _payWithUpi(workerUpi!, worker!.name),
+                      icon: const Icon(Icons.qr_code_2),
+                      label: Text(tr('Pay with UPI app ({workerUpi})',
+                          {'workerUpi': workerUpi})),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                ],
+                TextField(
+                  controller: _note,
+                  decoration: InputDecoration(
+                    hintText: tr('Note (optional)'),
+                    isDense: true,
+                    filled: true,
+                    fillColor: AppColors.page,
+                    prefixIcon: const Icon(Icons.edit_note, color: AppColors.muted),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: TextButton(
+                      onPressed: _pickDateTime,
+                      child: Text(
+                        isToday
+                            ? tr('Today, {time}', {
+                                'time': TimeOfDay.fromDateTime(_at)
+                                    .format(context)
+                              })
+                            : dayTimeFormat.format(_at),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            if (canPayUpi) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _saving
-                    ? null
-                    : () => _payWithUpi(workerUpi!, worker!.name),
-                icon: const Icon(Icons.qr_code_2),
-                label: Text(tr('Pay with UPI app ({workerUpi})', {'workerUpi': workerUpi})),
-              ),
-            ],
-          ],
-          const SizedBox(height: 12),
-          TextField(
-            controller: _note,
-            decoration: InputDecoration(labelText: tr('Note (optional)')),
           ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.schedule),
-            title: Text(isToday
-                ? tr('Today, {time}', {'time': TimeOfDay.fromDateTime(_at).format(context)})
-                : dayTimeFormat.format(_at)),
-            trailing: Text(tr('Change')),
-            onTap: _pickDateTime,
+          DecoratedBox(
+            decoration: const BoxDecoration(color: AppColors.surface),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AmountPad(
+                      value: _amount,
+                      onChanged: (v) => setState(() => _amount = v),
+                    ),
+                    const SizedBox(height: 4),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox.square(
+                              dimension: 24,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : Text(tr('Save {type}',
+                              {'type': ledgerTypeLabel(_type).toLowerCase()})),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      bottomNavigationBar: BottomActionBar(
-        label: tr('Save'),
-        busy: _saving,
-        onPressed: _save,
       ),
     );
   }

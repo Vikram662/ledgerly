@@ -88,13 +88,12 @@ class _PadKey extends StatelessWidget {
   Widget build(BuildContext context) {
     final isBackspace = label == '⌫';
     return Material(
-      color: AppColors.surface,
+      color: AppColors.page,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSizes.radius),
-        side: const BorderSide(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadius.input),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSizes.radius),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         onTap: enabled ? onTap : null,
         child: SizedBox(
           height: 60,
@@ -104,9 +103,10 @@ class _PadKey extends StatelessWidget {
                 : Text(
                     label,
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: enabled ? AppColors.slate900 : AppColors.border,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: enabled ? AppColors.ink : AppColors.faint,
                     ),
                   ),
           ),
@@ -116,22 +116,52 @@ class _PadKey extends StatelessWidget {
   }
 }
 
-/// Large amount display above an [AmountPad].
+/// Large amount display above an [AmountPad]: grey label, big amount,
+/// optional caption (e.g. the new balance).
 class AmountDisplay extends StatelessWidget {
-  const AmountDisplay({super.key, required this.text});
+  const AmountDisplay({
+    super.key,
+    required this.text,
+    this.label,
+    this.caption,
+    this.color = AppColors.ink,
+  });
 
   final String text;
+  final String? label;
+  final String? caption;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     final paise = parseRupeesToPaise(text);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(
-        text.isEmpty ? '₹0' : (paise == null ? '₹$text' : formatPaise(paise)),
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+    const grey = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+      color: AppColors.muted,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Text(label ?? tr('Amount'), style: grey),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              text.isEmpty ? '₹0' : (paise == null ? '₹$text' : formatPaise(paise)),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1.4,
+                fontFeatures: const [FontFeature.tabularFigures()],
+                color: text.isEmpty ? AppColors.faint : color,
+              ),
+            ),
+          ),
+          if (caption != null)
+            Text(caption!, style: grey.copyWith(fontSize: 12)),
+        ],
       ),
     );
   }

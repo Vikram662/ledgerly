@@ -26,19 +26,27 @@ class WorkerPickerField extends ConsumerWidget {
       icon: Icons.person,
       value: selected?.worker.name,
       onTap: () async {
-        final picked = await showPickerSheet<WorkerListItem>(
-          context,
-          title: tr('Choose worker'),
-          options: workers,
-          label: (w) => w.worker.name,
-          subtitle: (w) => [
-            if (w.roleName != null) w.roleName!,
-            wageLabel(w.wage),
-          ].join(' · '),
-          selected: selected,
-        );
+        final picked = await pickWorker(context, workers, selected);
         if (picked != null) onChanged(picked);
       },
     );
   }
 }
+
+/// Sheet listing [workers]; returns the one tapped.
+Future<WorkerListItem?> pickWorker(
+  BuildContext context,
+  List<WorkerListItem> workers,
+  WorkerListItem? selected,
+) =>
+    showPickerSheet<WorkerListItem>(
+      context,
+      title: tr('Choose worker'),
+      options: workers,
+      label: (w) => w.worker.name,
+      subtitle: (w) => [
+        if (w.roleName != null) w.roleName!,
+        wageLabel(w.wage),
+      ].join(' · '),
+      selected: selected,
+    );

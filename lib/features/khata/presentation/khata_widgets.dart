@@ -24,70 +24,176 @@ String ledgerTypeLabel(LedgerType type) => switch (type) {
       LedgerType.carryForward => tr('Carry forward'),
     };
 
-/// PRD KH-03 worker summary card: days, earned, advance, balance.
+IconData ledgerTypeIcon(LedgerType type) => switch (type) {
+      LedgerType.advance => Icons.payments_outlined,
+      LedgerType.payment => Icons.north_east,
+      LedgerType.bonus => Icons.card_giftcard,
+      LedgerType.deduction => Icons.remove_circle_outline,
+      LedgerType.emi => Icons.event_repeat,
+      LedgerType.reversal => Icons.undo,
+      LedgerType.carryForward => Icons.redo,
+    };
+
+/// PRD KH-03 worker summary card: open period, balance, days, earned,
+/// advance, then Advance and Settle buttons.
 class WorkerSummaryCard extends StatelessWidget {
-  const WorkerSummaryCard({super.key, required this.summary});
+  const WorkerSummaryCard({
+    super.key,
+    required this.summary,
+    this.onAdvance,
+    this.onSettle,
+  });
 
   final WorkerSummary summary;
+  final VoidCallback? onAdvance;
+  final VoidCallback? onSettle;
 
   @override
   Widget build(BuildContext context) {
     final r = summary.result;
     final balance = summary.balancePaise;
     final counts = summary.counts;
+    const label = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: AppColors.muted,
+    );
+    final value =
+        AppText.tabular.copyWith(fontSize: 16, fontWeight: FontWeight.w800);
+
+    Widget stat(String name, String text, [Color? color]) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: label),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(text, style: value.copyWith(color: color)),
+              ),
+            ],
+          ),
+        );
+
     return Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            tr('Since {date}', {'date': dayFormat.format(summary.periodFrom)}),
-            style: const TextStyle(color: AppColors.slate600),
-          ),
-          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
-                child: Text(tr('Paid days'), style: Theme.of(context).textTheme.bodyLarge),
+                child: Text(
+                  tr('Since {date}',
+                      {'date': dayFormat.format(summary.periodFrom)}),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.muted,
+                  ),
+                ),
               ),
-              Text(
-                _days(r.paidDays),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              TagBadge(
+                tr('Open period'),
+                color: AppColors.successSurface,
+                textColor: AppColors.successText,
               ),
             ],
           ),
+          const SizedBox(height: 14),
           Text(
-            tr('P {present} · ½ {half} · A {absent}', {
-                  'present': counts.present,
-                  'half': counts.half,
-                  'absent': counts.absent,
-                }) +
-                (counts.off > 0
-                    ? tr(' · Off {count}', {'count': counts.off})
-                    : ''),
-            style: const TextStyle(color: AppColors.slate600),
-          ),
-          const Divider(),
-          AmountRow(label: tr('Earned'), paise: r.earningPaise),
-          if (r.piecePaise > 0)
-            AmountRow(label: tr('  incl. piece work'), paise: r.piecePaise),
-          if (r.otPaise > 0) AmountRow(label: tr('  incl. OT'), paise: r.otPaise),
-          AmountRow(
-            label: tr('Advance taken'),
-            paise: r.advancePaise,
-            color: AppColors.warningText,
-          ),
-          if (r.previousBalancePaise != 0)
-            AmountRow(
-              label: tr('Previous balance'),
-              paise: r.previousBalancePaise,
+            balance >= 0 ? tr('Balance to pay') : tr('Worker owes'),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.muted,
             ),
-          const Divider(),
-          AmountRow(
-            label: balance >= 0 ? tr('Balance to pay') : tr('Worker owes'),
-            paise: balance.abs(),
-            bold: true,
-            color: balance >= 0 ? AppColors.successText : AppColors.dangerText,
           ),
+          Text(
+            formatPaise(balance.abs()),
+            style: AppText.tabular.copyWith(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.64,
+              color: balance >= 0 ? AppColors.successText : AppColors.dangerText,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              stat(tr('Days'), _days(r.paidDays)),
+              const SizedBox(width: 8),
+              stat(tr('Earned'), formatPaise(r.earningPaise)),
+              const SizedBox(width: 8),
+              stat(tr('Advance'), formatPaise(r.advancePaise),
+                  AppColors.warningText),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            [
+              tr('P {present} · ½ {half} · A {absent}', {
+                'present': counts.present,
+                'half': counts.half,
+                'absent': counts.absent,
+              }),
+              if (counts.off > 0) tr('Off {count}', {'count': counts.off}),
+              if (r.piecePaise > 0)
+                tr('Piece {amount}', {'amount': formatPaise(r.piecePaise)}),
+              if (r.otPaise > 0)
+                tr('OT {amount}', {'amount': formatPaise(r.otPaise)}),
+              if (r.previousBalancePaise != 0)
+                tr('Previous {amount}',
+                    {'amount': formatPaise(r.previousBalancePaise)}),
+            ].join(' · '),
+            style: AppText.tabular.merge(label),
+          ),
+          if (onAdvance != null || onSettle != null) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                if (onAdvance != null)
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.amber500,
+                        foregroundColor: AppColors.ink,
+                        minimumSize: const Size(0, AppSizes.tapSecondary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input),
+                        ),
+                      ),
+                      onPressed: onAdvance,
+                      icon: const Icon(Icons.add),
+                      label: Text(tr('Advance')),
+                    ),
+                  ),
+                if (onAdvance != null && onSettle != null)
+                  const SizedBox(width: 8),
+                if (onSettle != null)
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.ink,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, AppSizes.tapSecondary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input),
+                        ),
+                      ),
+                      onPressed: onSettle,
+                      child: FittedBox(
+                        child: Text(balance > 0
+                            ? tr('Settle {amount}',
+                                {'amount': formatPaise(balance)})
+                            : tr('Settle')),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -140,6 +246,12 @@ class LedgerTile extends ConsumerWidget {
     ].join(' · ');
 
     return ListTile(
+      minVerticalPadding: 12,
+      leading: IconTile(
+        ledgerTypeIcon(type),
+        color: isMoneyOut ? AppColors.amber100 : AppColors.page,
+        iconColor: isMoneyOut ? AppColors.warningText : AppColors.inkSoft,
+      ),
       title: Text(
         title,
         style: item.reversed

@@ -28,13 +28,24 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: AppColors.slate600),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Icon(icon, size: 32, color: AppColors.muted),
+            ),
             const SizedBox(height: AppSizes.gutter),
-            Text(title, style: textTheme.titleLarge, textAlign: TextAlign.center),
+            Text(title,
+                style: textTheme.titleMedium, textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.gap),
             Text(
               message,
-              style: textTheme.bodyLarge?.copyWith(color: AppColors.slate600),
+              style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[

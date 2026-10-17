@@ -140,89 +140,98 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final amountStyle =
+        AppText.tabular.copyWith(fontSize: 17, fontWeight: FontWeight.w700);
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Piece work'))),
+      appBar: AppBar(
+        leading: const CloseButton(),
+        title: Text(tr('Piece work')),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           WorkerPickerField(
             workerId: _workerId,
             onChanged: (w) => setState(() => _workerId = w.worker.id),
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _description,
-            decoration: InputDecoration(
-              labelText: tr('Work'),
-              hintText: tr('e.g. Floor tiling'),
-              suffixIcon: IconButton(
-                tooltip: tr('Choose from list'),
-                icon: const Icon(Icons.list),
-                onPressed: _pickItem,
+          const SizedBox(height: 14),
+          LabeledField(
+            label: tr('Work'),
+            child: TextField(
+              controller: _description,
+              decoration: InputDecoration(
+                hintText: tr('e.g. Floor tiling'),
+                suffixIcon: IconButton(
+                  tooltip: tr('Choose from list'),
+                  icon: const Icon(Icons.list),
+                  onPressed: _pickItem,
+                ),
               ),
+              onChanged: (_) => _itemId = null,
             ),
-            onChanged: (_) => _itemId = null,
           ),
-          const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: TextField(
-                  controller: _qty,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(fontSize: 20),
-                  decoration: InputDecoration(
-                    labelText: tr('Quantity'),
-                    suffixIcon: IconButton(
-                      tooltip: tr('Measure (L × W × H)'),
-                      icon: const Icon(Icons.straighten),
-                      onPressed: _measure,
-                    ),
+                child: LabeledField(
+                  label: tr('Quantity'),
+                  child: TextField(
+                    controller: _qty,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: amountStyle,
                   ),
                 ),
               ),
-              const SizedBox(width: AppSizes.gap),
+              const SizedBox(width: 10),
               Expanded(
-                child: PickerField(
-                  label: tr('Unit'),
-                  value: _unit?.name,
-                  onTap: _pickUnit,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: PickerField(
+                    label: tr('Unit'),
+                    value: _unit?.name,
+                    onTap: _pickUnit,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _rate,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(fontSize: 20),
-            decoration: InputDecoration(
-              labelText: _unit == null
-                  ? tr('Rate')
-                  : tr('Rate per {unit}', {'unit': _unit!.name}),
-              prefixText: '₹ ',
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _measure,
+              icon: const Icon(Icons.straighten),
+              label: Text(tr('Measure (L × W × H)')),
             ),
           ),
-          const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(dayFormat.format(_date)),
-            trailing: Text(tr('Change')),
-            onTap: () async {
-              final picked =
-                  await pickDate(context, initial: _date, last: DateTime.now());
-              if (picked != null) setState(() => _date = dateOnly(picked));
-            },
+          const SizedBox(height: 6),
+          LabeledField(
+            label: _unit == null
+                ? tr('Rate')
+                : tr('Rate per {unit}', {'unit': _unit!.name}),
+            child: TextField(
+              controller: _rate,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: amountStyle,
+              decoration: const InputDecoration(prefixText: '₹ '),
+            ),
+          ),
+          LabeledField(
+            label: tr('Date'),
+            child: TapField(
+              value: dayFormat.format(_date),
+              onTap: () async {
+                final picked = await pickDate(context,
+                    initial: _date, last: DateTime.now());
+                if (picked != null) setState(() => _date = dateOnly(picked));
+              },
+            ),
           ),
           JobPickerField(
             jobId: _jobId,
             onChanged: (id) => setState(() => _jobId = id),
-          ),
-          const SizedBox(height: 8),
-          Panel(
-            child: AmountRow(label: tr('Amount'), paise: _amount, bold: true),
           ),
         ],
       ),
@@ -230,6 +239,8 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
         label: tr('Save'),
         busy: _saving,
         onPressed: _save,
+        summaryLabel: tr('Amount'),
+        summaryValue: formatPaise(_amount),
       ),
     );
   }

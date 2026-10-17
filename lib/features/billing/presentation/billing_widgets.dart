@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
+import '../../../core/db/database.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/dates.dart';
@@ -43,36 +44,7 @@ class DocumentTile extends StatelessWidget {
     final invoice = doc.kind == DocumentKind.invoice;
     final open = doc.status == DocumentStatus.sent ||
         doc.status == DocumentStatus.partiallyPaid;
-    final today = dateOnly(DateTime.now());
-    final due = doc.dueDate == null ? null : parseIsoDate(doc.dueDate!);
-    final lateDays = due == null ? 0 : today.difference(due).inDays;
-    final overdue = invoice && open && lateDays > 0;
     final partPaid = invoice && open && item.paidPaise > 0;
-
-    final (String pill, Color bg, Color fg) = switch (doc.status) {
-      _ when overdue => (
-          trPlural(lateDays, 'Overdue 1 day', 'Overdue {count} days'),
-          AppColors.dangerSurface,
-          AppColors.dangerText,
-        ),
-      DocumentStatus.draft => (tr('Draft'), AppColors.page, AppColors.muted),
-      DocumentStatus.sent when invoice => (
-          due == null
-              ? tr('Unpaid')
-              : tr('Unpaid · due {date}',
-                  {'date': DateFormat('d MMM', uiDateLocale).format(due)}),
-          AppColors.warningSurface,
-          AppColors.warningText,
-        ),
-      DocumentStatus.sent =>
-        (tr('Sent'), AppColors.primaryTint, AppColors.primary),
-      DocumentStatus.partiallyPaid =>
-        (tr('Part paid'), AppColors.primaryTint, AppColors.primary),
-      DocumentStatus.paid =>
-        (tr('Paid'), AppColors.successSurface, AppColors.successText),
-      DocumentStatus.cancelled =>
-        (tr('Cancelled'), AppColors.page, AppColors.muted),
-    };
 
     const muted = TextStyle(
       fontSize: 12,
@@ -131,7 +103,7 @@ class DocumentTile extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                _Pill(pill, bg, fg),
+                DocumentPill(document: doc, paidPaise: item.paidPaise),
                 const Spacer(),
                 if (invoice && open)
                   Text(
@@ -153,30 +125,53 @@ class DocumentTile extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  const _Pill(this.text, this.color, this.textColor);
+/// Status pill of a bill: overdue days, unpaid with due date, part paid…
+class DocumentPill extends StatelessWidget {
+  const DocumentPill({
+    super.key,
+    required this.document,
+    required this.paidPaise,
+  });
 
-  final String text;
-  final Color color;
-  final Color textColor;
+  final BillDocument document;
+  final int paidPaise;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadius.badge),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: textColor,
+    final doc = document;
+    final invoice = doc.kind == DocumentKind.invoice;
+    final open = doc.status == DocumentStatus.sent ||
+        doc.status == DocumentStatus.partiallyPaid;
+    final today = dateOnly(DateTime.now());
+    final due = doc.dueDate == null ? null : parseIsoDate(doc.dueDate!);
+    final lateDays = due == null ? 0 : today.difference(due).inDays;
+    final overdue = invoice && open && lateDays > 0;
+
+    final (String text, Color bg, Color fg) = switch (doc.status) {
+      _ when overdue => (
+          trPlural(lateDays, 'Overdue 1 day', 'Overdue {count} days'),
+          AppColors.dangerSurface,
+          AppColors.dangerText,
         ),
-      ),
-    );
+      DocumentStatus.draft => (tr('Draft'), AppColors.page, AppColors.muted),
+      DocumentStatus.sent when invoice => (
+          due == null
+              ? tr('Unpaid')
+              : tr('Unpaid · due {date}',
+                  {'date': DateFormat('d MMM', uiDateLocale).format(due)}),
+          AppColors.warningSurface,
+          AppColors.warningText,
+        ),
+      DocumentStatus.sent =>
+        (tr('Sent'), AppColors.primaryTint, AppColors.primary),
+      DocumentStatus.partiallyPaid =>
+        (tr('Part paid'), AppColors.primaryTint, AppColors.primary),
+      DocumentStatus.paid =>
+        (tr('Paid'), AppColors.successSurface, AppColors.successText),
+      DocumentStatus.cancelled =>
+        (tr('Cancelled'), AppColors.page, AppColors.muted),
+    };
+    return TagBadge(text, color: bg, textColor: fg);
   }
 }
 

@@ -152,142 +152,178 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
     final roles = ref.watch(rolesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? tr('Edit Worker') : tr('Add Worker'))),
+      appBar: AppBar(
+        leading: const CloseButton(),
+        title: Text(_isEdit ? tr('Edit worker') : tr('Add worker')),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.gutter),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            TextFormField(
-              controller: _name,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: tr('Name')),
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? tr('Enter name') : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: tr('Mobile number (optional)'),
-                prefixText: '+91 ',
-              ),
-              validator: (value) => (value == null ||
-                      value.trim().isEmpty ||
-                      normalizeIndianPhone(value) != null)
-                  ? null
-                  : tr('Enter a valid 10-digit mobile number'),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _upi,
-              decoration: InputDecoration(
-                labelText: tr('UPI ID (optional)'),
-                hintText: 'name@bank',
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty || isValidUpiId(v))
-                      ? null
-                      : tr('Enter a UPI ID like name@okaxis'),
-            ),
-            SectionTitle(
-              tr('Role'),
-              trailing: TextButton.icon(
-                onPressed: _addRole,
-                icon: const Icon(Icons.add),
-                label: Text(tr('New role')),
+            LabeledField(
+              label: tr('Name'),
+              child: TextFormField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(hintText: tr('Worker name')),
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? tr('Enter name')
+                    : null,
               ),
             ),
-            roles.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (error, _) => Text(tr('Could not load roles: {error}', {'error': errorText(error)})),
-              data: (list) => Wrap(
-                spacing: AppSizes.gap,
-                runSpacing: AppSizes.gap,
-                children: [
-                  for (final role in list)
-                    ChoiceChip(
-                      label: Text(role.name),
-                      selected: _roleId == role.id,
-                      onSelected: (selected) =>
-                          setState(() => _roleId = selected ? role.id : null),
+            LabeledField(
+              label: tr('Mobile number'),
+              optional: true,
+              child: TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  hintText: tr('10-digit number'),
+                  prefixText: '+91 ',
+                ),
+                validator: (value) => (value == null ||
+                        value.trim().isEmpty ||
+                        normalizeIndianPhone(value) != null)
+                    ? null
+                    : tr('Enter a valid 10-digit mobile number'),
+              ),
+            ),
+            LabeledField(
+              label: tr('Role'),
+              child: roles.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (error, _) => Text(tr('Could not load roles: {error}',
+                    {'error': errorText(error)})),
+                data: (list) => Wrap(
+                  spacing: AppSizes.gap,
+                  runSpacing: AppSizes.gap,
+                  children: [
+                    for (final role in list)
+                      ChoiceChip(
+                        showCheckmark: false,
+                        label: Text(role.name),
+                        selected: _roleId == role.id,
+                        onSelected: (selected) =>
+                            setState(() => _roleId = selected ? role.id : null),
+                      ),
+                    ActionChip(
+                      label: Text(tr('+ New role')),
+                      onPressed: _addRole,
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (!_isEdit) ...[
               SectionTitle(tr('Wage')),
-              SegmentedButton<WageModel>(
-                segments: [
-                  ButtonSegment(value: WageModel.daily, label: Text(tr('Daily'))),
-                  ButtonSegment(
-                      value: WageModel.monthly, label: Text(tr('Monthly'))),
-                  ButtonSegment(
-                      value: WageModel.piece, label: Text(tr('Piece-rate'))),
-                ],
-                selected: {_model},
-                onSelectionChanged: (selection) =>
-                    setState(() => _model = selection.first),
-              ),
-              const SizedBox(height: 12),
-              if (_model == WageModel.piece)
-                Text(
-                  tr('Rate is entered with each piece-work entry (e.g. per sq.ft).'),
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: AppColors.slate600),
-                )
-              else
-                TextFormField(
-                  controller: _rate,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(fontSize: 20),
-                  decoration: InputDecoration(
-                    labelText: _model == WageModel.daily
-                        ? tr('Rate per day')
-                        : tr('Salary per month'),
-                    prefixText: '₹ ',
-                  ),
-                  validator: (v) => _validateAmount(v, isRequired: true),
-                ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _otRate,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: tr('OT rate per hour (optional)'),
-                  prefixText: '₹ ',
-                ),
-                validator: (v) => _validateAmount(v, isRequired: false),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event),
-                title: Text(tr('Joining date')),
-                subtitle: Text(dayFormat.format(_joinDate)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () async {
-                  final picked = await pickDate(
-                    context,
-                    initial: _joinDate,
-                    last: DateTime.now(),
-                  );
-                  if (picked != null) {
-                    setState(() => _joinDate = dateOnly(picked));
-                  }
+              SegmentedTabs<WageModel>(
+                value: _model,
+                options: {
+                  WageModel.daily: tr('Daily'),
+                  WageModel.monthly: tr('Monthly'),
+                  WageModel.piece: tr('Piece-rate'),
                 },
+                onChanged: (model) => setState(() => _model = model),
+              ),
+              const SizedBox(height: 14),
+              if (_model == WageModel.piece)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Text(
+                    tr('Rate is entered with each piece-work entry (e.g. per sq.ft).'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_model != WageModel.piece) ...[
+                    Expanded(
+                      child: LabeledField(
+                        label: _model == WageModel.daily
+                            ? tr('Rate per day')
+                            : tr('Salary per month'),
+                        child: TextFormField(
+                          controller: _rate,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          style: AppText.tabular.copyWith(
+                              fontSize: 17, fontWeight: FontWeight.w700),
+                          decoration: const InputDecoration(prefixText: '₹ '),
+                          validator: (v) => _validateAmount(v, isRequired: true),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: LabeledField(
+                      label: tr('OT per hour'),
+                      optional: true,
+                      child: TextFormField(
+                        controller: _otRate,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: AppText.tabular.copyWith(
+                            fontSize: 17, fontWeight: FontWeight.w700),
+                        decoration: const InputDecoration(prefixText: '₹ '),
+                        validator: (v) => _validateAmount(v, isRequired: false),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!_isEdit) ...[
+                  Expanded(
+                    child: LabeledField(
+                      label: tr('Joining date'),
+                      child: TapField(
+                        value: dayFormat.format(_joinDate),
+                        onTap: () async {
+                          final picked = await pickDate(
+                            context,
+                            initial: _joinDate,
+                            last: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setState(() => _joinDate = dateOnly(picked));
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: LabeledField(
+                    label: tr('UPI ID'),
+                    optional: true,
+                    child: TextFormField(
+                      controller: _upi,
+                      decoration: const InputDecoration(hintText: 'name@okaxis'),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty || isValidUpiId(v))
+                              ? null
+                              : tr('Enter a UPI ID like name@okaxis'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
       bottomNavigationBar: BottomActionBar(
-        label: tr('Save'),
+        label: _isEdit ? tr('Save') : tr('Save worker'),
         busy: _saving,
         onPressed: _save,
       ),

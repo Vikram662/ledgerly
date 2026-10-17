@@ -109,16 +109,25 @@ class AmountRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontSize: bold ? 20 : 16,
-      fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+    final style = AppText.tabular.copyWith(
+      fontSize: bold ? 18 : 15,
+      fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
       color: color,
     );
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: TextStyle(fontSize: bold ? 18 : 16))),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: bold ? 16 : 14,
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                color: bold ? AppColors.ink : AppColors.inkSoft,
+              ),
+            ),
+          ),
           Text('$prefix${formatPaise(paise)}', style: style),
         ],
       ),
@@ -367,6 +376,104 @@ class FieldLabel extends StatelessWidget {
           fontSize: 13,
           fontWeight: FontWeight.w700,
           color: AppColors.inkSoft,
+        ),
+      ),
+    );
+  }
+}
+
+/// Form field with its label above it (wireframe forms), and an optional
+/// grey help line under it.
+class LabeledField extends StatelessWidget {
+  const LabeledField({
+    super.key,
+    required this.label,
+    required this.child,
+    this.optional = false,
+    this.help,
+    this.bottomGap = 14,
+  });
+
+  final String label;
+  final Widget child;
+  final bool optional;
+  final String? help;
+  final double bottomGap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomGap),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FieldLabel(label, optional: optional),
+          child,
+          if (help != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 2),
+              child: Text(
+                help!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tappable read-only field (date, picker) styled like an input.
+class TapField extends StatelessWidget {
+  const TapField({
+    super.key,
+    required this.value,
+    required this.onTap,
+    this.icon = Icons.calendar_today_outlined,
+    this.placeholder,
+  });
+
+  final String? value;
+  final VoidCallback onTap;
+  final IconData icon;
+  final String? placeholder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        side: const BorderSide(color: AppColors.inputBorder),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        onTap: onTap,
+        child: Container(
+          height: AppSizes.tapSecondary,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value ?? placeholder ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: value == null ? AppColors.faint : AppColors.ink,
+                  ),
+                ),
+              ),
+              Icon(icon, size: 20, color: AppColors.muted),
+            ],
+          ),
         ),
       ),
     );
@@ -964,6 +1071,8 @@ class BottomActionBar extends StatelessWidget {
     required this.onPressed,
     this.busy = false,
     this.top,
+    this.summaryLabel,
+    this.summaryValue,
   });
 
   final String label;
@@ -971,8 +1080,75 @@ class BottomActionBar extends StatelessWidget {
   final bool busy;
   final Widget? top;
 
+  /// Optional total shown left of the button ("Amount ₹9,240").
+  final String? summaryLabel;
+  final String? summaryValue;
+
   @override
   Widget build(BuildContext context) {
+    final button = FilledButton(
+      onPressed: busy ? null : onPressed,
+      child: busy
+          ? const SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            )
+          : Text(label),
+    );
+    if (summaryValue != null) {
+      return DecoratedBox(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.divider)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (top != null) top!,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (summaryLabel != null)
+                            Text(
+                              summaryLabel!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              summaryValue!,
+                              style: AppText.tabular.copyWith(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: button),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: AppColors.surface,
