@@ -48,4 +48,13 @@ Write-Mark 'assets/logo/app_icon.png' 1024 $true
 Write-Mark 'assets/icon/splash_logo.png' 512 $false
 # Android 12 masks its splash icon; keep the mark inside the safe circle.
 Write-Mark 'assets/icon/splash_android12.png' 960 $false 0.65
+$densities = @{ mdpi = 1; hdpi = 1.5; xhdpi = 2; xxhdpi = 3; xxxhdpi = 4 }
+foreach ($density in $densities.Keys) {
+    $ratio = $densities[$density]
+    Write-Mark "android/app/src/main/res/mipmap-$density/ic_launcher.png" ([int](48*$ratio)) $true
+    Write-Mark "android/app/src/main/res/drawable-$density/ic_launcher_foreground.png" ([int](108*$ratio)) $false
+    Write-Mark "android/app/src/main/res/drawable-$density/splash.png" ([int](128*$ratio)) $false
+    Write-Mark "android/app/src/main/res/drawable-$density/android12splash.png" ([int](240*$ratio)) $false 0.65
+    Write-Mark "android/app/src/main/res/drawable-night-$density/android12splash.png" ([int](240*$ratio)) $false 0.65
+}
 Write-Output 'Brand SVG and PNG assets regenerated.'
