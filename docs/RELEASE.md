@@ -51,7 +51,7 @@ Google Cloud ke **Android OAuth client** mein dono SHA-1 daalne honge:
 ## Play Store par pehli baar
 
 1. Google Play Console account banayein (one-time $25 fee).
-2. Naya app banayein. Package name `com.thekedaar.thekedaar` hai, jo PRD D-6 tay hone par badal sakte hain. **Pehla upload ke baad package name kabhi nahi badal sakta.**
+2. Naya app banayein. Package name `com.ledgerly.app` hai, **Pehla upload ke baad package name kabhi nahi badal sakta.**
 3. **Play App Signing** on rakhein (default).
 4. `ledgerly-release-aab` wali `app-release.aab` upload karein.
 5. Har naye version se pehle `pubspec.yaml` mein `version: 0.1.0+1` ka `+1` wala number badhayein (`+2`, `+3`…), warna Play Store upload nahi lega.

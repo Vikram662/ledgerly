@@ -35,9 +35,9 @@ jobs:
       - name: Install SQLite (for database tests)
         run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
 
-      # android/ is not committed yet; generate it (existing files are never overwritten).
+      # android/ is generated for the com.ledgerly.app package in CI.
       - name: Generate Android platform files
-        run: flutter create . --platforms=android --org com.thekedaar --project-name thekedaar
+        run: flutter create . --platforms=android --org com.ledgerly --project-name app
 
       - name: Set up Firebase Android
         if: env.HAS_FIREBASE == 'true'
@@ -92,6 +92,19 @@ jobs:
 
       # Google Drive backup needs the Web OAuth client id (PRD D-7). Add it as a
       # repository secret named GOOGLE_SERVER_CLIENT_ID; the app builds without it.
+      - name: Validate Firebase Android identity
+        if: env.HAS_FIREBASE == 'true'
+        run: |
+          firebase_app_id=$(jq -r ".client[] | select(.client_info.android_client_info.package_name == \"com.ledgerly.app\") | .client_info.mobilesdk_app_id" android/app/google-services.json)
+          if [ -z "$firebase_app_id" ] || [ "$firebase_app_id" = "null" ]; then
+            echo "::error title=Firebase package mismatch::GOOGLE_SERVICES_JSON_BASE64 must contain the com.ledgerly.app Android client."
+            exit 1
+          fi
+          if ! grep -Fq "$firebase_app_id" lib/firebase_options.dart; then
+            echo "::error title=Firebase app ID mismatch::Update lib/firebase_options.dart from the new com.ledgerly.app Firebase client."
+            exit 1
+          fi
+
       - name: Build debug APK
         run: bash tool/ci_annotate.sh "Build" "error|Error|FAILURE|What went wrong" flutter build apk --debug --dart-define=GOOGLE_SERVER_CLIENT_ID=${{ secrets.GOOGLE_SERVER_CLIENT_ID }} --dart-define=SUBSCRIPTION_API_URL=${{ secrets.SUBSCRIPTION_API_URL }}
 

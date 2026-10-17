@@ -29,7 +29,7 @@ Backup ke liye Google Cloud mein ek baar setup chahiye:
 1. Google Cloud Console → naya project → **Google Drive API** enable.
 2. OAuth consent screen banayein (scope: `drive.file`).
 3. OAuth client banayein:
-   - **Android** client: package `com.thekedaar.thekedaar` + debug/release keystore ka SHA-1
+   - **Android** client: package `com.ledgerly.app` + debug/release keystore ka SHA-1
    - **Web application** client: iska client id hi `GOOGLE_SERVER_CLIENT_ID` hai
 4. GitHub repo → Settings → Secrets → Actions → `GOOGLE_SERVER_CLIENT_ID` naam se Web client id daalein.
 
@@ -38,7 +38,7 @@ Ye id na ho to app chalta hai, bas Backup screen "not switched on" dikhati hai (
 ## Agar kabhi Flutter install karein
 
 ```
-flutter create . --platforms=android --org com.thekedaar --project-name thekedaar
+flutter create . --platforms=android --org com.ledgerly --project-name app
 dart run tool/patch_android.dart
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs
