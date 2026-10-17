@@ -92,7 +92,7 @@ Iske bina app chalta hai, bas Drive backup band rehta hai.
    - Test users: apna Gmail add karein (jab tak app "Testing" mode mein hai)
 4. **APIs & Services → Credentials → Create credentials → OAuth client ID** (2 baar):
    - **Android** type
-     - Package name: `com.thekedaar.thekedaar`
+     - Package name: `com.ledgerly.app`
      - SHA-1: `FB:57:BF:C1:40:E7:43:9E:AA:67:26:EE:5F:36:55:D6:0A:C9:EF:33`
    - **Web application** type → naam kuch bhi → Create → jo **Client ID** mile (`xxxx.apps.googleusercontent.com`) use copy karein
 5. GitHub secret `GOOGLE_SERVER_CLIENT_ID` = wo Web Client ID (Section 3)
@@ -106,7 +106,7 @@ Note: Google login sirf **release APK** par chalega. Debug APK ki key har build 
 
 1. https://play.google.com/console → developer account (one-time $25)
 2. **Create app** → naam, language, App/Free
-3. Package name `com.thekedaar.thekedaar` hoga. ⚠️ Pehle upload ke baad ye **kabhi nahi badalta**, isliye pehle PRD D-6 (app ka naam/package) final kar lein.
+3. Package name `com.ledgerly.app` hoga. ⚠️ Pehle upload ke baad ye **kabhi nahi badalta**, isliye pehle PRD D-6 (app ka naam/package) final kar lein.
 4. **Play App Signing**: on rehne dein (default)
 5. Testing → Internal testing → Create release → `ledgerly-release-aab` wali `app-release.aab` upload
 6. Privacy policy, data safety form, screenshots bharein → review ke liye bhejein
