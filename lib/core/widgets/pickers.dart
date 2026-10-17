@@ -27,7 +27,7 @@ Future<T?> showPickerSheet<T>(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+              child: Text(title, style: AppText.titleMedium),
             ),
             Flexible(
               child: ListView(

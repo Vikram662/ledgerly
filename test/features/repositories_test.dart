@@ -10,6 +10,8 @@ import 'package:thekedaar/core/utils/dates.dart';
 import 'package:thekedaar/features/attendance/data/attendance_repository.dart';
 import 'package:thekedaar/features/billing/data/billing_repository.dart';
 import 'package:thekedaar/features/billing/domain/document_totals.dart';
+import 'package:thekedaar/features/expenses/data/expenses_repository.dart';
+import 'package:thekedaar/features/jobs/data/jobs_repository.dart';
 import 'package:thekedaar/features/khata/data/khata_repository.dart';
 import 'package:thekedaar/features/workers/data/workers_repository.dart';
 
@@ -25,6 +27,8 @@ void main() {
   late AttendanceRepository attendance;
   late KhataRepository khata;
   late BillingRepository billing;
+  late JobsRepository jobs;
+  late ExpensesRepository expenses;
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -32,6 +36,8 @@ void main() {
     attendance = AttendanceRepository(db);
     khata = KhataRepository(db);
     billing = BillingRepository(db);
+    jobs = JobsRepository(db);
+    expenses = ExpensesRepository(db);
   });
 
   tearDown(() => db.close());
@@ -329,6 +335,102 @@ void main() {
             ..where((i) => i.id.equals(item.id)))
           .getSingle();
       expect(updated.defaultRatePaise, 1800);
+    });
+  });
+
+  group("job and supplier aggregates", () {
+    test("watchJobs totals exclude draft and cancelled invoices", () async {
+      final clientId = await billing.saveClient(name: "Job client");
+      final jobId = await jobs.saveJob(
+        clientId: clientId,
+        title: "Tower wiring",
+        status: JobStatus.inProgress,
+      );
+      final workerId = await addDailyWorker();
+      final categoryId = await expenses.addCategory("Material");
+
+      DocumentDraft jobBill(DocumentKind kind, int amountPaise) =>
+          DocumentDraft(
+            kind: kind,
+            clientId: clientId,
+            jobId: jobId,
+            date: DateTime(2026, 10, 10),
+            lines: [
+              DraftLine(
+                lineType: LineType.lumpSum,
+                name: "Work",
+                qtyMilli: 1000,
+                ratePaise: amountPaise,
+              ),
+            ],
+          );
+
+      final counted =
+          await billing.saveDocument(jobBill(DocumentKind.invoice, 100000));
+      await billing.markSentIfDraft(counted);
+      await billing.saveDocument(jobBill(DocumentKind.invoice, 200000));
+      final cancelled =
+          await billing.saveDocument(jobBill(DocumentKind.invoice, 300000));
+      await billing.setStatus(cancelled, DocumentStatus.cancelled);
+      final quote =
+          await billing.saveDocument(jobBill(DocumentKind.quotation, 400000));
+      await billing.markSentIfDraft(quote);
+
+      await expenses.addExpense(
+        categoryId: categoryId,
+        amountPaise: 25000,
+        mode: PaymentMode.cash,
+        date: DateTime(2026, 10, 11),
+        jobId: jobId,
+      );
+      await khata.addPieceWork(
+        workerId: workerId,
+        date: day(-1),
+        description: "Job piece work",
+        qtyMilli: 2000,
+        ratePaise: 10000,
+        jobId: jobId,
+      );
+
+      final item = (await jobs.watchJobs().first).single;
+      expect(item.billedPaise, 100000);
+      expect(item.expensesPaise, 25000);
+      expect(item.piecePaise, 20000);
+      expect(item.profitPaise, 55000);
+    });
+
+    test("watchSuppliers reports latest purchase and payment dates", () async {
+      final supplierId = await expenses.saveSupplier(name: "Gupta Traders");
+      await expenses.addSupplierEntry(
+        supplierId: supplierId,
+        type: SupplierEntryType.purchase,
+        amountPaise: 1000,
+        date: DateTime(2026, 1, 2),
+      );
+      await expenses.addSupplierEntry(
+        supplierId: supplierId,
+        type: SupplierEntryType.purchase,
+        amountPaise: 2000,
+        date: DateTime(2026, 1, 7),
+      );
+      await expenses.addSupplierEntry(
+        supplierId: supplierId,
+        type: SupplierEntryType.payment,
+        amountPaise: 500,
+        date: DateTime(2026, 1, 3),
+        mode: PaymentMode.cash,
+      );
+      await expenses.addSupplierEntry(
+        supplierId: supplierId,
+        type: SupplierEntryType.payment,
+        amountPaise: 700,
+        date: DateTime(2026, 1, 6),
+        mode: PaymentMode.gPay,
+      );
+
+      final supplier = (await expenses.watchSuppliers().first).single;
+      expect(supplier.lastPurchaseDate, "2026-01-07");
+      expect(supplier.lastPaymentDate, "2026-01-06");
     });
   });
 

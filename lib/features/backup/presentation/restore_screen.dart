@@ -213,6 +213,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
   Widget build(BuildContext context) {
     final manifest = _chosenDrive == null ? _fileHeader?.manifest : null;
     final ready = _chosenDrive != null || _fileBytes != null;
+    final backupEmail = ref.watch(backupStateProvider).valueOrNull?.email;
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('Restore'))),
@@ -229,6 +230,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                     child: _SourceTile(
                       icon: Icons.add_to_drive_outlined,
                       title: tr('Google Drive'),
+                      subtitle: _driveEmail ?? backupEmail,
                       selected: _chosenDrive != null || _driveBackups != null,
                       onTap: _fromDrive,
                     ),
@@ -371,12 +373,14 @@ class _SourceTile extends StatelessWidget {
   const _SourceTile({
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.selected,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
+  final String? subtitle;
   final bool selected;
   final VoidCallback onTap;
 
@@ -406,6 +410,18 @@ class _SourceTile extends StatelessWidget {
                 style: const TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w700),
               ),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  subtitle!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

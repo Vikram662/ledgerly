@@ -119,7 +119,7 @@ class _SettlementScreenState extends ConsumerState<SettlementScreen> {
                     size: 72, color: AppColors.successText),
                 const SizedBox(height: 16),
                 Text(tr('{name} settled', {'name': worker.worker.name}),
-                    style: Theme.of(context).textTheme.titleLarge),
+                    style: AppText.titleLarge),
                 const SizedBox(height: 8),
                 Text(tr('Paid {amount} · Carry forward {amount2}', {'amount': formatPaise(done.paidPaise), 'amount2': formatPaise(done.carryForwardPaise)})),
                 const SizedBox(height: 24),
@@ -323,7 +323,7 @@ class _Breakdown extends StatelessWidget {
                 }) +
                 (c.off > 0 ? tr(' · Off {count}', {'count': c.off}) : '') +
                 (c.leave > 0 ? tr(' · Leave {count}', {'count': c.leave}) : ''),
-            style: const TextStyle(color: AppColors.slate600),
+            style: const TextStyle(color: AppColors.muted),
           ),
           const Divider(),
           AmountRow(label: tr('Wages'), paise: r.basePaise),

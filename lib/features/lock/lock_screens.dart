@@ -430,7 +430,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(tr('Change PIN'),
-                            style: Theme.of(context).textTheme.titleLarge),
+                            style: AppText.titleLarge),
                       ],
                     )
                   else if (lock.isFirstSetup)

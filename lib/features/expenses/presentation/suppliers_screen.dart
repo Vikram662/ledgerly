@@ -381,7 +381,7 @@ class SupplierDetailScreen extends ConsumerWidget {
           SectionLabel(tr('Entries')),
           if (entries.isEmpty)
             Text(tr('No entries yet.'),
-                style: TextStyle(color: AppColors.slate600))
+                style: TextStyle(color: AppColors.muted))
           else
             CardList(
                 children: [

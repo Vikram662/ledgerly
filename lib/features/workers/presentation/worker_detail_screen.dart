@@ -243,12 +243,12 @@ class WorkerDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
-          SectionTitle(tr('Attendance')),
+          SectionLabel(tr('Attendance')),
           AttendanceCalendar(worker: worker),
-          SectionTitle(tr('Khata entries')),
+          SectionLabel(tr('Khata entries')),
           if (ledger.isEmpty)
             Text(tr('No entries yet.'),
-                style: TextStyle(color: AppColors.slate600))
+                style: TextStyle(color: AppColors.muted))
           else
             Panel(
               padding: EdgeInsets.zero,
@@ -259,7 +259,7 @@ class WorkerDetailScreen extends ConsumerWidget {
               ),
             ),
           if (pieces.isNotEmpty) ...[
-            SectionTitle(tr('Piece work')),
+            SectionLabel(tr('Piece work')),
             Panel(
               padding: EdgeInsets.zero,
               child: Column(
@@ -305,7 +305,7 @@ class WorkerDetailScreen extends ConsumerWidget {
             ),
           ],
           if (settlements.isNotEmpty) ...[
-            SectionTitle(tr('Settlements')),
+            SectionLabel(tr('Settlements')),
             Panel(
               padding: EdgeInsets.zero,
               child: Column(

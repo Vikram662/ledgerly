@@ -17,7 +17,7 @@ import '../data/jobs_repository.dart';
 StatusChip jobStatusChip(JobStatus status) => switch (status) {
       JobStatus.planned => StatusChip(
           label: jobStatusLabel(status),
-          color: AppColors.slate600,
+          color: AppColors.muted,
           icon: Icons.schedule,
         ),
       JobStatus.inProgress => StatusChip(
@@ -385,7 +385,7 @@ class JobDetailScreen extends ConsumerWidget {
                 child: InkWell(
                   onTap: () => context.push(Routes.client(d.client.id)),
                   child: Text(d.client.name,
-                      style: Theme.of(context).textTheme.titleMedium),
+                      style: AppText.titleMedium),
                 ),
               ),
             ],
@@ -423,7 +423,7 @@ class JobDetailScreen extends ConsumerWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     tr('Daily-wage labour is not counted here yet.'),
-                    style: TextStyle(fontSize: 12, color: AppColors.slate600),
+                    style: TextStyle(fontSize: 12, color: AppColors.muted),
                   ),
                 ),
               ],
@@ -453,10 +453,10 @@ class JobDetailScreen extends ConsumerWidget {
               ),
             ],
           ),
-          SectionTitle(tr('Bills')),
+          SectionLabel(tr('Bills')),
           if (d.bills.isEmpty)
             Text(tr('No bills linked to this job.'),
-                style: TextStyle(color: AppColors.slate600))
+                style: TextStyle(color: AppColors.muted))
           else
             Panel(
               padding: EdgeInsets.zero,
@@ -479,10 +479,10 @@ class JobDetailScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          SectionTitle(tr('Expenses')),
+          SectionLabel(tr('Expenses')),
           if (d.expenses.isEmpty)
             Text(tr('No expenses linked to this job.'),
-                style: TextStyle(color: AppColors.slate600))
+                style: TextStyle(color: AppColors.muted))
           else
             Panel(
               padding: EdgeInsets.zero,

@@ -1731,6 +1731,17 @@ const hindiStrings = <String, String>{
   'Your name':
       'आपका नाम',
   // New design (wireframes).
+  'Try 5 days free, then ₹99/month': '5 दिन मुफ़्त आज़माएँ, फिर ₹99/महीना',
+  'Browse the whole app free. Pro lets you add or change records. Cancel any time.': 'पूरा ऐप मुफ़्त देखें। रिकॉर्ड जोड़ने या बदलने के लिए Pro लें। कभी भी रद्द करें।',
+  'Add sites, attendance, bills, expenses': 'साइट, हाज़िरी, बिल और खर्च जोड़ें',
+  'Bill and pay slip PDFs on WhatsApp': 'बिल और पे-स्लिप PDF WhatsApp पर',
+  'Works offline up to 7 days': '7 दिन तक ऑफ़लाइन चलता है',
+  '₹0 forever': 'हमेशा ₹0',
+  'View every screen and report': 'हर स्क्रीन और रिपोर्ट देखें',
+  'View + add + edit records': 'रिकॉर्ड देखें + जोड़ें + बदलें',
+  'Payment mandate is set up on day 1 via Razorpay. First ₹99 is charged after 5 days; cancel before then to pay nothing.': 'Razorpay से पहले दिन मैंडेट बनेगा। पहला ₹99 भुगतान 5 दिन बाद होगा; कुछ भी न देने के लिए उससे पहले रद्द करें।',
+  'Bill / quote': 'बिल / कोटेशन',
+  'Daily 9 PM · when internet comes back · after big changes': 'रोज़ रात 9 बजे · इंटरनेट वापस आने पर · बड़े बदलावों के बाद',
   'Last purchase {date}': 'आख़िरी खरीद {date}',
   'Paid {date}': 'भुगतान {date}',
   'Replace & restore': 'बदलें और वापस लाएँ',

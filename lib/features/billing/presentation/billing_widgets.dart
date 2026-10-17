@@ -18,7 +18,7 @@ import '../data/billing_repository.dart';
 /// Status pill with icon + label (PRD BL-15, I-D3).
 StatusChip documentStatusChip(DocumentStatus status, DocumentKind kind) {
   final (label, color, icon) = switch (status) {
-    DocumentStatus.draft => (tr('Draft'), AppColors.slate600, Icons.edit_note),
+    DocumentStatus.draft => (tr('Draft'), AppColors.muted, Icons.edit_note),
     DocumentStatus.sent => (
         kind == DocumentKind.invoice ? tr('Unpaid') : tr('Sent'),
         AppColors.warningText,

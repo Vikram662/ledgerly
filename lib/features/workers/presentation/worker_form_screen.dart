@@ -216,7 +216,7 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
               ),
             ),
             if (!_isEdit) ...[
-              SectionTitle(tr('Wage')),
+              SectionLabel(tr('Wage')),
               SegmentedTabs<WageModel>(
                 value: _model,
                 options: {
