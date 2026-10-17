@@ -98,7 +98,6 @@ async function install(request, env) {
       .bind(installId, customer.id, name, phone, fcmToken,
         fcmToken ? epoch() : null, epoch())
       .run();
-    await applyPendingComplimentaryGrant(env, installId, phone);
     row = await env.DB.prepare(
       'SELECT * FROM installs WHERE install_id = ?',
     )
@@ -114,7 +113,6 @@ async function install(request, env) {
     )
       .bind(name, phone, fcmToken, fcmToken, epoch(), epoch(), installId)
       .run();
-    await applyPendingComplimentaryGrant(env, installId, phone);
     row = await env.DB.prepare(
       'SELECT * FROM installs WHERE install_id = ?',
     )
@@ -248,52 +246,13 @@ async function setComplimentaryAccess(request, env) {
     .bind(until, mode === 'revoke' ? null : note, epoch(), identifier)
     .run();
   if (!result.meta?.changes) {
-    if (!phone) {
-      throw new ApiError(404, 'user_not_found', 'No matching user was found.');
-    }
-    const phoneKey = digits(phone);
-    if (mode === 'revoke') {
-      await env.DB.prepare(
-        'DELETE FROM complimentary_grants WHERE phone_key = ?',
-      ).bind(phoneKey).run();
-    } else {
-      await env.DB.prepare(
-        `INSERT INTO complimentary_grants
-         (phone_key, complimentary_until, note, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(phone_key) DO UPDATE SET
-           complimentary_until = excluded.complimentary_until,
-           note = excluded.note,
-           updated_at = excluded.updated_at`,
-      ).bind(phoneKey, until, note, epoch(), epoch()).run();
-    }
-    return ok({
-      updated: 0,
-      pending: mode !== 'revoke',
-      mode,
-      expiresAt: until === -1 ? null : until,
-    });
+    throw new ApiError(404, 'user_not_found', 'No matching user was found.');
   }
   return ok({
     updated: result.meta.changes,
     mode,
     expiresAt: until === -1 ? null : until,
   });
-}
-
-async function applyPendingComplimentaryGrant(env, installId, phone) {
-  if (!phone) return;
-  const grant = await env.DB.prepare(
-    `SELECT complimentary_until, note FROM complimentary_grants
-     WHERE phone_key = ?`,
-  ).bind(digits(phone)).first();
-  if (!grant) return;
-  const until = Number(grant.complimentary_until);
-  if (until !== -1 && until <= epoch()) return;
-  await env.DB.prepare(
-    `UPDATE installs SET complimentary_until = ?, complimentary_note = ?,
-     updated_at = ? WHERE install_id = ?`,
-  ).bind(until, grant.note, epoch(), installId).run();
 }
 
 function complimentaryPayload(user) {
