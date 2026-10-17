@@ -215,44 +215,61 @@ class _ExpenseEntryScreenState extends ConsumerState<ExpenseEntryScreen> {
                   onChanged: (m) => setState(() => _mode = m),
                 ),
                 const SizedBox(height: 12),
-                JobPickerField(
-                  jobId: _jobId,
-                  onChanged: (id) => setState(() => _jobId = id),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _note,
-                  decoration: InputDecoration(
-                    hintText: tr('Note (optional)'),
-                    isDense: true,
-                    fillColor: AppColors.page,
-                    prefixIcon:
-                        const Icon(Icons.edit_note, color: AppColors.muted),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                      borderSide: BorderSide.none,
-                    ),
-                    suffixIcon: TextButton(
-                      onPressed: () async {
-                        final picked = await pickDate(context,
-                            initial: _date, last: DateTime.now());
-                        if (picked != null) {
-                          setState(() => _date = dateOnly(picked));
-                        }
-                      },
-                      child: Text(
-                        _date == dateOnly(DateTime.now())
-                            ? tr('Today')
-                            : dayFormat.format(_date),
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w700),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _note,
+                        decoration: InputDecoration(
+                          hintText: tr("Note (optional)"),
+                          isDense: true,
+                          fillColor: AppColors.page,
+                          prefixIcon: const Icon(
+                            Icons.edit_note,
+                            color: AppColors.muted,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.small),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.small),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: TextButton(
+                            onPressed: () async {
+                              final picked = await pickDate(
+                                context,
+                                initial: _date,
+                                last: DateTime.now(),
+                              );
+                              if (picked != null) {
+                                setState(() => _date = dateOnly(picked));
+                              }
+                            },
+                            child: Text(
+                              _date == dateOnly(DateTime.now())
+                                  ? tr("Today")
+                                  : dayFormat.format(_date),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    JobPickerField(
+                      jobId: _jobId,
+                      compact: true,
+                      onChanged: (id) => setState(() => _jobId = id),
+                    ),
+                  ],
                 ),
               ],
             ),
