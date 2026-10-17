@@ -88,6 +88,39 @@ void main() {
     expect(terms!.metaValue, contains('advance'));
   });
 
+  test('a personal user gets home categories, no contractor defaults',
+      () async {
+    await seed.applyFor(UserType.personal, const {});
+    final counts = await _counts(db);
+    expect(counts['units'], 19);
+    expect(counts['roles'], 0);
+    expect(counts['items'], 0);
+    final categories =
+        (await db.select(db.expenseCategories).get()).map((c) => c.name);
+    expect(categories, containsAll(['Rent', 'Grocery / Ration', 'Other']));
+    expect(categories, isNot(contains('Machine Rent')));
+  });
+
+  test('a shop gets staff roles, shop categories and shop terms', () async {
+    await seed.applyFor(UserType.shop, const {});
+    final roles = (await db.select(db.roles).get()).map((r) => r.name);
+    expect(roles, containsAll(['Salesman', 'Cashier']));
+    expect(roles, isNot(contains('Mistri')));
+    final categories =
+        (await db.select(db.expenseCategories).get()).map((c) => c.name);
+    expect(categories, contains('Stock Purchase'));
+    final terms = await (db.select(db.appMeta)
+          ..where((m) => m.metaKey.equals('default_terms')))
+        .getSingle();
+    expect(terms.metaValue, contains('Goods once sold'));
+  });
+
+  test('a contractor seeds exactly like applyTrades', () async {
+    await seed.applyFor(UserType.contractor, {Trade.painting});
+    final roles = (await db.select(db.roles).get()).map((r) => r.name);
+    expect(roles, containsAll(['Helper', 'Painter']));
+  });
+
   test('an item name shared by trades has the same unit and kind', () {
     final seen = <String, String>{};
     for (final name in ['common', for (final t in Trade.values) t.seedFile]) {

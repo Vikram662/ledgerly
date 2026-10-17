@@ -1682,4 +1682,52 @@ const hindiStrings = <String, String>{
       '✓ {amount} मिले',
   '✓ {type} {amount} saved':
       '✓ {type} {amount} सेव हुआ',
+
+  // User types (PRD C10)
+  'All staff, month calendar':
+      'सारा स्टाफ़, महीने का कैलेंडर',
+  'Backup, reminders, app lock':
+      'बैकअप, रिमाइंडर, ऐप लॉक',
+  'Bills, payments & alerts':
+      'बिल, भुगतान और अलर्ट',
+  'Cloth, kirana, medical or any shop':
+      'कपड़ा, किराना, मेडिकल या कोई भी दुकान',
+  'Contractor':
+      'ठेकेदार',
+  'Customers':
+      'ग्राहक',
+  'Edit profile':
+      'प्रोफ़ाइल बदलें',
+  'Enter a name':
+      'नाम लिखें',
+  'Free for personal use.':
+      'निजी इस्तेमाल के लिए मुफ़्त।',
+  'My profile':
+      'मेरी प्रोफ़ाइल',
+  'Personal':
+      'निजी',
+  'Reminder':
+      'रिमाइंडर',
+  'Salary, home expenses and savings':
+      'तनख़्वाह, घर का ख़र्च और बचत',
+  'Set up Thekedaar':
+      'ठेकेदार ऐप सेट करें',
+  'Shop name':
+      'दुकान का नाम',
+  'Shopkeeper':
+      'दुकानदार',
+  'Spent last month':
+      'पिछले महीने ख़र्च',
+  'Spent this month':
+      'इस महीने ख़र्च',
+  'Staff':
+      'स्टाफ़',
+  'Staff & Khata':
+      'स्टाफ़ और खाता',
+  'Who will use this app?':
+      'यह ऐप कौन इस्तेमाल करेगा?',
+  'Workers, sites, attendance and bills':
+      'मज़दूर, साइट, हाज़िरी और बिल',
+  'Your name':
+      'आपका नाम',
 };

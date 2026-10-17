@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/backup/backup_providers.dart';
+import '../core/db/enums.dart';
 import '../core/db/providers.dart';
 import '../core/i18n/i18n.dart';
 import '../core/notify/notifications.dart';
@@ -14,18 +15,28 @@ import 'router.dart';
 import 'theme.dart';
 
 class ThekedaarApp extends ConsumerStatefulWidget {
-  const ThekedaarApp({super.key, required this.needsOnboarding});
+  const ThekedaarApp({
+    super.key,
+    required this.needsOnboarding,
+    this.userType = UserType.contractor,
+  });
 
   /// True on first launch, before the business profile exists.
   final bool needsOnboarding;
+
+  /// The saved profile's type, read before the first frame so the right
+  /// tabs show at once.
+  final UserType userType;
 
   @override
   ConsumerState<ThekedaarApp> createState() => _ThekedaarAppState();
 }
 
 class _ThekedaarAppState extends ConsumerState<ThekedaarApp> {
-  late final GoRouter _router = buildRouter(
+  late UserType _userType = widget.userType;
+  late GoRouter _router = buildRouter(
     ref: ref,
+    userType: _userType,
     initialLocation:
         widget.needsOnboarding ? Routes.onboarding : Routes.dashboard,
   );
@@ -33,6 +44,22 @@ class _ThekedaarAppState extends ConsumerState<ThekedaarApp> {
   @override
   void initState() {
     super.initState();
+    // Tabs depend on the user type (PRD C10): after onboarding, or when the
+    // type changes, start a fresh router on Home.
+    ref.listenManual(businessProfileProvider, (_, next) {
+      final type = next.valueOrNull?.userType;
+      if (type == null || type == _userType) return;
+      final old = _router;
+      setState(() {
+        _userType = type;
+        _router = buildRouter(
+          ref: ref,
+          userType: type,
+          initialLocation: Routes.dashboard,
+        );
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+    });
     // Auto backup triggers live as long as this app scope (PRD D3.1).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(backupCoordinatorProvider).start();
@@ -76,8 +103,8 @@ class _ThekedaarAppState extends ConsumerState<ThekedaarApp> {
       NotificationKind.holiday => Routes.attendanceMonth,
       NotificationKind.taskReminder => Routes.tasks,
     };
-    // Tabs (khata, attendance) are switched with go; others open on top.
-    if (route.startsWith('/khata') || route.startsWith('/attendance')) {
+    // Tabs are switched with go; others open on top.
+    if (Routes.isTab(route)) {
       _router.go(route);
     } else {
       _router.go(Routes.dashboard);

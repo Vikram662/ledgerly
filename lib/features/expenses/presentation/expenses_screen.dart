@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_drawer.dart';
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/i18n/i18n.dart';
@@ -15,7 +16,10 @@ import '../data/expenses_repository.dart';
 
 /// PRD EX-01: business expenses by month, with category totals.
 class ExpensesScreen extends ConsumerStatefulWidget {
-  const ExpensesScreen({super.key});
+  const ExpensesScreen({super.key, this.showMenu = false});
+
+  /// True when this is a bottom tab: show the side menu instead of Back.
+  final bool showMenu;
 
   @override
   ConsumerState<ExpensesScreen> createState() => _ExpensesScreenState();
@@ -52,6 +56,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     );
 
     return Scaffold(
+      drawer: widget.showMenu ? const AppDrawer() : null,
       appBar: AppBar(
         title: Text(tr('Expenses')),
         actions: [

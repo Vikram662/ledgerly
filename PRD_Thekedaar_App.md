@@ -2,7 +2,7 @@
 
 > **Version:** 2.3 (har tarah ke contractor ke liye, mobile-only, offline, admin-only, task reminders, Razorpay ₹99/mo subscription)  ·  **Date:** 2026-10-04
 > **Platform:** Android app (Flutter). iOS baad mein, dekhein [I-M3](#b1-mobile-only-architecture-ke-risks)
-> **User:** Sirf **Admin (thekedaar)**. Workers app use nahi karte, unka saara record admin rakhta hai.
+> **User:** Sirf **Admin** (phone ka maalik). Teen type: **Contractor (thekedaar)**, **Shopkeeper** aur **Personal** ([C10](#c10-user-types-contractor-shopkeeper-personal)). Workers / staff app use nahi karte, unka saara record admin rakhta hai.
 > **Trades:** ✅ **Har type ka contractor**: Electrical, Plumbing, Civil / Construction, Painting, Tiles / Flooring, Carpentry / Interior, POP / False Ceiling, Fabrication / Welding, Labour Supply, ya Other. Setup ke waqt trade chuno, aur app usi hisaab se roles, units, items aur templates bhar deta hai ([C0](#c0-business-type-aur-trade-setup))
 > **Server:** Business data ke liye koi server nahi; saara data admin ke phone ki **SQLite** file mein rehta hai. Razorpay secrets aur subscription verification ke liye sirf ek minimal **Cloudflare Worker** payment gateway hai.
 > **Subscription & Monetization:** ✅ Razorpay ₹99/month recurring UPI Autopay. Free explore mode (view-only) + Paywall on data entry (sites, attendance, kharcha). Zero backend / direct Razorpay customer & subscription sync.
@@ -12,6 +12,7 @@
 ### Version history
 | Ver | Change |
 |---|---|
+| **2.4** | ✅ **User Types (C10)**: Contractor, Shopkeeper aur Personal. Har type ke apne tabs, menu aur seed data. Personal free; Contractor aur Shopkeeper ₹99/month trial ke saath. |
 | **2.3** | ✅ **Site Tasks & Visits Scheduler (C8)**: Client meeting, site visit, payment reminders, interval alerts, turn-off toggle. Purana reminder menu ab "Notification Settings".<br>✅ **Razorpay ₹99/Month Subscription (C9)**: Secure Cloudflare Worker-based monetization. Onboarding par Razorpay Customer banna (tracking ke liye), Free View-Only Explore mode, aur data entry par paywall. 1-click in-app cancel & refund. |
 | 2.2 | ✅ **Generic contractor app**: sirf electrician nahi, har trade ke liye. Trade setup (C0), custom roles/units, "Points" ki jagah generic **Work-rate** line, measurement (L × W × H) billing, piece-rate (theka) worker payment, configurable expense categories |
 | 2.1 | ✅ Offline → online auto backup: internet na ho to backup pending, aur internet aate hi apne aap (D3.1) |
@@ -294,6 +295,23 @@ App kisi ek trade ke liye hardcoded nahi hai. Saari trade-specific cheezein (rol
 | RZ-05 | **Zero Backend Status Verification**: App start hote waqt Cloudflare Worker ke through Razorpay Subscription API (`GET /v1/subscriptions/{sub_id}`) call karegi. Status: `active` → full unlock; `halted` / `cancelled` → subscription prompt. Offline rehne par cached active status allow hoga (7-day offline grace). |
 | RZ-06 | **Device Lost / Change Recovery**: User naye phone par Google Drive Restore karega to backup ke sath uska `subscription_id` bhi naye phone par restore ho jayega aur direct unlock ho jayega. Secondary option: Razorpay receipt SMS/email se Subscription ID daal kar 1-click restore. Zero OTP cost. |
 | RZ-07 | **1-Click In-App Cancellation & Refund**: Settings > Manage Subscription mein 1-click button. Cancel karne par Cloudflare Worker Razorpay API se mandate revoke karega. Pehle 7 din mein voluntary cancel karne par immediate refund trigger hoga. |
+| RZ-08 | **Complimentary (Free) Access by Owner**: Owner kisi registered user (exact phone number ya `installId` se) ko **permanent** ya **fixed date tak** free access de sake, aur baad mein revoke kar sake. Protected Worker endpoint `POST /v1/admin/complimentary-access` (`Authorization: Bearer <ADMIN_API_SECRET>`); ye secret sirf Cloudflare aur owner ke admin tools mein rahega, app ya source code mein kabhi nahi. Grant active ho to status `active` (`accessSource: complimentary`) aata hai aur app full unlock hota hai. Time-limited grant khatam hote hi status apne aap user ke normal Razorpay status par wapas aa jata hai; revoke se sirf free grant hatta hai, paid subscription nahi. App reopen ya Manage Subscription refresh par change pick karta hai. Detail: [cloudflare-subscription/README.md](cloudflare-subscription/README.md) |
+
+### C10. User Types: Contractor, Shopkeeper, Personal
+App ab sirf thekedaar ke liye nahi hai. Onboarding par pehla sawaal **"Who will use this app?"** hai, aur jawab ke hisaab se tabs, menu, seed data aur subscription badalte hain. Ek profile ka ek hi type hota hai.
+
+| ID | Requirement |
+|---|---|
+| UT-01 | Onboarding par 3 type: **Contractor** (workers, sites, attendance, bills), **Shopkeeper** (kapda, kirana, medical ya koi bhi dukaan), **Personal** (salary, ghar ka kharcha, bachat). Type chunna zaroori hai. Naam ka label type ke hisaab se: Business name / Shop name / Your name |
+| UT-02 | Trades (C0) sirf Contractor ke liye. Shopkeeper aur Personal ke liye trade nahi poocha jata |
+| UT-03 | Type `BusinessProfile.userType` mein save hota hai (schema v5). Purane saare users apne aap **Contractor** rahenge, unke liye kuch nahi badalta |
+| UT-04 | **Bottom tabs:** Contractor: Home · Attendance · Billing · Khata · Workers. Shopkeeper: Home · Billing · Expenses · Khata · Staff. Personal: Home · Expenses · Reminders. Baaki sections side menu se khulte hain |
+| UT-05 | **Side menu / Settings:** Personal ko Billing, Workers, Khata, Suppliers, Lena/Dena, Trades, Work rules aur Pro nahi dikhte. Shopkeeper ko Jobs/Sites aur Trades nahi dikhte; "Workers" ki jagah "Staff", "Clients" ki jagah "Customers" |
+| UT-06 | **Seed data:** Contractor: common + trades (jaise pehle). Shopkeeper: `assets/seed/shop.json` (Salesman, Cashier, Tailor... roles; Stock Purchase, Shop Rent, Staff Salary... categories; dukaan ki bill terms). Personal: `assets/seed/personal.json` (Rent, Grocery, Milk, EMI, School Fees, Medical... categories). Units sabko common se milte hain |
+| UT-07 | **Subscription:** Personal **free** hai, data entry par koi paywall nahi aur payment server ko call bhi nahi hota. Contractor aur Shopkeeper ke liye ₹99/month aur 5-day free trial (C9) jaise pehle |
+| UT-08 | **Home:** Personal ko "Spent this month / Spent last month" aur quick actions Expense · Reminder · Calendar dikhte hain. Contractor aur Shopkeeper ko Lena/Dena aur aaj ki attendance |
+
+**Aage (planned):** Personal ke liye Income entries (salary, bonus, rent received) aur "income · kharcha · bachat" summary; Shopkeeper ke liye daily sales entry aur customer udhaar khata; Settings se type badalna.
 
 ---
 

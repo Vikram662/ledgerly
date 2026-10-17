@@ -23,18 +23,20 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(businessProfileProvider).valueOrNull;
     final backup = ref.watch(backupStateProvider).valueOrNull;
+    final type = ref.watch(userTypeProvider);
+    final contractor = type == UserType.contractor;
+    final personal = type == UserType.personal;
     final location = GoRouterState.of(context).uri.toString();
 
-    /// [tab] = open a bottom-tab section; otherwise push a page on top.
+    /// A bottom-tab section is switched to; other pages open on top.
     Widget item(
       IconData icon,
       String title,
       String route, {
       String? subtitle,
-      bool tab = false,
       Widget? trailing,
     }) {
-      final selected = tab && location == route;
+      final selected = Routes.isTab(route) && location == route;
       return ListTile(
         leading: Icon(icon),
         title: Text(title),
@@ -45,11 +47,7 @@ class AppDrawer extends ConsumerWidget {
         selectedColor: AppColors.slate900,
         onTap: () {
           Navigator.of(context).pop(); // close the drawer
-          if (tab) {
-            context.go(route);
-          } else {
-            context.push(route);
-          }
+          openRoute(context, route);
         },
       );
     }
@@ -133,7 +131,9 @@ class AppDrawer extends ConsumerWidget {
                               style: const TextStyle(color: Color(0xFFCBD5E1)),
                             ),
                           Text(
-                            tr('Edit business profile'),
+                            personal
+                                ? tr('Edit profile')
+                                : tr('Edit business profile'),
                             style: TextStyle(
                               color: AppColors.amber500,
                               fontSize: 12,
@@ -146,45 +146,56 @@ class AppDrawer extends ConsumerWidget {
                 ),
               ),
             ),
-            item(Icons.home_outlined, tr('Home'), Routes.dashboard, tab: true),
-            heading(tr('Billing')),
-            item(Icons.receipt_long_outlined, tr('Bills'), Routes.billingTab(0),
-                tab: true),
-            item(Icons.request_quote_outlined, tr('Quotations'),
-                Routes.billingTab(1),
-                tab: true),
-            item(Icons.people_outline, tr('Clients'), Routes.billingTab(2),
-                tab: true),
-            item(Icons.payments_outlined, tr('Payments received'),
-                Routes.billingTab(3),
-                tab: true),
-            item(Icons.location_city_outlined, tr('Jobs / Sites'), Routes.jobs),
-            heading(tr('Workers & Khata')),
-            item(Icons.groups_outlined, tr('Workers'), Routes.workers, tab: true),
-            item(Icons.fact_check_outlined, tr('Mark attendance'),
-                Routes.attendance(),
-                tab: true),
-            item(Icons.calendar_month_outlined, tr('Attendance register'),
-                Routes.attendanceMonth,
-                subtitle: tr('All workers, month calendar'), tab: true),
-            item(Icons.account_balance_wallet_outlined, tr('Khata balances'),
-                Routes.khataTab(0),
-                tab: true),
-            item(Icons.history, tr('Khata entries'), Routes.khataTab(1), tab: true),
+            item(Icons.home_outlined, tr('Home'), Routes.dashboard),
+            if (!personal) ...[
+              heading(tr('Billing')),
+              item(Icons.receipt_long_outlined, tr('Bills'),
+                  Routes.billingTab(0)),
+              item(Icons.request_quote_outlined, tr('Quotations'),
+                  Routes.billingTab(1)),
+              item(Icons.people_outline,
+                  contractor ? tr('Clients') : tr('Customers'),
+                  Routes.billingTab(2)),
+              item(Icons.payments_outlined, tr('Payments received'),
+                  Routes.billingTab(3)),
+              if (contractor)
+                item(Icons.location_city_outlined, tr('Jobs / Sites'),
+                    Routes.jobs),
+              heading(contractor ? tr('Workers & Khata') : tr('Staff & Khata')),
+              item(Icons.groups_outlined,
+                  contractor ? tr('Workers') : tr('Staff'), Routes.workers),
+              item(Icons.fact_check_outlined, tr('Mark attendance'),
+                  Routes.attendance()),
+              item(Icons.calendar_month_outlined, tr('Attendance register'),
+                  Routes.attendanceMonth,
+                  subtitle: contractor
+                      ? tr('All workers, month calendar')
+                      : tr('All staff, month calendar')),
+              item(Icons.account_balance_wallet_outlined, tr('Khata balances'),
+                  Routes.khataTab(0)),
+              item(Icons.history, tr('Khata entries'), Routes.khataTab(1)),
+            ],
             heading(tr('Expenses')),
             item(Icons.receipt_outlined, tr('Expenses'), Routes.expenses,
                 subtitle: tr('Kharcha log, month-wise')),
-            item(Icons.store_outlined, tr('Suppliers'), Routes.suppliers,
-                subtitle: tr('Udhaar purchases & payments')),
-            heading(tr('Reports & Tasks')),
+            if (!personal)
+              item(Icons.store_outlined, tr('Suppliers'), Routes.suppliers,
+                  subtitle: tr('Udhaar purchases & payments')),
+            heading(personal ? tr('Reminders') : tr('Reports & Tasks')),
             item(Icons.task_alt_outlined, tr('Tasks & Reminders'), Routes.tasks,
-                subtitle: tr('Site visits, payments & alerts')),
+                subtitle: contractor
+                    ? tr('Site visits, payments & alerts')
+                    : tr('Bills, payments & alerts')),
             item(Icons.calendar_month_outlined, tr('Calendar'), Routes.calendar,
                 subtitle: tr('What happened on each day')),
-            item(Icons.account_balance_outlined, tr('Lena / Dena'), Routes.dues()),
+            if (!personal)
+              item(Icons.account_balance_outlined, tr('Lena / Dena'),
+                  Routes.dues()),
             heading(tr('Settings')),
             const LanguageTile(closeDrawer: true),
-            item(Icons.store_mall_directory_outlined, tr('Business profile'),
+            item(
+                Icons.store_mall_directory_outlined,
+                personal ? tr('My profile') : tr('Business profile'),
                 Routes.businessProfile),
             ListTile(
               leading: const Icon(Icons.backup_outlined),
@@ -222,11 +233,14 @@ class AppDrawer extends ConsumerWidget {
             ),
             item(Icons.notifications_active_outlined, tr('Notification settings'),
                 Routes.notificationSettings),
-            item(Icons.workspace_premium_outlined, tr('Thekedaar Pro'),
-                Routes.subscription,
-                subtitle: tr('₹99/month · Manage plan')),
+            if (!type.isFree)
+              item(Icons.workspace_premium_outlined, tr('Thekedaar Pro'),
+                  Routes.subscription,
+                  subtitle: tr('₹99/month · Manage plan')),
             item(Icons.settings_outlined, tr('All settings'), Routes.settings,
-                subtitle: tr('Trades, work rules, app lock')),
+                subtitle: contractor
+                    ? tr('Trades, work rules, app lock')
+                    : tr('Backup, reminders, app lock')),
             const SizedBox(height: 16),
           ],
         ),

@@ -135,14 +135,84 @@ abstract final class Routes {
   static const reminders = '/settings/reminders';
   static const notificationSettings = '/settings/reminders';
   static const subscription = '/settings/subscription';
+
+  static Set<String> _tabPaths = const {};
+
+  /// True when [route] is a bottom tab for the current user type.
+  static bool isTab(String route) =>
+      _tabPaths.contains(Uri.parse(route).path);
 }
 
-GoRouter buildRouter(
-    {required String initialLocation, required WidgetRef ref}) {
+/// Switches to [route] if it is a bottom tab, otherwise opens it on top.
+void openRoute(BuildContext context, String route) =>
+    Routes.isTab(route) ? context.go(route) : context.push(route);
+
+GoRouter buildRouter({
+  required String initialLocation,
+  required WidgetRef ref,
+  required UserType userType,
+}) {
   String? q(GoRouterState state, String key) => state.uri.queryParameters[key];
   String id(GoRouterState state) => state.pathParameters['id']!;
+  final rootKey = GlobalKey<NavigatorState>();
+  final tabs = tabsFor(userType);
+  final tabPaths = {for (final tab in tabs) tab.path};
+  Routes._tabPaths = tabPaths;
+
+  // Sections that are a bottom tab for some user type. The current type's
+  // tabs go into the shell; the rest open full screen like other pages.
+  final sections = <String, GoRoute>{
+    Routes.dashboard: GoRoute(
+      path: Routes.dashboard,
+      builder: (context, state) => const DashboardScreen(),
+    ),
+    '/attendance': GoRoute(
+      path: '/attendance',
+      builder: (context, state) {
+        final date = q(state, 'date');
+        return AttendanceScreen(
+          date: date == null ? null : parseIsoDate(date),
+          showMonth: q(state, 'view') == 'month',
+        );
+      },
+    ),
+    Routes.billing: GoRoute(
+      path: Routes.billing,
+      builder: (context, state) => BillingScreen(
+        tab: int.tryParse(q(state, 'tab') ?? ''),
+      ),
+    ),
+    Routes.khata: GoRoute(
+      path: Routes.khata,
+      builder: (context, state) => KhataScreen(
+        tab: int.tryParse(q(state, 'tab') ?? ''),
+      ),
+    ),
+    Routes.workers: GoRoute(
+      path: Routes.workers,
+      builder: (context, state) => const WorkersScreen(),
+    ),
+    Routes.expenses: GoRoute(
+      path: Routes.expenses,
+      builder: (context, state) =>
+          ExpensesScreen(showMenu: tabPaths.contains(Routes.expenses)),
+      routes: [
+        GoRoute(
+          path: 'new',
+          parentNavigatorKey: rootKey,
+          builder: (context, state) =>
+              ExpenseEntryScreen(jobId: q(state, 'jobId')),
+        ),
+      ],
+    ),
+    Routes.tasks: GoRoute(
+      path: Routes.tasks,
+      builder: (context, state) => const TasksScreen(),
+    ),
+  };
 
   return GoRouter(
+    navigatorKey: rootKey,
     initialLocation: initialLocation,
     redirect: (context, state) {
       if (!_isDataEntryPath(state.uri.path)) return null;
@@ -159,50 +229,15 @@ GoRouter buildRouter(
         builder: (context, state) => const RestoreScreen(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => HomeShell(navigationShell: shell),
+        builder: (context, state, shell) =>
+            HomeShell(navigationShell: shell, tabs: tabs),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.dashboard,
-              builder: (context, state) => const DashboardScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/attendance',
-              builder: (context, state) {
-                final date = q(state, 'date');
-                return AttendanceScreen(
-                  date: date == null ? null : parseIsoDate(date),
-                  showMonth: q(state, 'view') == 'month',
-                );
-              },
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.billing,
-              builder: (context, state) => BillingScreen(
-                tab: int.tryParse(q(state, 'tab') ?? ''),
-              ),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.khata,
-              builder: (context, state) => KhataScreen(
-                tab: int.tryParse(q(state, 'tab') ?? ''),
-              ),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.workers,
-              builder: (context, state) => const WorkersScreen(),
-            ),
-          ]),
+          for (final tab in tabs)
+            StatefulShellBranch(routes: [sections[tab.path]!]),
         ],
       ),
+      for (final entry in sections.entries)
+        if (!tabPaths.contains(entry.key)) entry.value,
       // Full-screen pages above the tabs.
       GoRoute(
         path: Routes.addWorker,
@@ -287,17 +322,6 @@ GoRouter buildRouter(
         ),
       ),
       GoRoute(
-        path: Routes.expenses,
-        builder: (context, state) => const ExpensesScreen(),
-        routes: [
-          GoRoute(
-            path: 'new',
-            builder: (context, state) =>
-                ExpenseEntryScreen(jobId: q(state, 'jobId')),
-          ),
-        ],
-      ),
-      GoRoute(
         path: Routes.jobs,
         builder: (context, state) => const JobsScreen(),
       ),
@@ -354,10 +378,6 @@ GoRouter buildRouter(
       GoRoute(
         path: Routes.calendar,
         builder: (context, state) => const CalendarScreen(),
-      ),
-      GoRoute(
-        path: Routes.tasks,
-        builder: (context, state) => const TasksScreen(),
       ),
       GoRoute(
         path: Routes.addTask,

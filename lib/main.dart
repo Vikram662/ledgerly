@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'app/app.dart';
 import 'core/backup/backup_scheduler.dart';
 import 'core/db/database.dart';
+import 'core/db/enums.dart';
 import 'core/db/providers.dart';
 import 'core/i18n/i18n.dart';
 import 'firebase_options.dart';
@@ -23,9 +24,12 @@ Future<void> main() async {
     // Background backup unavailable; foreground triggers still run.
   }
   final db = AppDatabase();
-  final needsOnboarding =
-      await db.select(db.businessProfiles).getSingleOrNull() == null;
-  runApp(AppRoot(database: db, needsOnboarding: needsOnboarding));
+  final profile = await db.select(db.businessProfiles).getSingleOrNull();
+  runApp(AppRoot(
+    database: db,
+    needsOnboarding: profile == null,
+    userType: profile?.userType ?? UserType.contractor,
+  ));
 }
 
 /// Owns the open database. A restore closes it, swaps the file and rebuilds
@@ -35,10 +39,12 @@ class AppRoot extends StatefulWidget {
     super.key,
     required this.database,
     required this.needsOnboarding,
+    required this.userType,
   });
 
   final AppDatabase database;
   final bool needsOnboarding;
+  final UserType userType;
 
   @override
   State<AppRoot> createState() => _AppRootState();
@@ -47,6 +53,7 @@ class AppRoot extends StatefulWidget {
 class _AppRootState extends State<AppRoot> {
   late AppDatabase _db = widget.database;
   late bool _needsOnboarding = widget.needsOnboarding;
+  late UserType _userType = widget.userType;
   int _generation = 0;
 
   Future<void> _replaceDatabase(
@@ -60,10 +67,10 @@ class _AppRootState extends State<AppRoot> {
       _db = AppDatabase();
     }
     await afterOpen(_db);
-    final needsOnboarding =
-        await _db.select(_db.businessProfiles).getSingleOrNull() == null;
+    final profile = await _db.select(_db.businessProfiles).getSingleOrNull();
     setState(() {
-      _needsOnboarding = needsOnboarding;
+      _needsOnboarding = profile == null;
+      _userType = profile?.userType ?? UserType.contractor;
       _generation++;
     });
   }
@@ -76,7 +83,10 @@ class _AppRootState extends State<AppRoot> {
         databaseProvider.overrideWithValue(_db),
         databaseReplacerProvider.overrideWithValue(_replaceDatabase),
       ],
-      child: ThekedaarApp(needsOnboarding: _needsOnboarding),
+      child: ThekedaarApp(
+        needsOnboarding: _needsOnboarding,
+        userType: _userType,
+      ),
     );
   }
 }

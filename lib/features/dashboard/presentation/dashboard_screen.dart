@@ -16,6 +16,7 @@ import '../../../core/utils/money.dart';
 import '../../../core/widgets/common.dart';
 import '../../attendance/data/attendance_repository.dart';
 import '../../backup/presentation/backup_screen.dart';
+import '../../expenses/data/expenses_repository.dart';
 import '../../reports/presentation/dues_screen.dart';
 import '../../tasks/data/tasks_repository.dart';
 import '../../workers/data/workers_repository.dart';
@@ -33,6 +34,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final backup = ref.watch(backupStateProvider).valueOrNull;
+    final personal = ref.watch(userTypeProvider) == UserType.personal;
 
     return Scaffold(
       // All sections are in the side menu (☰); bottom tabs keep the main 5.
@@ -54,8 +56,10 @@ class DashboardScreen extends ConsumerWidget {
           const _QuickActions(),
           const SizedBox(height: 20),
           const _TasksPreviewCard(),
-          const SizedBox(height: 20),
-          const _TodayCard(),
+          if (!personal) ...[
+            const SizedBox(height: 20),
+            const _TodayCard(),
+          ],
         ],
       ),
     );
@@ -76,8 +80,7 @@ class _HeroCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(businessProfileProvider).valueOrNull;
-    final report = ref.watch(duesReportProvider).valueOrNull;
-    final overdue = report?.overdueTotal ?? 0;
+    final personal = ref.watch(userTypeProvider) == UserType.personal;
 
     return Container(
       decoration: BoxDecoration(
@@ -119,34 +122,87 @@ class _HeroCard extends ConsumerWidget {
             style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _HeroStat(
-                  label: tr('Lena (to receive)'),
-                  value: report == null ? '…' : formatPaise(report.lenaTotal),
-                  icon: Icons.south_west,
-                  accent: AppColors.amber500,
-                  note: overdue > 0
-                      ? tr('Overdue {amount}', {'amount': formatPaise(overdue)})
-                      : null,
-                  onTap: () => context.push(Routes.dues(0)),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _HeroStat(
-                  label: tr('Dena (to pay)'),
-                  value: report == null ? '…' : formatPaise(report.denaTotal),
-                  icon: Icons.north_east,
-                  accent: const Color(0xFF34D399),
-                  onTap: () => context.push(Routes.dues(1)),
-                ),
-              ),
-            ],
-          ),
+          personal ? const _SpendingStats() : const _DuesStats(),
         ],
       ),
+    );
+  }
+}
+
+/// Lena / Dena totals for contractors and shops.
+class _DuesStats extends ConsumerWidget {
+  const _DuesStats();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final report = ref.watch(duesReportProvider).valueOrNull;
+    final overdue = report?.overdueTotal ?? 0;
+    return Row(
+      children: [
+        Expanded(
+          child: _HeroStat(
+            label: tr('Lena (to receive)'),
+            value: report == null ? '…' : formatPaise(report.lenaTotal),
+            icon: Icons.south_west,
+            accent: AppColors.amber500,
+            note: overdue > 0
+                ? tr('Overdue {amount}', {'amount': formatPaise(overdue)})
+                : null,
+            onTap: () => context.push(Routes.dues(0)),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _HeroStat(
+            label: tr('Dena (to pay)'),
+            value: report == null ? '…' : formatPaise(report.denaTotal),
+            icon: Icons.north_east,
+            accent: const Color(0xFF34D399),
+            onTap: () => context.push(Routes.dues(1)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// This month's and last month's spending for personal users.
+class _SpendingStats extends ConsumerWidget {
+  const _SpendingStats();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    final last = DateTime(now.year, now.month - 1);
+    String total(ExpenseMonth month) {
+      final items = ref.watch(monthExpensesProvider(month)).valueOrNull;
+      if (items == null) return '…';
+      return formatPaise(
+          items.fold<int>(0, (sum, item) => sum + item.expense.amountPaise));
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: _HeroStat(
+            label: tr('Spent this month'),
+            value: total((year: now.year, month: now.month)),
+            icon: Icons.north_east,
+            accent: AppColors.amber500,
+            onTap: () => openRoute(context, Routes.expenses),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _HeroStat(
+            label: tr('Spent last month'),
+            value: total((year: last.year, month: last.month)),
+            icon: Icons.history,
+            accent: const Color(0xFF34D399),
+            onTap: () => openRoute(context, Routes.expenses),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -224,11 +280,39 @@ class _HeroStat extends StatelessWidget {
 }
 
 /// Four big round shortcuts, each with its own colour.
-class _QuickActions extends StatelessWidget {
+class _QuickActions extends ConsumerWidget {
   const _QuickActions();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(userTypeProvider) == UserType.personal) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _QuickAction(
+            icon: Icons.receipt,
+            label: tr('Expense'),
+            tint: const Color(0xFFFFE4E6),
+            iconColor: AppColors.dangerText,
+            onTap: () => context.push(Routes.addExpense),
+          ),
+          _QuickAction(
+            icon: Icons.alarm_add,
+            label: tr('Reminder'),
+            tint: AppColors.amber100,
+            iconColor: AppColors.warningText,
+            onTap: () => context.push(Routes.addTask),
+          ),
+          _QuickAction(
+            icon: Icons.calendar_month,
+            label: tr('Calendar'),
+            tint: const Color(0xFFDBEAFE),
+            iconColor: AppColors.blue700,
+            onTap: () => context.push(Routes.calendar),
+          ),
+        ],
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -252,7 +336,7 @@ class _QuickActions extends StatelessWidget {
           label: tr('Attendance'),
           tint: const Color(0xFFD1FAE5),
           iconColor: AppColors.successText,
-          onTap: () => context.go(Routes.attendance()),
+          onTap: () => openRoute(context, Routes.attendance()),
         ),
         _QuickAction(
           icon: Icons.receipt,
@@ -430,14 +514,14 @@ class _TasksPreviewCard extends ConsumerWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => context.push(Routes.tasks),
+                    onPressed: () => openRoute(context, Routes.tasks),
                     child: Text(tr('View all')),
                   ),
                 ],
               ),
               const Divider(height: 20),
               InkWell(
-                onTap: () => context.push(Routes.tasks),
+                onTap: () => openRoute(context, Routes.tasks),
                 child: Row(
                   children: [
                     Icon(
@@ -516,7 +600,7 @@ class _TodayCard extends ConsumerWidget {
                   textStyle: const TextStyle(
                       fontSize: 15, fontWeight: FontWeight.w700),
                 ),
-                onPressed: () => context.go(
+                onPressed: () => openRoute(context,
                     total == 0 ? Routes.workers : Routes.attendance()),
                 icon: Icon(total == 0 ? Icons.person_add : Icons.edit_calendar),
                 label: Text(total == 0 ? tr('Add') : tr('Mark')),

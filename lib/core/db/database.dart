@@ -50,7 +50,8 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// v1: first release. v2: suppliers + supplier khata. v3: task reminders.
   /// v4: subscription cache moved from SQLite to secure storage.
-  static const currentSchemaVersion = 4;
+  /// v5: business profile user type (contractor / shop / personal).
+  static const currentSchemaVersion = 5;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -72,6 +73,9 @@ class AppDatabase extends _$AppDatabase {
               "('razorpay_customer_id', 'subscription_id', "
               "'subscription_status', 'subscription_verified_at')",
             );
+          }
+          if (from < 5) {
+            await m.addColumn(businessProfiles, businessProfiles.userType);
           }
         },
         beforeOpen: (details) async {

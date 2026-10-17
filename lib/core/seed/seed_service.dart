@@ -27,11 +27,31 @@ class SeedService {
   final AppDatabase _db;
   final SeedReader _read;
 
-  Future<void> applyTrades(Iterable<Trade> trades) async {
+  /// Seeds what [type] starts with (PRD C10): contractors get the common
+  /// pack plus their trades; shops and personal users get their own pack.
+  Future<void> applyFor(UserType type, Iterable<Trade> trades) =>
+      switch (type) {
+        UserType.contractor => applyTrades(trades),
+        UserType.shop => _apply(const ['shop'], withCommonPack: false),
+        UserType.personal => _apply(const ['personal'], withCommonPack: false),
+      };
+
+  Future<void> applyTrades(Iterable<Trade> trades) => _apply(
+        [for (final trade in trades) trade.seedFile],
+        withCommonPack: true,
+      );
+
+  /// Units always come from the common pack (billing needs them). Its
+  /// roles, categories and items are contractor defaults, so only
+  /// [withCommonPack] seeds those.
+  Future<void> _apply(
+    Iterable<String> names, {
+    required bool withCommonPack,
+  }) async {
     final common = await _load('common');
     final packs = [
-      common,
-      for (final trade in trades.toSet()) await _load(trade.seedFile),
+      if (withCommonPack) common,
+      for (final name in names.toSet()) await _load(name),
     ];
 
     await _db.transaction(() async {
@@ -45,7 +65,12 @@ class SeedService {
         await _seedItems(packs[i], unitIds);
         await _seedTemplates(packs[i]);
       }
-      final terms = common['defaultTerms'] as List? ?? const [];
+      // A pack's own terms win (shop bills); otherwise the common ones.
+      final terms = [...packs, common]
+              .map((pack) => pack['defaultTerms'] as List?)
+              .nonNulls
+              .firstOrNull ??
+          const [];
       await _db.into(_db.appMeta).insert(
             AppMetaCompanion.insert(
               metaKey: 'default_terms',

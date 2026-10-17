@@ -32,6 +32,10 @@ class BusinessProfiles extends Table with Timestamps {
 
   /// Comma separated [Trade] names, see [Trade.encode].
   TextColumn get trades => text().withDefault(const Constant(''))();
+
+  /// Rows from before v5 were all contractors.
+  TextColumn get userType =>
+      textEnum<UserType>().withDefault(const Constant('contractor'))();
   TextColumn get settingsJson => text().withDefault(const Constant('{}'))();
 
   @override

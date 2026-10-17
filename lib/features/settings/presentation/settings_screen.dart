@@ -18,6 +18,7 @@ class SettingsScreen extends ConsumerWidget {
     final profile = ref.watch(businessProfileProvider).valueOrNull;
     final backup = ref.watch(backupStateProvider).valueOrNull;
     final trades = profile == null ? <Trade>{} : Trade.decode(profile.trades);
+    final type = ref.watch(userTypeProvider);
 
     Widget tile(IconData icon, String title, String? subtitle, String route) =>
         ListTile(
@@ -33,12 +34,19 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           const LanguageTile(),
-          tile(Icons.store, tr('Business profile'), profile?.name,
+          tile(
+              Icons.store,
+              type == UserType.personal
+                  ? tr('My profile')
+                  : tr('Business profile'),
+              profile?.name,
               Routes.businessProfile),
-          tile(Icons.handyman, tr('Trades'), trades.map((t) => t.label).join(', '),
-              Routes.trades),
-          tile(Icons.rule, tr('Work rules'), tr('Monthly salary, weekly off'),
-              Routes.rules),
+          if (type.usesTrades)
+            tile(Icons.handyman, tr('Trades'),
+                trades.map((t) => t.label).join(', '), Routes.trades),
+          if (type != UserType.personal)
+            tile(Icons.rule, tr('Work rules'), tr('Monthly salary, weekly off'),
+                Routes.rules),
           tile(
             Icons.cloud_upload,
             tr('Backup & restore'),
@@ -47,8 +55,9 @@ class SettingsScreen extends ConsumerWidget {
                 : tr('Google Drive · {email}', {'email': backup.email ?? ''}),
             Routes.backup,
           ),
-          tile(Icons.workspace_premium, tr('Thekedaar Pro'),
-              tr('₹99/month subscription'), Routes.subscription),
+          if (!type.isFree)
+            tile(Icons.workspace_premium, tr('Thekedaar Pro'),
+                tr('₹99/month subscription'), Routes.subscription),
           tile(Icons.lock, tr('App lock'), tr('PIN and fingerprint'), Routes.appLock),
           tile(Icons.notifications, tr('Reminders'),
               tr('Backup, overdue bills, month end'), Routes.reminders),

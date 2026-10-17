@@ -5,6 +5,32 @@ import 'package:flutter/material.dart';
 
 import '../i18n/i18n.dart';
 
+/// Who uses the app (PRD C10). Decides the bottom tabs, the default seed
+/// data and whether data entry needs the subscription.
+enum UserType {
+  contractor('Contractor', 'Workers, sites, attendance and bills',
+      Icons.engineering_outlined),
+  shop('Shopkeeper', 'Cloth, kirana, medical or any shop',
+      Icons.storefront_outlined),
+  personal('Personal', 'Salary, home expenses and savings',
+      Icons.person_outline);
+
+  const UserType(this._label, this._description, this.icon);
+
+  final String _label;
+  final String _description;
+  final IconData icon;
+
+  String get label => tr(_label);
+  String get description => tr(_description);
+
+  /// Personal use is free; contractors and shops need the subscription.
+  bool get isFree => this == UserType.personal;
+
+  /// Contractors choose trades; the other types have one seed pack each.
+  bool get usesTrades => this == UserType.contractor;
+}
+
 /// Trades a contractor can work in (PRD C0). [seedFile] is the JSON file in
 /// `assets/seed/` holding that trade's default roles, items and templates.
 enum Trade {

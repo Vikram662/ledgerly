@@ -14,7 +14,8 @@ import '../../subscription/subscription_controller.dart';
 import '../data/onboarding_repository.dart';
 import 'trade_icons.dart';
 
-/// First launch: business name, phone and trades (PRD C0, TR-01).
+/// First launch: user type, name, phone and, for a contractor, trades
+/// (PRD C10, C0 TR-01).
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -27,6 +28,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _name = TextEditingController();
   final _phone = TextEditingController();
   final _trades = <Trade>{};
+  UserType? _type;
   bool _saving = false;
 
   @override
@@ -45,7 +47,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _refresh() => setState(() {});
 
   bool get _canContinue =>
-      !_saving && _name.text.trim().isNotEmpty && _trades.isNotEmpty;
+      !_saving &&
+      _type != null &&
+      _name.text.trim().isNotEmpty &&
+      (!_type!.usesTrades || _trades.isNotEmpty);
+
+  String get _nameLabel => switch (_type) {
+        UserType.personal => tr('Your name'),
+        UserType.shop => tr('Shop name'),
+        _ => tr('Business name'),
+      };
 
   void _toggle(Trade trade) {
     setState(() {
@@ -58,6 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() => _saving = true);
     try {
       await ref.read(onboardingRepositoryProvider).complete(
+            userType: _type!,
             businessName: _name.text.trim(),
             phone: normalizeIndianPhone(_phone.text),
             trades: _trades,
@@ -78,7 +90,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Set up your business'))),
+      appBar: AppBar(title: Text(tr('Set up Thekedaar'))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -88,13 +100,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               alignment: Alignment.centerRight,
               child: LanguageToggle(),
             ),
+            Text(tr('Who will use this app?'), style: textTheme.titleLarge),
+            const SizedBox(height: 12),
+            for (final type in UserType.values) ...[
+              UserTypeTile(
+                type: type,
+                selected: _type == type,
+                onTap: () => setState(() => _type = type),
+              ),
+              const SizedBox(height: AppSizes.gap),
+            ],
             const SizedBox(height: 12),
             TextFormField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: tr('Business name')),
+              decoration: InputDecoration(labelText: _nameLabel),
               validator: (value) => (value == null || value.trim().isEmpty)
-                  ? tr('Enter business name')
+                  ? tr('Enter a name')
                   : null,
             ),
             const SizedBox(height: 12),
@@ -111,30 +133,41 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ? null
                   : tr('Enter a valid 10-digit mobile number'),
             ),
-            const SizedBox(height: 24),
-            Text(tr('What work do you do?'), style: textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              tr('Choose one or more. You can change this later.'),
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.slate600),
-            ),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: AppSizes.gap,
-              crossAxisSpacing: AppSizes.gap,
-              childAspectRatio: 2.4,
-              children: [
-                for (final trade in Trade.values)
-                  TradeTile(
-                    trade: trade,
-                    selected: _trades.contains(trade),
-                    onTap: () => _toggle(trade),
-                  ),
-              ],
-            ),
+            if (_type?.usesTrades == true) ...[
+              const SizedBox(height: 24),
+              Text(tr('What work do you do?'), style: textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                tr('Choose one or more. You can change this later.'),
+                style:
+                    textTheme.bodyMedium?.copyWith(color: AppColors.slate600),
+              ),
+              const SizedBox(height: 12),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: AppSizes.gap,
+                crossAxisSpacing: AppSizes.gap,
+                childAspectRatio: 2.4,
+                children: [
+                  for (final trade in Trade.values)
+                    TradeTile(
+                      trade: trade,
+                      selected: _trades.contains(trade),
+                      onTap: () => _toggle(trade),
+                    ),
+                ],
+              ),
+            ],
+            if (_type == UserType.personal) ...[
+              const SizedBox(height: 12),
+              Text(
+                tr('Free for personal use.'),
+                style: textTheme.bodyMedium
+                    ?.copyWith(color: AppColors.successText),
+              ),
+            ],
             const SizedBox(height: 24),
             const Divider(),
             ListTile(
@@ -160,6 +193,68 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     child: CircularProgressIndicator(strokeWidth: 3),
                   )
                 : Text(tr('Continue')),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One user type with a short description (PRD C10).
+class UserTypeTile extends StatelessWidget {
+  const UserTypeTile({
+    super.key,
+    required this.type,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final UserType type;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppSizes.radius),
+      side: BorderSide(
+        color: selected ? AppColors.amber500 : AppColors.border,
+        width: selected ? 2 : 1,
+      ),
+    );
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: selected ? AppColors.amber100 : AppColors.surface,
+        shape: shape,
+        child: InkWell(
+          customBorder: shape,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(type.icon, size: 32, color: AppColors.slate900),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(type.label, style: textTheme.titleMedium),
+                      Text(
+                        type.description,
+                        style: textTheme.bodySmall
+                            ?.copyWith(color: AppColors.slate600),
+                      ),
+                    ],
+                  ),
+                ),
+                if (selected)
+                  const Icon(Icons.check_circle, color: AppColors.successText),
+              ],
+            ),
           ),
         ),
       ),

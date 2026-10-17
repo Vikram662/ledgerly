@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'database.dart';
+import 'enums.dart';
 
 /// Overridden in `main()` with the opened database.
 final databaseProvider = Provider<AppDatabase>(
@@ -22,3 +23,10 @@ final businessProfileProvider = StreamProvider<BusinessProfile?>((ref) {
   final db = ref.watch(databaseProvider);
   return db.select(db.businessProfiles).watchSingleOrNull();
 });
+
+/// Contractor until the profile has loaded (PRD C10).
+final userTypeProvider = Provider<UserType>(
+  (ref) =>
+      ref.watch(businessProfileProvider).valueOrNull?.userType ??
+      UserType.contractor,
+);

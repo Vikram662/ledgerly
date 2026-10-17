@@ -1,0 +1,11 @@
+{
+  "roles": [],
+  "expenseCategories": [
+    "Rent", "Grocery / Ration", "Milk", "Vegetables / Fruits", "Electricity",
+    "Gas Cylinder", "Mobile / Internet", "Petrol", "EMI / Loan",
+    "School / Tuition Fees", "Medical", "Shopping / Clothes", "Travel",
+    "Eating Out", "Gifts / Shagun", "Other"
+  ],
+  "items": [],
+  "templates": []
+}

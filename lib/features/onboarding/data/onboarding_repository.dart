@@ -29,21 +29,25 @@ class OnboardingRepository {
   final AppDatabase _db;
   final SeedService _seed;
 
-  /// Seeds the trades' defaults, then saves the profile. The profile is
-  /// written last, so if seeding fails the app opens onboarding again and the
-  /// (idempotent) seed simply runs once more.
+  /// Seeds the defaults for [userType] (and the trades, for a contractor),
+  /// then saves the profile. The profile is written last, so if seeding
+  /// fails the app opens onboarding again and the (idempotent) seed simply
+  /// runs once more.
   Future<void> complete({
+    required UserType userType,
     required String businessName,
     required String? phone,
     required Set<Trade> trades,
   }) async {
-    await _seed.applyTrades(trades);
+    final chosen = userType.usesTrades ? trades : const <Trade>{};
+    await _seed.applyFor(userType, chosen);
     await _db.into(_db.businessProfiles).insertOnConflictUpdate(
           BusinessProfilesCompanion.insert(
             id: businessProfileId,
             name: businessName,
             phone: Value(phone),
-            trades: Value(Trade.encode(trades)),
+            trades: Value(Trade.encode(chosen)),
+            userType: Value(userType),
           ),
         );
   }

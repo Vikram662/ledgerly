@@ -1,0 +1,15 @@
+{
+  "roles": ["Salesman", "Cashier", "Helper", "Tailor", "Delivery Boy"],
+  "expenseCategories": [
+    "Stock Purchase", "Shop Rent", "Staff Salary", "Electricity",
+    "Packing / Bags", "Transport / Bhada", "Food / Chai",
+    "Mobile Recharge", "Repair / Maintenance", "Other"
+  ],
+  "items": [],
+  "templates": [],
+  "defaultTerms": [
+    "Goods once sold will not be taken back.",
+    "Exchange within 7 days with the bill.",
+    "Subject to local jurisdiction."
+  ]
+}

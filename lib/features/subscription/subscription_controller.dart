@@ -7,7 +7,8 @@ import '../../core/i18n/i18n.dart';
 import '../../core/security/secure_store.dart';
 import 'data/subscription_service.dart';
 
-enum AccessKind { loading, explore, active, offlineGrace, setupRequired }
+/// [free]: a user type that never needs the subscription (PRD C10).
+enum AccessKind { loading, explore, active, offlineGrace, setupRequired, free }
 
 class SubscriptionAccess {
   const SubscriptionAccess(this.kind,
@@ -24,7 +25,9 @@ class SubscriptionAccess {
   final bool trialEligible;
   bool get isTrial => status == 'authenticated';
   bool get canWrite =>
-      kind == AccessKind.active || kind == AccessKind.offlineGrace;
+      kind == AccessKind.active ||
+      kind == AccessKind.offlineGrace ||
+      kind == AccessKind.free;
 }
 
 final subscriptionServiceProvider = Provider<SubscriptionService>(
@@ -47,6 +50,11 @@ class SubscriptionController
       _db.select(_db.businessProfiles).getSingleOrNull();
 
   Future<void> refresh() async {
+    // Free user types skip the payment server entirely.
+    if ((await _profile())?.userType.isFree == true) {
+      state = const AsyncData(SubscriptionAccess(AccessKind.free));
+      return;
+    }
     if (!AppConfig.subscriptionConfigured) {
       state = AsyncData(SubscriptionAccess(AccessKind.setupRequired,
           message: tr('Subscription service is not configured.')));
