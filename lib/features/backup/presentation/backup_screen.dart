@@ -533,179 +533,245 @@ class _BackupDashboard extends ConsumerWidget {
                   )
                 : (tr('All data backed up'), AppColors.successText);
 
+    const grey = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColors.muted,
+    );
+    final ok = statusColor == AppColors.successText;
+
     return ListView(
-      padding: const EdgeInsets.all(AppSizes.gutter),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         Panel(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.cloud_done),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(state.email ?? tr('Google Drive'))),
-                ],
-              ),
-              const Divider(),
-              Text(
-                state.lastBackupAt == null
-                    ? tr('Last backup: never')
-                    : tr('Last backup: {date}', {'date': dayTimeFormat.format(state.lastBackupAt!)}),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.circle, size: 12, color: statusColor),
-                  const SizedBox(width: 6),
+                  IconTile(
+                    ok ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+                    color: ok
+                        ? AppColors.successSurface
+                        : statusColor == AppColors.warningText
+                            ? AppColors.warningSurface
+                            : AppColors.dangerSurface,
+                    iconColor: statusColor,
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(statusText, style: TextStyle(color: statusColor)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: ok ? AppColors.ink : statusColor,
+                          ),
+                        ),
+                        Text(
+                          state.lastBackupAt == null
+                              ? tr('Last backup: never')
+                              : tr('Last backup: {date}', {
+                                  'date':
+                                      dayTimeFormat.format(state.lastBackupAt!)
+                                }),
+                          style: grey,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              if (lastSuccess?.sizeBytes != null || quota?.freeBytes != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    [
-                      if (lastSuccess?.sizeBytes != null)
-                        tr('Size {size}', {'size': _size(lastSuccess!.sizeBytes!)}),
-                      if (quota?.freeBytes != null)
-                        tr('Drive free {size}', {'size': _size(quota!.freeBytes!)}),
-                    ].join(' · '),
-                    style: const TextStyle(color: AppColors.slate600),
-                  ),
+              if (running && progress != null) ...[
+                const SizedBox(height: 12),
+                PercentProgress(
+                  value: progress.fraction,
+                  label: progress.step,
+                  detail: progress.detail,
                 ),
-              if ((quota?.usedFraction ?? 0) > 0.9)
-                Text(
-                  tr('Google Drive is almost full (PRD I-M11). Free some space.'),
-                  style: TextStyle(color: AppColors.dangerText),
+              ],
+              const SizedBox(height: 14),
+              FilledButton.icon(
+                onPressed: running ? null : () => _backupNow(context, ref),
+                icon: running
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.backup_outlined),
+                label: Text(running ? tr('Backing up…') : tr('Backup Now')),
+              ),
+              if (disconnected) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _reconnect(context, ref),
+                  icon: const Icon(Icons.link),
+                  label: Text(tr('Reconnect Google Drive')),
                 ),
+              ],
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        if (running && progress != null) ...[
-          Panel(
-            child: PercentProgress(
-              value: progress.fraction,
-              label: progress.step,
-              detail: progress.detail,
-            ),
+        const SizedBox(height: 16),
+        SectionLabel(tr('Google Drive')),
+        Panel(
+          child: Row(
+            children: [
+              const IconTile(Icons.add_to_drive_outlined),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('Connected: {email}', {'email': state.email ?? ''}),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w700),
+                    ),
+                    if (lastSuccess?.sizeBytes != null ||
+                        quota?.freeBytes != null)
+                      Text(
+                        [
+                          if (lastSuccess?.sizeBytes != null)
+                            tr('Size {size}',
+                                {'size': _size(lastSuccess!.sizeBytes!)}),
+                          if (quota?.freeBytes != null)
+                            tr('Drive free {size}',
+                                {'size': _size(quota!.freeBytes!)}),
+                        ].join(' · '),
+                        style: grey,
+                      ),
+                    if ((quota?.usedFraction ?? 0) > 0.9)
+                      Text(
+                        tr('Google Drive is almost full (PRD I-M11). Free some space.'),
+                        style: grey.copyWith(color: AppColors.dangerText),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+        ),
+        const SizedBox(height: 16),
+        SectionLabel(tr('Settings')),
+        CardList(
+          children: [
+            if (settings != null) ...[
+              ListTile(
+                leading: const Icon(Icons.schedule),
+                title: Text(tr('Auto backup times')),
+                subtitle: Text(settings.backupSlots
+                    .map((h) => '${h.toString().padLeft(2, '0')}:00')
+                    .join(' · ')),
+                trailing: SizedBox(
+                  width: 110,
+                  child: SegmentedTabs<int>(
+                    value: settings.backupSlots.length == 3 ? 3 : 4,
+                    options: const {3: '3×', 4: '4×'},
+                    onChanged: (n) => ref
+                        .read(settingsRepositoryProvider)
+                        .saveSettings(settings.copyWith(
+                          backupSlots: n == 3
+                              ? AppSettings.threeBackupSlots
+                              : AppSettings.defaultBackupSlots,
+                        )),
+                  ),
+                ),
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.wifi),
+                title: Text(tr('Wi-Fi only')),
+                value: settings.backupWifiOnly,
+                onChanged: (v) async {
+                  await ref
+                      .read(settingsRepositoryProvider)
+                      .saveSettings(settings.copyWith(backupWifiOnly: v));
+                  try {
+                    await ref
+                        .read(backupSchedulerProvider)
+                        .schedulePeriodic(wifiOnly: v);
+                  } catch (_) {}
+                },
+              ),
+            ],
+            ListTile(
+              leading: const Icon(Icons.password),
+              title: Text(tr('Change Backup Password')),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.faint),
+              onTap: () => _changePassword(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_off, color: AppColors.dangerText),
+              title: Text(
+                tr('Turn off backup'),
+                style: const TextStyle(color: AppColors.dangerText),
+              ),
+              onTap: () => _turnOff(context, ref),
+            ),
+          ],
+        ),
+        if (history.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          SectionLabel(tr('History')),
+          CardList(
+            children: [
+              for (final log in history.take(15))
+                ListTile(
+                  dense: true,
+                  leading: Icon(
+                    switch (log.status) {
+                      BackupStatus.success => Icons.check_circle,
+                      BackupStatus.failed => Icons.error,
+                      BackupStatus.skipped => Icons.remove_circle_outline,
+                    },
+                    color: switch (log.status) {
+                      BackupStatus.success => AppColors.successText,
+                      BackupStatus.failed => AppColors.dangerText,
+                      BackupStatus.skipped => AppColors.slate600,
+                    },
+                  ),
+                  title: Text(
+                    dayTimeFormat.format(
+                        DateTime.fromMillisecondsSinceEpoch(log.startedAt)),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: Text([
+                    if (log.sizeBytes != null) _size(log.sizeBytes!),
+                    if (log.status == BackupStatus.failed && log.error != null)
+                      log.error!,
+                  ].join(' · ')),
+                  trailing: TagBadge(
+                    _triggerLabel(log.triggerType),
+                    color: AppColors.track,
+                    textColor: AppColors.inkSoft,
+                  ),
+                ),
+            ],
+          ),
         ],
-        FilledButton.icon(
-          onPressed: running ? null : () => _backupNow(context, ref),
-          icon: running
-              ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.backup),
-          label: Text(running ? tr('Backing up…') : tr('Backup Now')),
-        ),
-        if (disconnected)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: OutlinedButton.icon(
-              onPressed: () => _reconnect(context, ref),
-              icon: const Icon(Icons.link),
-              label: Text(tr('Reconnect Google Drive')),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => context.push(Routes.restore),
+                icon: const Icon(Icons.restore),
+                label: Text(tr('Restore')),
+              ),
             ),
-          ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => context.push(Routes.restore),
-          icon: const Icon(Icons.restore),
-          label: Text(tr('Restore')),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => _download(context, ref),
-          icon: const Icon(Icons.download),
-          label: Text(tr('Download backup file')),
-        ),
-        SectionTitle(tr('Settings')),
-        if (settings != null) ...[
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.schedule),
-            title: Text(tr('Auto backup times')),
-            subtitle: Text(settings.backupSlots
-                .map((h) => '${h.toString().padLeft(2, '0')}:00')
-                .join(' · ')),
-            trailing: SegmentedButton<int>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 3, label: Text('3×')),
-                ButtonSegment(value: 4, label: Text('4×')),
-              ],
-              selected: {settings.backupSlots.length == 3 ? 3 : 4},
-              onSelectionChanged: (s) => ref
-                  .read(settingsRepositoryProvider)
-                  .saveSettings(settings.copyWith(
-                    backupSlots: s.first == 3
-                        ? AppSettings.threeBackupSlots
-                        : AppSettings.defaultBackupSlots,
-                  )),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _download(context, ref),
+                icon: const Icon(Icons.download),
+                label: Text(tr('Download file')),
+              ),
             ),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            secondary: const Icon(Icons.wifi),
-            title: Text(tr('Wi-Fi only')),
-            value: settings.backupWifiOnly,
-            onChanged: (v) async {
-              await ref
-                  .read(settingsRepositoryProvider)
-                  .saveSettings(settings.copyWith(backupWifiOnly: v));
-              try {
-                await ref
-                    .read(backupSchedulerProvider)
-                    .schedulePeriodic(wifiOnly: v);
-              } catch (_) {}
-            },
-          ),
-        ],
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.password),
-          title: Text(tr('Change Backup Password')),
-          onTap: () => _changePassword(context, ref),
+          ],
         ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.cloud_off, color: AppColors.dangerText),
-          title: Text(tr('Turn off backup')),
-          onTap: () => _turnOff(context, ref),
-        ),
-        SectionTitle(tr('History')),
-        for (final log in history.take(15))
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(
-              switch (log.status) {
-                BackupStatus.success => Icons.check_circle,
-                BackupStatus.failed => Icons.error,
-                BackupStatus.skipped => Icons.remove_circle_outline,
-              },
-              color: switch (log.status) {
-                BackupStatus.success => AppColors.successText,
-                BackupStatus.failed => AppColors.dangerText,
-                BackupStatus.skipped => AppColors.slate600,
-              },
-            ),
-            title: Text(dayTimeFormat
-                .format(DateTime.fromMillisecondsSinceEpoch(log.startedAt))),
-            subtitle: Text([
-              _triggerLabel(log.triggerType),
-              if (log.sizeBytes != null) _size(log.sizeBytes!),
-              if (log.status == BackupStatus.failed && log.error != null)
-                log.error!,
-            ].join(' · ')),
-          ),
       ],
     );
   }

@@ -124,30 +124,62 @@ class _MeasurementPageState extends State<_MeasurementPage> {
   Widget build(BuildContext context) {
     final total = measurementTotalMilli(_entries);
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Measurement'))),
+      appBar: AppBar(
+        leading: const CloseButton(),
+        title: Text(tr('Measurement')),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           Text(
             tr('Enter length, and width or height as needed. Use the same unit (ft or m) for all rows.'),
-            style: TextStyle(color: AppColors.slate600),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted,
+            ),
           ),
           const SizedBox(height: 12),
           for (var i = 0; i < _rows.length; i++) _rowCard(i),
-          Wrap(
-            spacing: AppSizes.gap,
+          Row(
             children: [
-              OutlinedButton.icon(
-                onPressed: _add,
-                icon: const Icon(Icons.add),
-                label: Text(tr('Add row')),
+              SmallOutlinedButton(
+                icon: Icons.add,
+                label: tr('Add row'),
+                onTap: _add,
               ),
-              OutlinedButton.icon(
-                onPressed: () => _add(deduction: true),
-                icon: const Icon(Icons.remove),
-                label: Text(tr('Add deduction')),
+              const SizedBox(width: 8),
+              SmallOutlinedButton(
+                icon: Icons.remove,
+                label: tr('Add deduction'),
+                onTap: () => _add(deduction: true),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Panel(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    tr('Total'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ),
+                Text(
+                  formatMilli(total),
+                  style: AppText.tabular.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.48,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -175,8 +207,17 @@ class _MeasurementPageState extends State<_MeasurementPage> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSizes.gap),
-      child: Panel(
+      child: Container(
         padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: row.isDeduction ? AppColors.dangerSurface : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+            color: row.isDeduction
+                ? AppColors.dangerText.withValues(alpha: 0.25)
+                : AppColors.border,
+          ),
+        ),
         child: Column(
           children: [
             Row(

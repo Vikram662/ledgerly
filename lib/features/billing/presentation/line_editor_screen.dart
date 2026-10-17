@@ -185,69 +185,68 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const CloseButton(),
         title: Text(widget.initial == null ? tr('Add line') : tr('Edit line')),
         actions: [
-          if (widget.initial != null)
-            IconButton(
+          if (widget.initial != null) ...[
+            AppIconButton(
+              icon: Icons.delete_outline,
               tooltip: tr('Delete line'),
-              icon: const Icon(Icons.delete_outline),
               onPressed: () =>
                   Navigator.of(context).pop(const LineEditResult.delete()),
             ),
+            const SizedBox(width: 12),
+          ],
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
-          SegmentedButton<LineType>(
-            showSelectedIcon: false,
-            segments: [
-              for (final t in LineType.values)
-                ButtonSegment(value: t, label: Text(lineTypeLabel(t))),
-            ],
-            selected: {_type},
-            onSelectionChanged: (s) => setState(() {
-              _type = s.first;
+          SegmentedTabs<LineType>(
+            value: _type,
+            options: {for (final t in LineType.values) t: lineTypeLabel(t)},
+            onChanged: (t) => setState(() {
+              _type = t;
               _itemId = null;
             }),
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _name,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: _isLumpSum ? tr('Description') : tr('Item / work'),
-              suffixIcon: _isLumpSum
-                  ? null
-                  : IconButton(
-                      tooltip: tr('Choose from rate list'),
-                      icon: const Icon(Icons.list),
-                      onPressed: _pickItem,
-                    ),
+          const SizedBox(height: 16),
+          LabeledField(
+            label: _isLumpSum ? tr('Description') : tr('Item / work'),
+            child: TextField(
+              controller: _name,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                hintText: _isLumpSum ? null : tr('Choose from rate list'),
+                suffixIcon: _isLumpSum
+                    ? null
+                    : IconButton(
+                        tooltip: tr('Choose from rate list'),
+                        icon: const Icon(Icons.list_alt),
+                        onPressed: _pickItem,
+                      ),
+              ),
+              onChanged: (_) => _itemId = null,
             ),
-            onChanged: (_) => _itemId = null,
           ),
-          const SizedBox(height: 12),
           if (!_isLumpSum) ...[
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _qty,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(fontSize: 20),
-                    decoration: InputDecoration(
-                      labelText: tr('Quantity'),
-                      suffixIcon: IconButton(
-                        tooltip: tr('Measure (L × W × H)'),
-                        icon: const Icon(Icons.straighten),
-                        onPressed: _measure,
-                      ),
+                  child: LabeledField(
+                    label: tr('Quantity'),
+                    bottomGap: 0,
+                    child: TextField(
+                      controller: _qty,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      style: AppText.tabular.copyWith(
+                          fontSize: 18, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
-                const SizedBox(width: AppSizes.gap),
+                const SizedBox(width: 12),
                 Expanded(
                   child: PickerField(
                     label: tr('Unit'),
@@ -257,35 +256,69 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
                 ),
               ],
             ),
-            if (_measurement.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  tr('From measurement: {count} rows', {'count': _measurement.length}),
-                  style: const TextStyle(color: AppColors.slate600),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                SmallOutlinedButton(
+                  icon: Icons.straighten,
+                  label: tr('Measure (L × W × H)'),
+                  onTap: _measure,
                 ),
-              ),
-            const SizedBox(height: 12),
+                if (_measurement.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      tr('From measurement: {count} rows',
+                          {'count': _measurement.length}),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 14),
           ],
-          TextField(
-            controller: _rate,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(fontSize: 20),
-            decoration: InputDecoration(
-              labelText: _isLumpSum
-                  ? tr('Amount')
-                  : unitName == null
-                      ? tr('Rate')
-                      : tr('Rate per {unit}', {'unit': unitName}),
-              prefixText: '₹ ',
+          LabeledField(
+            label: _isLumpSum
+                ? tr('Amount')
+                : unitName == null
+                    ? tr('Rate')
+                    : tr('Rate per {unit}', {'unit': unitName}),
+            child: TextField(
+              controller: _rate,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: AppText.tabular
+                  .copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+              decoration: const InputDecoration(prefixText: '₹ '),
             ),
           ),
-          const SizedBox(height: 16),
           Panel(
-            child: AmountRow(
-              label: tr('Line amount'),
-              paise: lineAmountPaise(_qtyMilli, _ratePaise),
-              bold: true,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    tr('Line amount'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ),
+                Text(
+                  formatPaise(lineAmountPaise(_qtyMilli, _ratePaise)),
+                  style: AppText.tabular.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.48,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -1731,6 +1731,10 @@ const hindiStrings = <String, String>{
   'Your name':
       'आपका नाम',
   // New design (wireframes).
+  'Replace & restore': 'बदलें और वापस लाएँ',
+  'Use Backup Password instead': 'इसकी जगह बैकअप पासवर्ड इस्तेमाल करें',
+  'Use Recovery Key instead': 'इसकी जगह रिकवरी की इस्तेमाल करें',
+  'Download file': 'फ़ाइल डाउनलोड करें',
   'LEDGERLY PRO': 'Ledgerly PRO',
   'Account': 'खाता',
   'Business': 'कारोबार',

@@ -219,65 +219,107 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
       body: AbsorbPointer(
         absorbing: _busy,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.gutter),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
-            Text(tr('Where is your backup?')),
-            const SizedBox(height: 8),
-            if (AppConfig.driveConfigured)
-              OutlinedButton.icon(
-                onPressed: _fromDrive,
-                icon: const Icon(Icons.cloud_download),
-                label: Text(tr('Google Drive')),
-              ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _fromFile,
-              icon: const Icon(Icons.file_open),
-              label: Text(tr('Backup file (.tkbak)')),
+            SectionLabel(tr('Where is your backup?')),
+            Row(
+              children: [
+                if (AppConfig.driveConfigured) ...[
+                  Expanded(
+                    child: _SourceTile(
+                      icon: Icons.add_to_drive_outlined,
+                      title: tr('Google Drive'),
+                      selected: _chosenDrive != null || _driveBackups != null,
+                      onTap: _fromDrive,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: _SourceTile(
+                    icon: Icons.insert_drive_file_outlined,
+                    title: tr('Backup file (.tkbak)'),
+                    selected: manifest != null,
+                    onTap: _fromFile,
+                  ),
+                ),
+              ],
             ),
             if (_driveBackups != null && _driveBackups!.isNotEmpty) ...[
-              SectionTitle(tr('Choose a backup')),
-              for (final b in _driveBackups!.take(30))
-                RadioListTile<String>(
-                  contentPadding: EdgeInsets.zero,
-                  value: b.id,
-                  groupValue: _chosenDrive?.id,
-                  onChanged: (_) => setState(() => _chosenDrive = b),
-                  title: Text(dayTimeFormat.format(b.createdAt)),
-                  subtitle: Text(_describe(b.counts, b.sizeBytes)),
-                ),
+              const SizedBox(height: 16),
+              SectionLabel(tr('Choose a backup')),
+              CardList(
+                children: [
+                  for (final b in _driveBackups!.take(30))
+                    ListTile(
+                      onTap: () => setState(() => _chosenDrive = b),
+                      leading: Icon(
+                        _chosenDrive?.id == b.id
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: _chosenDrive?.id == b.id
+                            ? AppColors.primary
+                            : AppColors.faint,
+                      ),
+                      title: Text(
+                        dayTimeFormat.format(b.createdAt),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(_describe(b.counts, b.sizeBytes)),
+                    ),
+                ],
+              ),
             ],
             if (manifest != null) ...[
-              SectionTitle(tr('Backup file')),
+              const SizedBox(height: 16),
+              SectionLabel(tr('Backup file')),
               Panel(
                 child: Text(
                   '${dayTimeFormat.format(manifest.createdAt)}\n'
                   '${_describe(manifest.counts, _fileBytes!.length)}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
             if (ready) ...[
-              SectionTitle(tr('Unlock')),
-              SegmentedButton<bool>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(value: false, label: Text(tr('Backup Password'))),
-                  ButtonSegment(value: true, label: Text(tr('Recovery Key'))),
-                ],
-                selected: {_useRecoveryKey},
-                onSelectionChanged: (s) =>
-                    setState(() => _useRecoveryKey = s.first),
+              const SizedBox(height: 16),
+              LabeledField(
+                label: _useRecoveryKey ? tr('Recovery Key') : tr('Backup Password'),
+                child: TextField(
+                  controller: _secret,
+                  obscureText: !_useRecoveryKey,
+                  textCapitalization: _useRecoveryKey
+                      ? TextCapitalization.characters
+                      : TextCapitalization.none,
+                  decoration: InputDecoration(
+                    hintText: _useRecoveryKey ? 'XXXX-XXXX-XXXX-…' : null,
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _secret,
-                obscureText: !_useRecoveryKey,
-                textCapitalization: _useRecoveryKey
-                    ? TextCapitalization.characters
-                    : TextCapitalization.none,
-                decoration: InputDecoration(
-                  labelText:
-                      _useRecoveryKey ? 'XXXX-XXXX-XXXX-…' : tr('Backup Password'),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () =>
+                      setState(() => _useRecoveryKey = !_useRecoveryKey),
+                  child: Text(_useRecoveryKey
+                      ? tr('Use Backup Password instead')
+                      : tr('Use Recovery Key instead')),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warningSurface,
+                  borderRadius: BorderRadius.circular(AppRadius.small),
+                ),
+                child: Text(
+                  tr('Everything on this phone will be replaced by the backup. A copy of the current data is backed up first.'),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.warningText,
+                  ),
                 ),
               ),
             ],
@@ -303,7 +345,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
       ),
       bottomNavigationBar: ready
           ? BottomActionBar(
-              label: tr('Restore'),
+              label: tr('Replace & restore'),
               busy: _busy,
               onPressed: _restore,
             )
@@ -322,5 +364,52 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
       '${(sizeBytes / 1024).ceil()} KB',
     ];
     return parts.join(' · ');
+  }
+}
+
+class _SourceTile extends StatelessWidget {
+  const _SourceTile({
+    required this.icon,
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.primarySurface : AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+        side: BorderSide(
+          color: selected ? AppColors.primary : AppColors.border,
+          width: selected ? 1.5 : 1,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconTile(icon),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
