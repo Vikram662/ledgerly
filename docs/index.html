@@ -5,27 +5,42 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Ledgerly - Construction & Contractor Management Software</title>
-  <meta name="description" content="Ledgerly - Professional mobile software for civil contractors, builders, and construction supervisors. Manage daily labor attendance, site expenses, material bills, and secure Google Drive backup.">
-  <meta name="keywords" content="ledgerly app, construction management, contractor app, site expense tracking, labor attendance, builder software">
+  <meta name="description" content="Ledgerly - Smart site management software for civil contractors, builders, and supervisors. Manage labor attendance, site expenses, material bills, vouchers, and secure Google Drive backup.">
+  <meta name="keywords" content="ledgerly app, construction management, contractor app, site expense tracking, labor attendance, builder software, thekedaar app">
 
-  <!-- Google Fonts: Oswald & Open Sans -->
+  <!-- Google Fonts: Manrope -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --theme-color: #E65100;
-      --theme-hover: #BF360C;
-      --theme-light: #FFF3E0;
-      --dark-bg: #1B2129;
-      --dark-secondary: #14181F;
-      --light-bg: #F7F9FB;
-      --border-color: #ECEFF1;
-      --text-dark: #2B313B;
-      --text-gray: #6C7A89;
+      /* App Theme Tokens */
+      --primary: #0369A1;
+      --primary-hover: #075985;
+      --primary-tint: #E0F2FE;
+      --primary-surface: #F0F9FF;
+      --amber-500: #F59E0B;
+      --amber-100: #FEF3C7;
+      --amber-dark: #92400E;
+      
+      --ink: #15181D;
+      --ink-soft: #3A414B;
+      --muted: #5B6370;
+      --faint: #8A919C;
+      
+      --page: #F4F5F7;
+      --surface: #FFFFFF;
+      --border: #E3E6EA;
+      --divider: #EEF0F2;
+      
+      --success-fill: #059669;
+      --success-text: #047857;
+      --success-surface: #ECFDF5;
+      
+      --dark-bg: #0F172A;
+      --dark-card: #1E293B;
       --white: #FFFFFF;
-      --accent-green: #2ECC71;
     }
 
     * {
@@ -35,89 +50,103 @@
     }
 
     body {
-      font-family: 'Open Sans', sans-serif;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 15px;
-      line-height: 1.7;
-      color: var(--text-gray);
-      background-color: var(--white);
+      line-height: 1.65;
+      color: var(--muted);
+      background-color: var(--page);
       -webkit-font-smoothing: antialiased;
     }
 
     h1, h2, h3, h4, h5, h6 {
-      font-family: 'Oswald', sans-serif;
-      text-transform: uppercase;
-      color: var(--text-dark);
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      color: var(--ink);
+      font-weight: 800;
+      letter-spacing: -0.02em;
     }
 
     a {
       text-decoration: none;
-      transition: all 0.3s ease-in-out;
+      transition: all 0.25s ease;
     }
 
     .container {
       width: 100%;
-      max-width: 1170px;
+      max-width: 1160px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 24px;
     }
 
     .btn {
-      display: inline-block;
-      font-family: 'Oswald', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
       font-size: 15px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 12px 32px;
-      border-radius: 4px;
+      font-weight: 700;
+      padding: 14px 28px;
+      border-radius: 12px;
       cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.3s ease;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
       text-align: center;
+      gap: 8px;
     }
 
-    .btn-theme {
-      background-color: var(--theme-color);
+    .btn-primary {
+      background-color: var(--primary);
       color: var(--white) !important;
-      border-color: var(--theme-color);
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(3, 105, 161, 0.25);
     }
 
-    .btn-theme:hover {
-      background-color: var(--theme-hover);
-      border-color: var(--theme-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(230, 81, 0, 0.35);
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(3, 105, 161, 0.35);
+    }
+
+    .btn-amber {
+      background-color: var(--amber-500);
+      color: var(--ink) !important;
+      font-weight: 800;
+      border-color: var(--amber-500);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+    }
+
+    .btn-amber:hover {
+      background-color: #D97706;
+      border-color: #D97706;
+      transform: translateY(-1px);
     }
 
     .btn-outline-white {
-      background-color: transparent;
+      background-color: rgba(255, 255, 255, 0.08);
       color: var(--white) !important;
-      border-color: rgba(255, 255, 255, 0.7);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     .btn-outline-white:hover {
       background-color: var(--white);
-      color: var(--dark-bg) !important;
+      color: var(--ink) !important;
       border-color: var(--white);
     }
 
     /* HEADER */
     #header {
-      background-color: rgba(255, 255, 255, 0.98);
-      border-bottom: 1px solid #ECEFF1;
+      background-color: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 999;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
 
     .navbar-wrap {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      height: 80px;
+      height: 74px;
     }
 
     .brand-logo {
@@ -127,106 +156,104 @@
     }
 
     .brand-logo img {
-      width: 44px;
-      height: 44px;
-      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
       object-fit: cover;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .logo-text {
-      font-family: 'Oswald', sans-serif;
-      font-size: 26px;
-      font-weight: 700;
-      color: var(--text-dark);
-      letter-spacing: 1px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.03em;
     }
 
     .logo-text span {
-      color: var(--theme-color);
+      color: var(--primary);
     }
 
     .main-nav {
       display: flex;
-      gap: 28px;
+      gap: 26px;
       align-items: center;
       list-style: none;
     }
 
     .main-nav a {
-      font-family: 'Oswald', sans-serif;
       font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #546E7A;
-      font-weight: 500;
+      font-weight: 600;
+      color: var(--muted);
     }
 
     .main-nav a:hover, .main-nav a.active {
-      color: var(--theme-color);
+      color: var(--primary);
       font-weight: 700;
     }
 
     /* HERO */
     #intro {
-      background: linear-gradient(135deg, rgba(20, 24, 31, 0.92) 0%, rgba(27, 33, 41, 0.95) 100%),
-                  radial-gradient(circle at 80% 20%, rgba(230, 81, 0, 0.18) 0%, transparent 60%);
+      background: linear-gradient(145deg, #0F172A 0%, #1E293B 100%);
       color: var(--white);
-      padding: 100px 0 110px;
+      padding: 80px 0 95px;
       position: relative;
       text-align: center;
-      border-bottom: 4px solid var(--theme-color);
+      border-bottom: 3px solid var(--primary);
     }
 
-    .intro-tagline {
-      font-family: 'Oswald', sans-serif;
-      font-size: 15px;
-      color: var(--theme-color);
-      letter-spacing: 3px;
-      margin-bottom: 15px;
+    .tag-badge {
       display: inline-block;
-      border-bottom: 1px solid rgba(230, 81, 0, 0.4);
-      padding-bottom: 4px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 10px;
+      background: var(--amber-100);
+      color: var(--amber-dark);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
     }
 
     .intro-title {
-      font-size: 50px;
-      font-weight: 700;
+      font-size: 46px;
+      font-weight: 800;
       color: var(--white);
       line-height: 1.15;
-      margin-bottom: 25px;
-      letter-spacing: 1.5px;
+      margin-bottom: 20px;
+      letter-spacing: -0.03em;
     }
 
     .intro-title span {
-      color: var(--theme-color);
+      color: #38BDF8;
     }
 
     .intro-desc {
       font-size: 17px;
-      color: #B0BEC5;
-      max-width: 800px;
-      margin: 0 auto 35px;
-      font-weight: 300;
-      line-height: 1.8;
+      color: #CBD5E1;
+      max-width: 720px;
+      margin: 0 auto 34px;
+      font-weight: 400;
+      line-height: 1.7;
     }
 
     .intro-buttons {
       display: flex;
       justify-content: center;
-      gap: 18px;
+      gap: 16px;
       flex-wrap: wrap;
     }
 
     /* COUNTERS BAR */
     .counters-bar {
-      background-color: var(--white);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-      border-radius: 8px;
-      margin-top: -45px;
+      background-color: var(--surface);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border-radius: 16px;
+      margin-top: -40px;
       position: relative;
       z-index: 10;
-      padding: 30px 20px;
-      border: 1px solid #ECEFF1;
+      padding: 26px 20px;
+      border: 1px solid var(--border);
     }
 
     .counters-grid {
@@ -237,7 +264,7 @@
     }
 
     .counter-item {
-      border-right: 1px solid #ECEFF1;
+      border-right: 1px solid var(--divider);
       padding: 0 15px;
     }
 
@@ -246,129 +273,113 @@
     }
 
     .counter-num {
-      font-family: 'Oswald', sans-serif;
-      font-size: 38px;
-      font-weight: 700;
-      color: var(--text-dark);
-      line-height: 1;
-      margin-bottom: 6px;
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.1;
+      margin-bottom: 4px;
+      font-feature-settings: "tnum";
     }
 
     .counter-num span {
-      color: var(--theme-color);
+      color: var(--primary);
     }
 
     .counter-label {
       font-size: 12px;
       text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 1px;
-      color: #90A4AE;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--faint);
     }
 
     /* SECTION TITLEBAR */
     .section-wrap {
-      padding: 95px 0;
+      padding: 85px 0;
     }
 
     .titlebar {
       text-align: center;
-      margin-bottom: 60px;
+      margin-bottom: 50px;
     }
 
     .titlebar h3 {
-      font-size: 14px;
-      color: var(--theme-color);
-      letter-spacing: 2px;
-      font-weight: 600;
-      margin-bottom: 5px;
+      font-size: 13px;
+      color: var(--primary);
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 8px;
     }
 
     .titlebar h2 {
-      font-size: 36px;
-      font-weight: 700;
-      color: var(--text-dark);
-      letter-spacing: 1px;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
       position: relative;
-      padding-bottom: 18px;
-    }
-
-    .titlebar h2::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 3px;
-      background-color: var(--theme-color);
     }
 
     .titlebar p {
-      max-width: 650px;
-      margin: 15px auto 0;
+      max-width: 620px;
+      margin: 12px auto 0;
       font-size: 15px;
+      color: var(--muted);
     }
 
     /* GRID */
     .features-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 35px;
+      gap: 24px;
     }
 
     .feature-item {
-      background: var(--white);
-      border: 1px solid #ECEFF1;
-      border-radius: 6px;
-      padding: 35px 25px;
-      text-align: center;
-      transition: all 0.35s ease;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: left;
+      transition: all 0.25s ease;
     }
 
     .feature-item:hover {
-      border-color: var(--theme-color);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.08);
-      transform: translateY(-4px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      transform: translateY(-2px);
     }
 
     .feature-icon-circle {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background-color: var(--theme-light);
-      color: var(--theme-color);
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background-color: var(--primary-surface);
+      color: var(--primary);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
-      margin: 0 auto 22px;
-      border: 2px solid #FFE0B2;
-      transition: all 0.3s ease;
-    }
-
-    .feature-item:hover .feature-icon-circle {
-      background-color: var(--theme-color);
-      color: var(--white);
-      border-color: var(--theme-color);
+      font-size: 26px;
+      margin-bottom: 20px;
+      border: 1px solid var(--primary-tint);
     }
 
     .feature-item h4 {
-      font-size: 18px;
-      margin-bottom: 12px;
-      letter-spacing: 0.5px;
+      font-size: 17px;
+      margin-bottom: 8px;
+      font-weight: 700;
     }
 
     .feature-item p {
       font-size: 14px;
-      line-height: 1.7;
+      line-height: 1.6;
+      color: var(--muted);
     }
 
     /* PRICING */
-    .bg-light {
-      background-color: var(--light-bg);
-      border-top: 1px solid #ECEFF1;
-      border-bottom: 1px solid #ECEFF1;
+    .bg-surface {
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
 
     .pricing-table-wrap {
@@ -377,122 +388,132 @@
     }
 
     .pricing-table {
-      background: var(--white);
-      border: 2px solid var(--theme-color);
-      border-radius: 8px;
+      background: var(--surface);
+      border: 2px solid var(--primary);
+      border-radius: 20px;
       width: 100%;
-      max-width: 480px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+      max-width: 500px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.08);
       overflow: hidden;
       text-align: center;
       position: relative;
     }
 
     .pricing-top {
-      background-color: var(--dark-bg);
+      background-color: #0F172A;
       color: var(--white);
-      padding: 30px 20px 25px;
+      padding: 28px 24px 22px;
     }
 
     .pricing-top h4 {
       color: var(--white);
-      font-size: 22px;
-      letter-spacing: 1.5px;
-      margin-bottom: 5px;
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 4px;
     }
 
     .pricing-top .plan-subtitle {
-      color: #90A4AE;
+      color: #94A3B8;
       font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-weight: 600;
     }
 
     .price-amount {
-      padding: 25px 20px;
-      background-color: var(--theme-light);
-      border-bottom: 1px solid #FFE0B2;
+      padding: 24px 20px;
+      background-color: var(--primary-surface);
+      border-bottom: 1px solid var(--primary-tint);
     }
 
     .price-amount .currency {
-      font-family: 'Oswald', sans-serif;
-      font-size: 26px;
-      font-weight: 700;
-      color: var(--theme-color);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--primary);
       vertical-align: top;
       position: relative;
       top: 6px;
     }
 
     .price-amount .num {
-      font-family: 'Oswald', sans-serif;
-      font-size: 56px;
-      font-weight: 700;
-      color: var(--theme-color);
+      font-size: 52px;
+      font-weight: 800;
+      color: var(--primary);
       line-height: 1;
+      font-feature-settings: "tnum";
     }
 
     .price-amount .cycle {
-      font-size: 14px;
-      color: #78909C;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
       display: block;
-      margin-top: 4px;
+      margin-top: 6px;
     }
 
     .pricing-features {
       list-style: none;
-      padding: 25px 35px;
+      padding: 24px 30px;
       text-align: left;
     }
 
     .pricing-features li {
-      padding: 11px 0;
-      border-bottom: 1px solid #ECEFF1;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--divider);
       font-size: 14px;
-      color: #455A64;
+      color: var(--ink-soft);
       display: flex;
       align-items: center;
       gap: 12px;
+      font-weight: 500;
+    }
+
+    .pricing-features li:last-child {
+      border-bottom: none;
     }
 
     .pricing-features li span.icon-check {
-      color: var(--accent-green);
+      color: var(--success-text);
+      background: var(--success-surface);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 800;
-      font-size: 16px;
+      font-size: 12px;
+      flex-shrink: 0;
     }
 
     .pricing-bottom {
-      padding: 0 35px 35px;
+      padding: 0 30px 32px;
     }
 
     /* FOOTER */
     footer {
-      background-color: var(--dark-bg);
-      color: #90A4AE;
-      padding: 65px 0 25px;
-      border-top: 4px solid var(--theme-color);
+      background-color: #0F172A;
+      color: #94A3B8;
+      padding: 60px 0 25px;
+      border-top: 3px solid var(--primary);
     }
 
     .footer-grid {
       display: grid;
       grid-template-columns: 1.5fr 1fr 1fr;
       gap: 40px;
-      padding-bottom: 45px;
+      padding-bottom: 40px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
     .footer-col h4 {
       color: var(--white);
-      font-size: 16px;
-      letter-spacing: 1px;
-      margin-bottom: 18px;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 16px;
     }
 
     .footer-col p {
       font-size: 13px;
-      line-height: 1.8;
+      line-height: 1.7;
     }
 
     .footer-nav {
@@ -504,33 +525,33 @@
     }
 
     .footer-nav a {
-      color: #90A4AE;
+      color: #94A3B8;
       font-size: 13px;
     }
 
     .footer-nav a:hover {
-      color: var(--theme-color);
+      color: #38BDF8;
     }
 
     .footer-bottom {
-      padding-top: 25px;
+      padding-top: 24px;
       text-align: center;
       font-size: 12px;
-      color: #607D8B;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      color: #64748B;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
 
     @media (max-width: 991px) {
       .features-grid { grid-template-columns: 1fr 1fr; }
-      .counters-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+      .counters-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
       .counter-item { border-right: none; }
       .footer-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 767px) {
       .main-nav { display: none; }
-      .intro-title { font-size: 34px; }
+      .intro-title { font-size: 32px; }
       .features-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -543,16 +564,16 @@
       <div class="navbar-wrap">
         <a href="index.html" class="brand-logo">
           <img src="img/logo.png" alt="Ledgerly App Logo">
-          <span class="logo-text">THEKE<span>DAAR</span></span>
+          <span class="logo-text">Ledger<span>ly</span></span>
         </a>
 
         <!-- Exactly 5 Pages Navigation -->
         <ul class="main-nav">
-          <li><a href="index.html" class="active">HOME</a></li>
-          <li><a href="privacy.html">PRIVACY POLICY</a></li>
-          <li><a href="terms.html">TERMS & CONDITIONS</a></li>
-          <li><a href="refund.html">REFUND POLICY</a></li>
-          <li><a href="contact.html">CONTACT US</a></li>
+          <li><a href="index.html" class="active">Home</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms & Conditions</a></li>
+          <li><a href="refund.html">Refund Policy</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
         </ul>
       </div>
     </div>
@@ -561,18 +582,20 @@
   <!-- ================= HERO SECTION ================= -->
   <section id="intro">
     <div class="container">
-      <div style="margin-bottom: 25px;">
-        <img src="img/logo.png" alt="Ledgerly App Icon" style="width: 105px; height: 105px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); border: 3px solid rgba(255,255,255,0.2);">
+      <div style="margin-bottom: 22px;">
+        <img src="img/logo.png" alt="Ledgerly App Icon" style="width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 12px 28px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.15);">
       </div>
-      <span class="intro-tagline">SMART SITE MANAGEMENT SOFTWARE</span>
-      <h1 class="intro-title">CONSTRUCTION MANAGEMENT<br><span>MADE ULTRA SIMPLE</span></h1>
+      <div>
+        <span class="tag-badge">Smart Site & Business Management</span>
+      </div>
+      <h1 class="intro-title">Construction Management<br><span>Made Simple & Fast</span></h1>
       <p class="intro-desc">
-        Eliminate paperwork and manual registers. Manage multiple construction projects, labor attendance, material bills, vouchers, and party ledgers in one secure application. Works 100% offline with encrypted personal Google Drive backup.
+        Eliminate paperwork and manual registers. Manage daily labor attendance, project expenses, material bills, vouchers, and party ledgers in one secure application. Works 100% offline with encrypted personal Google Drive backup.
       </p>
 
       <div class="intro-buttons">
-        <a href="#pricing-section" class="btn btn-theme">EXPLORE APP FREE (SUBSCRIBE ₹99/MO)</a>
-        <a href="contact.html" class="btn btn-outline-white">CONTACT SALES</a>
+        <a href="#pricing-section" class="btn btn-amber">Try 5 Days Free (Then ₹99/mo)</a>
+        <a href="contact.html" class="btn btn-outline-white">Contact Sales</a>
       </div>
     </div>
   </section>
@@ -583,19 +606,19 @@
       <div class="counters-grid">
         <div class="counter-item">
           <div class="counter-num">100<span>%</span></div>
-          <div class="counter-label">OFFLINE READY</div>
+          <div class="counter-label">Offline Ready</div>
         </div>
         <div class="counter-item">
           <div class="counter-num">0<span>₹</span></div>
-          <div class="counter-label">SETUP / HIDDEN FEES</div>
+          <div class="counter-label">Setup / Hidden Fees</div>
         </div>
         <div class="counter-item">
           <div class="counter-num">AES<span>256</span></div>
-          <div class="counter-label">ENCRYPTED CLOUD SYNC</div>
+          <div class="counter-label">Encrypted Cloud Sync</div>
         </div>
         <div class="counter-item">
           <div class="counter-num">24<span>x7</span></div>
-          <div class="counter-label">LOCAL DATA PRIVACY</div>
+          <div class="counter-label">Local Data Privacy</div>
         </div>
       </div>
     </div>
@@ -605,27 +628,27 @@
   <section class="section-wrap">
     <div class="container">
       <div class="titlebar">
-        <h3>WHO WE ARE</h3>
-        <h2>ENGINEERED FOR CIVIL CONTRACTORS</h2>
-        <p>Built ground-up to resolve the real field operational challenges of modern construction supervisors.</p>
+        <h3>Who We Are</h3>
+        <h2>Engineered for Modern Contractors & Builders</h2>
+        <p>Built ground-up to solve the real operational challenges faced by site supervisors, shopkeepers, and contractors.</p>
       </div>
 
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-icon-circle">🏗️</div>
-          <h4>MULTI-SITE TRACKING</h4>
+          <h4>Multi-Site Tracking</h4>
           <p>Maintain separate site budgets, track expense records, and monitor client receipts across all your active construction sites.</p>
         </div>
 
         <div class="feature-item">
           <div class="feature-icon-circle">👷</div>
-          <h4>LABOR ATTENDANCE REGISTER</h4>
+          <h4>Labor Attendance Register</h4>
           <p>Record daily labor presence, half-day shifts, overtime hours, advances, and compute weekly payouts accurately.</p>
         </div>
 
         <div class="feature-item">
           <div class="feature-icon-circle">🧾</div>
-          <h4>BILL & VOUCHER ATTACHMENTS</h4>
+          <h4>Bill & Voucher Attachments</h4>
           <p>Capture and attach instant camera photos of cement, sand, brick, and rebar bills directly to specific project ledgers.</p>
         </div>
       </div>
@@ -633,31 +656,31 @@
   </section>
 
   <!-- ================= FEATURES SECTION ================= -->
-  <section class="section-wrap bg-light">
+  <section class="section-wrap bg-surface">
     <div class="container">
       <div class="titlebar">
-        <h3>CORE CAPABILITIES</h3>
-        <h2>ADVANCED BUSINESS UTILITIES</h2>
-        <p>Comprehensive supervision tools designed for smartphone use directly on job sites.</p>
+        <h3>Core Capabilities</h3>
+        <h2>Advanced Field Utilities</h2>
+        <p>Comprehensive supervision tools designed for effortless smartphone use directly on site.</p>
       </div>
 
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-icon-circle">💰</div>
-          <h4>PARTY & SUPPLIER LEDGERS</h4>
+          <h4>Party & Supplier Ledgers</h4>
           <p>Keep transparent financial records of dues payable to suppliers and pending collections receivable from property owners.</p>
         </div>
 
         <div class="feature-item">
           <div class="feature-icon-circle">⏰</div>
-          <h4>SITE VISITS & TASK REMINDERS</h4>
-          <p>Schedule client meetings, architect reviews, and material delivery alerts with precise notifications.</p>
+          <h4>Site Visits & Task Reminders</h4>
+          <p>Schedule client meetings, architect reviews, and material delivery alerts with timely phone notifications.</p>
         </div>
 
         <div class="feature-item">
           <div class="feature-icon-circle">☁️</div>
-          <h4>PRIVATE GOOGLE DRIVE BACKUP</h4>
-          <p>Your business database is stored on your device and backed up to your personal Google Drive with client-side encryption.</p>
+          <h4>Private Google Drive Backup</h4>
+          <p>Your business database is stored on your device and backed up to your personal Google Drive with client-side AES-256 encryption.</p>
         </div>
       </div>
     </div>
@@ -667,41 +690,42 @@
   <section class="section-wrap" id="pricing-section">
     <div class="container">
       <div class="titlebar">
-        <h3>TRANSPARENT SUBSCRIPTION</h3>
-        <h2>LEDGERLY PRO MEMBERSHIP</h2>
+        <h3>Transparent Subscription</h3>
+        <h2>Ledgerly Pro Membership</h2>
         <p>A single, affordable, and flexible plan for contractors and builders across India.</p>
       </div>
 
       <div class="pricing-table-wrap">
         <div class="pricing-table">
           <div class="pricing-top">
-            <h4>PRO CONTRACTOR ACCESS</h4>
-            <div class="plan-subtitle">FREE EXPLORATION • ₹99 / MONTH TO RECORD DATA</div>
+            <span class="tag-badge" style="margin-bottom: 10px;">LEDGERLY PRO</span>
+            <h4>Try 5 Days Free, Then ₹99/Month</h4>
+            <div class="plan-subtitle">Browse free forever • Pro lets you record & manage data</div>
           </div>
 
           <div class="price-amount">
             <span class="currency">₹</span>
             <span class="num">99</span>
-            <span class="cycle">PER MONTH • CANCEL ANYTIME</span>
+            <span class="cycle">per month • cancel any time</span>
           </div>
 
           <ul class="pricing-features">
-            <li><span class="icon-check">✓</span> Free Account Registration & Feature Exploration</li>
-            <li><span class="icon-check">✓</span> Create & Manage Unlimited Construction Sites</li>
-            <li><span class="icon-check">✓</span> Record Daily Worker Attendance & Overtime</li>
-            <li><span class="icon-check">✓</span> Capture & Attach Material Bills & Photos</li>
-            <li><span class="icon-check">✓</span> Maintain Party, Client & Vendor Ledgers</li>
-            <li><span class="icon-check">✓</span> Automated Encrypted Google Drive Backup</li>
-            <li><span class="icon-check">✓</span> Generate Shareable PDF & WhatsApp Reports</li>
-            <li><span class="icon-check">✓</span> Dedicated WhatsApp & Phone Support</li>
+            <li><span class="icon-check">✓</span> 5-day free trial on first activation</li>
+            <li><span class="icon-check">✓</span> Create & manage unlimited construction sites</li>
+            <li><span class="icon-check">✓</span> Record daily worker attendance, overtime & advances</li>
+            <li><span class="icon-check">✓</span> Capture & attach material bills & photos</li>
+            <li><span class="icon-check">✓</span> Maintain party, client & vendor ledgers</li>
+            <li><span class="icon-check">✓</span> Automated encrypted Google Drive backup</li>
+            <li><span class="icon-check">✓</span> Generate shareable PDF & WhatsApp reports</li>
+            <li><span class="icon-check">✓</span> Works offline up to 7 days seamlessly</li>
           </ul>
 
           <div class="pricing-bottom">
-            <a href="contact.html" class="btn btn-theme" style="width: 100%;">
-              SUBSCRIBE TO ACTIVATE DATA ENTRY (₹99/MO)
+            <a href="contact.html" class="btn btn-primary" style="width: 100%;">
+              Start 5-Day Free Trial (₹99/mo)
             </a>
-            <p style="font-size: 12px; color: #78909C; margin-top: 12px;">
-              Monthly recurring via UPI / Card. Free to browse and explore app features.
+            <p style="font-size: 12px; color: var(--muted); margin-top: 12px; line-height: 1.5;">
+              Payment mandate is set up on day 1 via Razorpay. First ₹99 is charged after 5 days; cancel before then to pay nothing.
             </p>
           </div>
         </div>
@@ -714,15 +738,15 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-col">
-          <div class="brand-logo" style="margin-bottom: 15px;">
-            <img src="img/logo.png" alt="Ledgerly App Logo" style="width: 40px; height: 40px; border-radius: 8px;">
-            <span class="logo-text" style="color: #FFF;">THEKE<span style="color: var(--theme-color);">DAAR</span></span>
+          <div class="brand-logo" style="margin-bottom: 16px;">
+            <img src="img/logo.png" alt="Ledgerly App Logo" style="width: 38px; height: 38px; border-radius: 8px;">
+            <span class="logo-text" style="color: #FFF;">Ledger<span style="color: #38BDF8;">ly</span></span>
           </div>
           <p>India's leading mobile application for civil contractors, builders, and construction project supervisors.</p>
         </div>
 
         <div class="footer-col">
-          <h4>WEBSITE PAGES</h4>
+          <h4>Website Pages</h4>
           <ul class="footer-nav">
             <li><a href="index.html">Home</a></li>
             <li><a href="privacy.html">Privacy Policy</a></li>
@@ -733,9 +757,9 @@
         </div>
 
         <div class="footer-col">
-          <h4>CUSTOMER SUPPORT</h4>
+          <h4>Customer Support</h4>
           <p><strong>Email:</strong> thekedaar.support@gmail.com</p>
-          <p style="margin-top: 5px;">Monday – Saturday (9:00 AM – 7:00 PM IST)</p>
+          <p style="margin-top: 6px;">Monday – Saturday (9:00 AM – 7:00 PM IST)</p>
         </div>
       </div>
 
