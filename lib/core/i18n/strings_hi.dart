@@ -1731,6 +1731,8 @@ const hindiStrings = <String, String>{
   'Your name':
       'आपका नाम',
   // New design (wireframes).
+  'Job: {name}': 'काम: {name}',
+  'none': 'कोई नहीं',
   'Try 5 days free, then ₹99/month': '5 दिन मुफ़्त आज़माएँ, फिर ₹99/महीना',
   'Browse the whole app free. Pro lets you add or change records. Cancel any time.': 'पूरा ऐप मुफ़्त देखें। रिकॉर्ड जोड़ने या बदलने के लिए Pro लें। कभी भी रद्द करें।',
   'Add sites, attendance, bills, expenses': 'साइट, हाज़िरी, बिल और खर्च जोड़ें',

@@ -6,9 +6,7 @@ What is listed here is left for later.
 
 ## 1. Gaps against the wireframes
 
-| Screen | What is missing | Needs |
-|---|---|---|
-| Expense entry | Wireframe has a "Job: none" chip; the app uses the job picker field | optional |
+No known screen gaps remain against the current wireframes.
 
 Done since the merge: job cards show Billed / Expense / Profit, supplier rows
 show "Last purchase {date}" or "Paid {date}", and both calculations now have
