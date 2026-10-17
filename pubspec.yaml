@@ -49,6 +49,8 @@ dev_dependencies:
   # cap once a fixed build_runner is out.
   analyzer: ">=8.0.0 <14.5.0"
   flutter_launcher_icons: ^0.14.4
+  # image 4.11.0 calls archive APIs unavailable in the CI SDK.
+  image: 4.10.1
   flutter_native_splash: ^2.4.6
 
 flutter:
