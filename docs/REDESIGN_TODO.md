@@ -1,6 +1,7 @@
 # Redesign: remaining work
 
-Wireframes: `docs/wireframes/*.dc.html`. All 45 screens have been restyled.
+Wireframes: `docs/wireframes/*.dc.html`. All 45 screens have been restyled
+on `feature/new-design` and merged into `main` (Analyze and Test pass on CI).
 What is listed here is left for later.
 
 ## 1. Gaps against the wireframes
