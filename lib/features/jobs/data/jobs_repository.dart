@@ -28,10 +28,24 @@ String jobStatusLabel(JobStatus status) => switch (status) {
     };
 
 class JobListItem {
-  const JobListItem({required this.job, required this.clientName});
+  const JobListItem({
+    required this.job,
+    required this.clientName,
+    this.billedPaise = 0,
+    this.expensesPaise = 0,
+    this.piecePaise = 0,
+  });
 
   final Job job;
   final String clientName;
+
+  /// Same rules as [JobDetail]: non-draft, non-cancelled invoices.
+  final int billedPaise;
+  final int expensesPaise;
+  final int piecePaise;
+
+  /// Billed − expenses − piece work, as on the job detail screen.
+  int get profitPaise => billedPaise - expensesPaise - piecePaise;
 }
 
 /// PRD JB-01 / EX-03: a site with its bills and expenses.
@@ -69,22 +83,71 @@ class JobsRepository {
 
   final AppDatabase _db;
 
-  Stream<List<JobListItem>> watchJobs() {
-    final query = _db.select(_db.jobs).join([
-      innerJoin(_db.clients, _db.clients.id.equalsExp(_db.jobs.clientId)),
-    ])
-      ..orderBy([
-        OrderingTerm.asc(_db.jobs.status),
-        OrderingTerm.desc(_db.jobs.createdAt),
-      ]);
-    return query.watch().map((rows) => [
-          for (final row in rows)
-            JobListItem(
-              job: row.readTable(_db.jobs),
-              clientName: row.readTable(_db.clients).name,
-            ),
-        ]);
-  }
+  Stream<List<JobListItem>> watchJobs() => watchComputed(
+        _db,
+        [
+          _db.jobs,
+          _db.clients,
+          _db.documents,
+          _db.expenses,
+          _db.pieceWorks,
+        ],
+        () async {
+          final rows = await (_db.select(_db.jobs).join([
+            innerJoin(
+                _db.clients, _db.clients.id.equalsExp(_db.jobs.clientId)),
+          ])
+                ..orderBy([
+                  OrderingTerm.asc(_db.jobs.status),
+                  OrderingTerm.desc(_db.jobs.createdAt),
+                ]))
+              .get();
+
+          final billed = <String, int>{};
+          final bills = await (_db.select(_db.documents)
+                ..where((d) =>
+                    d.jobId.isNotNull() &
+                    d.kind.equalsValue(DocumentKind.invoice)))
+              .get();
+          for (final b in bills) {
+            if (b.status == DocumentStatus.draft ||
+                b.status == DocumentStatus.cancelled) {
+              continue;
+            }
+            billed[b.jobId!] = (billed[b.jobId!] ?? 0) + b.totalPaise;
+          }
+
+          final spent = <String, int>{};
+          final expenses = await (_db.select(_db.expenses)
+                ..where((e) => e.jobId.isNotNull()))
+              .get();
+          for (final e in expenses) {
+            spent[e.jobId!] = (spent[e.jobId!] ?? 0) + e.amountPaise;
+          }
+
+          final piece = <String, int>{};
+          final pieces = await (_db.select(_db.pieceWorks)
+                ..where((p) => p.jobId.isNotNull()))
+              .get();
+          for (final p in pieces) {
+            piece[p.jobId!] = (piece[p.jobId!] ?? 0) + p.amountPaise;
+          }
+
+          return [
+            for (final row in rows)
+              () {
+                final job = row.readTable(_db.jobs);
+                return JobListItem(
+                  job: job,
+                  clientName: row.readTable(_db.clients).name,
+                  billedPaise: billed[job.id] ?? 0,
+                  expensesPaise: spent[job.id] ?? 0,
+                  piecePaise: piece[job.id] ?? 0,
+                );
+              }(),
+          ];
+        },
+      );
 
   Stream<JobDetail?> watchJob(String id) => watchComputed(
         _db,

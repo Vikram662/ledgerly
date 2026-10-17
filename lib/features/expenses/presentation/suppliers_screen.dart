@@ -94,9 +94,9 @@ class SuppliersScreen extends ConsumerWidget {
                         s.supplier.name,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      subtitle: s.supplier.phone == null
+                      subtitle: _lastEntryText(s) == null
                           ? null
-                          : Text(formatIndianPhone(s.supplier.phone!)),
+                          : Text(_lastEntryText(s)!),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -135,6 +135,20 @@ class SuppliersScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// "Last purchase 15 Oct" or "Paid 05 Oct", whichever entry is newer.
+String? _lastEntryText(SupplierBalance s) {
+  final purchase = s.lastPurchaseDate;
+  final payment = s.lastPaymentDate;
+  if (purchase == null && payment == null) return null;
+  // ISO dates compare correctly as strings.
+  final paidLast =
+      payment != null && (purchase == null || payment.compareTo(purchase) > 0);
+  final date = dayFormat.format(parseIsoDate(paidLast ? payment : purchase!));
+  return paidLast
+      ? tr('Paid {date}', {'date': date})
+      : tr('Last purchase {date}', {'date': date});
 }
 
 class SupplierFormScreen extends ConsumerStatefulWidget {

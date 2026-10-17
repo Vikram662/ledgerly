@@ -1731,6 +1731,8 @@ const hindiStrings = <String, String>{
   'Your name':
       'आपका नाम',
   // New design (wireframes).
+  'Last purchase {date}': 'आख़िरी खरीद {date}',
+  'Paid {date}': 'भुगतान {date}',
   'Replace & restore': 'बदलें और वापस लाएँ',
   'Use Backup Password instead': 'इसकी जगह बैकअप पासवर्ड इस्तेमाल करें',
   'Use Recovery Key instead': 'इसकी जगह रिकवरी की इस्तेमाल करें',

@@ -60,11 +60,17 @@ class SupplierBalance {
     required this.supplier,
     required this.purchasedPaise,
     required this.paidPaise,
+    this.lastPurchaseDate,
+    this.lastPaymentDate,
   });
 
   final Supplier supplier;
   final int purchasedPaise;
   final int paidPaise;
+
+  /// ISO dates (yyyy-MM-dd) of the latest purchase and payment, if any.
+  final String? lastPurchaseDate;
+  final String? lastPaymentDate;
 
   /// Positive: you owe the supplier (dena). Negative: paid in advance.
   int get duePaise => purchasedPaise - paidPaise;
@@ -191,7 +197,11 @@ class ExpensesRepository {
         COALESCE((SELECT SUM(l.amount_paise) FROM supplier_ledger l
           WHERE l.supplier_id = s.id AND l.entry_type = 'purchase'), 0) AS purchased,
         COALESCE((SELECT SUM(l.amount_paise) FROM supplier_ledger l
-          WHERE l.supplier_id = s.id AND l.entry_type = 'payment'), 0) AS paid
+          WHERE l.supplier_id = s.id AND l.entry_type = 'payment'), 0) AS paid,
+        (SELECT MAX(l.date) FROM supplier_ledger l
+          WHERE l.supplier_id = s.id AND l.entry_type = 'purchase') AS last_purchase,
+        (SELECT MAX(l.date) FROM supplier_ledger l
+          WHERE l.supplier_id = s.id AND l.entry_type = 'payment') AS last_payment
       FROM suppliers s
       ORDER BY s.name COLLATE NOCASE
       ''',
@@ -202,6 +212,8 @@ class ExpensesRepository {
               supplier: _db.suppliers.map(row.data),
               purchasedPaise: row.read<int>('purchased'),
               paidPaise: row.read<int>('paid'),
+              lastPurchaseDate: row.read<String?>('last_purchase'),
+              lastPaymentDate: row.read<String?>('last_payment'),
             ),
         ]);
   }

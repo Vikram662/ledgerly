@@ -127,43 +127,85 @@ class _JobCard extends StatelessWidget {
       JobStatus.inProgress => (AppColors.successSurface, AppColors.successText),
       JobStatus.completed => (AppColors.primarySurface, AppColors.primary),
     };
+    final spent = item.expensesPaise + item.piecePaise;
+    final profit = item.profitPaise;
+    Widget figure(String label, int paise, Color color) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted,
+                ),
+              ),
+              Text(
+                formatPaise(paise),
+                style: AppText.tabular.copyWith(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => context.push(Routes.job(job.id)),
       child: Panel(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          children: [
+            Row(
               children: [
-                Text(
-                  job.title,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  [
-                    item.clientName,
-                    if (job.siteAddress != null) job.siteAddress!,
-                  ].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.muted,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        job.title,
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          item.clientName,
+                          if (job.siteAddress != null) job.siteAddress!,
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                const SizedBox(width: 8),
+                TagBadge(jobStatusLabel(job.status), color: bg, textColor: fg),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                figure(tr('Billed'), item.billedPaise, AppColors.ink),
+                figure(tr('Expense'), spent, AppColors.ink),
+                figure(
+                  profit >= 0 ? tr('Profit') : tr('Loss'),
+                  profit.abs(),
+                  profit >= 0 ? AppColors.successText : AppColors.dangerText,
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 8),
-          TagBadge(jobStatusLabel(job.status), color: bg, textColor: fg),
-          const Icon(Icons.chevron_right, color: AppColors.faint),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
