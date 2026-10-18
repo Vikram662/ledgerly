@@ -88,24 +88,25 @@ class MoreScreen extends ConsumerWidget {
         detail: tr('This month'),
         onTap: () => go(Routes.calendar),
       ),
-      if (!personal)
-        NavTile(
-          icon: Icons.grid_view_outlined,
-          label: tr('Attendance register'),
-          detail: tr('Month view'),
-          onTap: () => go(Routes.attendanceMonth),
-        ),
-      if (!personal && !Routes.isTab(Routes.workers))
+      NavTile(
+        icon: Icons.grid_view_outlined,
+        label: tr('Attendance register'),
+        detail: tr('Month view'),
+        onTap: () => go(Routes.attendanceMonth),
+      ),
+      if (!Routes.isTab(Routes.workers))
         NavTile(
           icon: Icons.groups_outlined,
-          label: contractor ? tr('Workers') : tr('Staff'),
+          label: contractor ? tr('Workers') : tr('People'),
           onTap: () => go(Routes.workers),
         ),
-      if (!personal && !Routes.isTab(Routes.khata))
+      if (!Routes.isTab(Routes.khata))
         NavTile(
           icon: Icons.account_balance_wallet_outlined,
-          label: tr('Khata'),
-          detail: tr('Advances & wages'),
+          label: personal ? tr('Payments & wages') : tr('Khata'),
+          detail: personal
+              ? tr('Salary and helper payments')
+              : tr('Advances & wages'),
           onTap: () => go(Routes.khata),
         ),
     ];
@@ -120,10 +121,10 @@ class MoreScreen extends ConsumerWidget {
               : tr('{amount} this month', {'amount': formatPaise(spent)}),
           onTap: () => go(Routes.expenses),
         ),
-      if (!personal) ...[
+      ...[
         NavTile(
           icon: Icons.store_outlined,
-          label: tr('Suppliers'),
+          label: personal ? tr('People you pay') : tr('Suppliers'),
           detail: toPay == null
               ? null
               : tr('{amount} to pay', {'amount': formatPaise(toPay)}),
@@ -131,13 +132,15 @@ class MoreScreen extends ConsumerWidget {
         ),
         NavTile(
           icon: Icons.account_balance_outlined,
-          label: tr('Lena / Dena'),
+          label: personal ? tr('Money in / out') : tr('Lena / Dena'),
           detail: tr('Dues report'),
           onTap: () => go(Routes.dues()),
         ),
         NavTile(
           icon: Icons.people_outline,
-          label: contractor ? tr('Clients') : tr('Customers'),
+          label: personal
+              ? tr('Income sources')
+              : (contractor ? tr('Clients') : tr('Customers')),
           detail: clients == null
               ? null
               : (contractor

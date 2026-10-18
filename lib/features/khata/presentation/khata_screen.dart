@@ -72,7 +72,9 @@ class _KhataHero extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final balances = ref.watch(allWorkerBalancesProvider).valueOrNull;
-    final shop = ref.watch(userTypeProvider) == UserType.shop;
+    final type = ref.watch(userTypeProvider);
+    final shop = type == UserType.shop;
+    final personal = type == UserType.personal;
     int sum(int Function(WorkerBalance b) pick) =>
         balances?.fold<int>(0, (s, b) => s + pick(b)) ?? 0;
     final net = sum((b) => b.balancePaise);
@@ -121,7 +123,7 @@ class _KhataHero extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            shop ? tr('Net pending to staff') : tr('Net pending to workers'),
+            personal ? tr('Net pending to people') : (shop ? tr('Net pending to staff') : tr('Net pending to workers')),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

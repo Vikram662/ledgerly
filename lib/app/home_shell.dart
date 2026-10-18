@@ -40,7 +40,8 @@ List<AppTab> tabsFor(UserType type) => switch (type) {
           _workers,
         ],
       UserType.shop => const [_home, _billing, _expenses, _khata, _staff],
-      UserType.personal => const [_home, _expenses, _tasks],
+      // Personal mode is free, but still needs a complete ledger surface.
+      UserType.personal => const [_home, _billing, _expenses, _khata, _tasks],
     };
 
 class HomeShell extends StatelessWidget {

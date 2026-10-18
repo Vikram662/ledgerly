@@ -49,8 +49,9 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
     }.toList()
       ..sort();
 
-    final title = shop ? tr('Staff') : tr('Workers');
-    final addLabel = shop ? tr('Add staff') : tr('Add worker');
+    final personal = ref.watch(userTypeProvider) == UserType.personal;
+    final title = personal ? tr('People') : (shop ? tr('Staff') : tr('Workers'));
+    final addLabel = personal ? tr('Add person') : (shop ? tr('Add staff') : tr('Add worker'));
 
     return Scaffold(
       appBar: tabAppBar(

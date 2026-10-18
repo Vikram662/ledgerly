@@ -1731,6 +1731,13 @@ const hindiStrings = <String, String>{
   'Your name':
       'आपका नाम',
   // New design (wireframes).
+  'People': 'लोग',
+  'Add person': 'व्यक्ति जोड़ें',
+  'Payments & wages': 'भुगतान और मज़दूरी',
+  'Salary and helper payments': 'तनख़्वाह और मददगारों के भुगतान',
+  'People you pay': 'जिन्हें आप भुगतान करते हैं',
+  'Money in / out': 'पैसा अंदर / बाहर',
+  'Income sources': 'कमाई के स्रोत',
   'Job: {name}': 'काम: {name}',
   'none': 'कोई नहीं',
   'Try 5 days free, then ₹99/month': '5 दिन मुफ़्त आज़माएँ, फिर ₹99/महीना',
@@ -1841,6 +1848,7 @@ const hindiStrings = <String, String>{
   'More': 'और',
   'More options': 'और विकल्प',
   'Net pending to staff': 'स्टाफ़ का कुल बकाया',
+  'Net pending to people': 'लोगों का कुल बकाया',
   'Net pending to workers': 'मज़दूरों का कुल बकाया',
   'New balance {balance}': 'नया बकाया {balance}',
   'New customer': 'नया ग्राहक',
