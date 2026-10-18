@@ -279,18 +279,34 @@ async function setComplimentaryAccess(request, env) {
   }
 
   const note = optionalString(body.note, 240);
-  const where = installId ? 'install_id = ?' : 'phone = ?';
-  const identifier = installId || phone;
-  const result = await env.DB.prepare(
-    `UPDATE installs SET complimentary_until = ?, complimentary_note = ?,
-     updated_at = ? WHERE ${where}`,
-  )
-    .bind(until, mode === 'revoke' ? null : note, epoch(), identifier)
-    .run();
-  if (!result.meta?.changes) {
-    throw new ApiError(404, 'user_not_found', 'No matching user was found.');
+  const value = mode === 'revoke' ? null : until;
+  let changes = 0;
+  if (installId) {
+    const result = await env.DB.prepare(
+      `UPDATE installs SET complimentary_until = ?, complimentary_note = ?,
+       updated_at = ? WHERE install_id = ?`,
+    )
+      .bind(value, mode === 'revoke' ? null : note, epoch(), installId)
+      .run();
+    changes = result.meta?.changes || 0;
+  } else {
+    const rows = await env.DB.prepare(
+      'SELECT install_id, phone FROM installs WHERE phone IS NOT NULL',
+    ).all();
+    for (const row of rows.results || []) {
+      if (digits(row.phone) !== digits(phone)) continue;
+      const result = await env.DB.prepare(
+        `UPDATE installs SET complimentary_until = ?, complimentary_note = ?,
+         updated_at = ? WHERE install_id = ?`,
+      )
+        .bind(value, mode === 'revoke' ? null : note, epoch(), row.install_id)
+        .run();
+      changes += result.meta?.changes || 0;
+    }
   }
-  return ok({
+  if (!changes) {
+    throw new ApiError(404, 'user_not_found', 'No registered user matched.');
+  }  return ok({
     updated: result.meta.changes,
     mode,
     expiresAt: until === -1 ? null : until,
