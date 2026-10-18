@@ -104,6 +104,16 @@ async function install(request, env) {
       .bind(installId)
       .first();
   } else {
+    if (
+      (row.subscription_id || row.subscription_created_at) &&
+      digits(row.phone) !== digits(phone)
+    ) {
+      throw new ApiError(
+        409,
+        'phone_change_requires_verification',
+        'Phone change requires account verification.',
+      );
+    }
     await env.DB.prepare(
       `UPDATE installs SET name = ?, phone = ?,
        fcm_token = COALESCE(?, fcm_token),
@@ -146,6 +156,13 @@ async function updateNotificationToken(request, env) {
 
 async function createSubscription(request, env) {
   const user = await authenticated(request, env);
+  if (!digits(user.phone)) {
+    throw new ApiError(
+      400,
+      'phone_required',
+      'Add and verify a mobile number before starting a subscription.',
+    );
+  }
   if (
     user.subscription_id &&
     !['cancelled', 'expired', 'completed'].includes(user.subscription_status)
@@ -156,7 +173,10 @@ async function createSubscription(request, env) {
     );
     return checkout(current, env);
   }
-  const trialEligible = !user.subscription_created_at;
+  // A trial is tied to customer history, not only this install ID.
+  // This prevents reinstalling from granting another free trial.
+  const trialEligible =
+    !user.subscription_created_at && !(await hasUsedTrial(env, user));
   const subscription = await razorpay(env, '/subscriptions', 'POST', {
     plan_id: env.RAZORPAY_PLAN_ID,
     total_count: 120,
@@ -185,17 +205,21 @@ async function subscriptionStatus(request, env) {
   const user = await authenticated(request, env);
   const complimentary = complimentaryPayload(user);
   if (complimentary) {
+    const trialEligible =
+      !user.subscription_created_at && !(await hasUsedTrial(env, user));
     return ok({
       ...complimentary,
       subscriptionId: user.subscription_id,
-      trialEligible: !user.subscription_created_at,
+      trialEligible,
     });
   }
   if (!user.subscription_id) {
+    const trialEligible =
+      !user.subscription_created_at && !(await hasUsedTrial(env, user));
     return ok({
       status: 'none',
       active: false,
-      trialEligible: !user.subscription_created_at,
+      trialEligible,
     });
   }
   const subscription = await razorpay(
@@ -212,6 +236,15 @@ async function subscriptionStatus(request, env) {
   return ok({ ...statusPayload(subscription), trialEligible: false });
 }
 
+async function hasUsedTrial(env, user) {
+  const phone = digits(user.phone);
+  if (!phone) return false;
+  const result = await env.DB.prepare(
+    `SELECT phone FROM installs
+     WHERE phone IS NOT NULL AND subscription_created_at IS NOT NULL`,
+  ).all();
+  return (result.results || []).some((row) => digits(row.phone) === phone);
+}
 async function setComplimentaryAccess(request, env) {
   await adminAuthenticated(request, env);
   const body = await bodyJson(request);

@@ -15,10 +15,10 @@ class AppTab {
 }
 
 const _home = AppTab('/', Icons.home_outlined, Icons.home, 'Home');
-const _attendance = AppTab('/attendance', Icons.fact_check_outlined,
-    Icons.fact_check, 'Attendance');
-const _billing = AppTab('/billing', Icons.receipt_long_outlined,
-    Icons.receipt_long, 'Billing');
+const _attendance = AppTab(
+    '/attendance', Icons.fact_check_outlined, Icons.fact_check, 'Attendance');
+const _billing = AppTab(
+    '/billing', Icons.receipt_long_outlined, Icons.receipt_long, 'Billing');
 const _khata = AppTab('/khata', Icons.account_balance_wallet_outlined,
     Icons.account_balance_wallet, 'Khata');
 const _workers =
@@ -40,6 +40,7 @@ List<AppTab> tabsFor(UserType type) => switch (type) {
           _workers,
         ],
       UserType.shop => const [_home, _billing, _expenses, _khata, _staff],
+      // Personal mode is free, but still needs a complete ledger surface.
       UserType.personal => const [_home, _expenses, _tasks],
     };
 

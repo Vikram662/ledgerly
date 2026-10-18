@@ -205,7 +205,8 @@ class _Welcome extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  FilledButton(onPressed: onStart, child: Text(tr('Get started'))),
+                  FilledButton(
+                      onPressed: onStart, child: Text(tr('Get started'))),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -357,7 +358,10 @@ class _DetailsStep extends StatelessWidget {
     final (nameLabel, nameHint) = switch (type) {
       UserType.personal => (tr('Your name'), tr('e.g. Priya Sharma')),
       UserType.shop => (tr('Shop name'), tr('e.g. Sharma Cloth House')),
-      UserType.contractor => (tr('Business name'), tr('e.g. Sharma Electricals')),
+      UserType.contractor => (
+          tr('Business name'),
+          tr('e.g. Sharma Electricals')
+        ),
     };
 
     return ListView(
@@ -388,7 +392,7 @@ class _DetailsStep extends StatelessWidget {
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             hintText: tr('10-digit number'),
-            prefixText: '+91 ',
+            prefixIcon: const Text('+91 '),
           ),
           validator: (value) => (value == null ||
                   value.trim().isEmpty ||
@@ -529,8 +533,7 @@ class UserTypeTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.input),
                   ),
                   child: Icon(type.icon,
-                      size: 24,
-                      color: selected ? Colors.white : AppColors.ink),
+                      size: 24, color: selected ? Colors.white : AppColors.ink),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

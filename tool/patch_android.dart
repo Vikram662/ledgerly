@@ -53,7 +53,9 @@ void _patchManifest() {
   ];
   var out = text;
   out =
-      out.replaceAll('android:label="thekedaar"', 'android:label="Ledgerly"');
+      out.replaceAll('android:label="thekedaar"', 'android:label="Ledgerly"')
+      .replaceAll('android:label="app"', 'android:label="Ledgerly"')
+      .replaceAll('android:label="Thekedaar"', 'android:label="Ledgerly"');
   final missing = permissions.where((p) => !out.contains('"$p"')).toList();
   if (missing.isNotEmpty) {
     final lines = missing
@@ -64,7 +66,9 @@ void _patchManifest() {
         '${out.substring(manifestTag.end)}';
   }
   out =
-      out.replaceAll('android:label="thekedaar"', 'android:label="Ledgerly"');
+      out.replaceAll('android:label="thekedaar"', 'android:label="Ledgerly"')
+      .replaceAll('android:label="app"', 'android:label="Ledgerly"')
+      .replaceAll('android:label="Thekedaar"', 'android:label="Ledgerly"');
   if (!out.contains('android:scheme="upi"')) {
     const upiIntent = '''
         <intent>

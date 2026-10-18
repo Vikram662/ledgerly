@@ -55,16 +55,15 @@ class MoreScreen extends ConsumerWidget {
         .split(',')
         .map((t) => t.trim())
         .firstWhere((t) => t.isNotEmpty, orElse: () => '');
-    final kindLine = (trade == null || trade.isEmpty || !contractor)
-        ? type.label
-        : trade;
+    final kindLine =
+        (trade == null || trade.isEmpty || !contractor) ? type.label : trade;
     final pro = access?.kind == AccessKind.active ||
         access?.kind == AccessKind.offlineGrace;
 
     void go(String route) => openRoute(context, route);
 
     final work = <Widget>[
-      if (contractor)
+      if (!personal)
         NavTile(
           icon: Icons.location_city_outlined,
           label: tr('Jobs / Sites'),
@@ -95,17 +94,19 @@ class MoreScreen extends ConsumerWidget {
           detail: tr('Month view'),
           onTap: () => go(Routes.attendanceMonth),
         ),
-      if (!personal && !Routes.isTab(Routes.workers))
+      if (!Routes.isTab(Routes.workers))
         NavTile(
           icon: Icons.groups_outlined,
-          label: contractor ? tr('Workers') : tr('Staff'),
+          label: contractor ? tr('Workers') : tr('People'),
           onTap: () => go(Routes.workers),
         ),
-      if (!personal && !Routes.isTab(Routes.khata))
+      if (!Routes.isTab(Routes.khata))
         NavTile(
           icon: Icons.account_balance_wallet_outlined,
-          label: tr('Khata'),
-          detail: tr('Advances & wages'),
+          label: personal ? tr('Payments & wages') : tr('Khata'),
+          detail: personal
+              ? tr('Salary and helper payments')
+              : tr('Advances & wages'),
           onTap: () => go(Routes.khata),
         ),
     ];
@@ -155,8 +156,7 @@ class MoreScreen extends ConsumerWidget {
     ];
 
     final backupOn = backup?.configured == true;
-    final lockValue =
-        lock.biometricEnabled ? tr('Fingerprint') : tr('PIN');
+    final lockValue = lock.biometricEnabled ? tr('Fingerprint') : tr('PIN');
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('More'))),
@@ -264,7 +264,7 @@ class MoreScreen extends ConsumerWidget {
                   label: tr('Wage rules & trades'),
                   onTap: () => go(Routes.settings),
                 )
-              else if (!personal)
+              else
                 SettingRow(
                   icon: Icons.rule,
                   label: tr('Work rules'),

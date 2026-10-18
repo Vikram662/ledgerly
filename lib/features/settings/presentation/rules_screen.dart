@@ -18,14 +18,14 @@ class RulesScreen extends ConsumerWidget {
   );
 
   static Map<int, String> get _weekdays => {
-    DateTime.monday: tr('Monday'),
-    DateTime.tuesday: tr('Tuesday'),
-    DateTime.wednesday: tr('Wednesday'),
-    DateTime.thursday: tr('Thursday'),
-    DateTime.friday: tr('Friday'),
-    DateTime.saturday: tr('Saturday'),
-    DateTime.sunday: tr('Sunday'),
-  };
+        DateTime.monday: tr('Mon'),
+        DateTime.tuesday: tr('Tue'),
+        DateTime.wednesday: tr('Wed'),
+        DateTime.thursday: tr('Thu'),
+        DateTime.friday: tr('Fri'),
+        DateTime.saturday: tr('Sat'),
+        DateTime.sunday: tr('Sun'),
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,6 +52,12 @@ class RulesScreen extends ConsumerWidget {
                   children: [
                     ChoiceChip(
                       showCheckmark: false,
+                      labelStyle: TextStyle(
+                        color: settings.weeklyOffDay == null
+                            ? Colors.white
+                            : AppColors.inkSoft,
+                        fontWeight: FontWeight.w700,
+                      ),
                       label: Text(tr('None')),
                       selected: settings.weeklyOffDay == null,
                       onSelected: (_) =>
@@ -60,6 +66,12 @@ class RulesScreen extends ConsumerWidget {
                     for (final entry in _weekdays.entries)
                       ChoiceChip(
                         showCheckmark: false,
+                        labelStyle: TextStyle(
+                          color: settings.weeklyOffDay == entry.key
+                              ? Colors.white
+                              : AppColors.inkSoft,
+                          fontWeight: FontWeight.w700,
+                        ),
                         label: Text(entry.value),
                         selected: settings.weeklyOffDay == entry.key,
                         onSelected: (_) => save(
@@ -77,26 +89,58 @@ class RulesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           SectionLabel(tr('Monthly salary → per-day rate')),
-          CardList(
+          Column(
             children: [
               for (final (value, label) in [
                 (0, tr('Salary ÷ days in month')),
                 (30, tr('Salary ÷ 30')),
                 (26, tr('Salary ÷ 26')),
               ])
-                ListTile(
-                  onTap: () => save(settings.copyWith(monthlyDivisor: value)),
-                  title: Text(
-                    label,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  trailing: Icon(
-                    settings.monthlyDivisor == value
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Material(
                     color: settings.monthlyDivisor == value
-                        ? AppColors.primary
-                        : AppColors.faint,
+                        ? AppColors.primaryTint
+                        : AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      side: BorderSide(
+                        color: settings.monthlyDivisor == value
+                            ? AppColors.primary
+                            : AppColors.border,
+                        width: settings.monthlyDivisor == value ? 2 : 1,
+                      ),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.small),
+                      onTap: () => save(
+                        settings.copyWith(monthlyDivisor: value),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              settings.monthlyDivisor == value
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_off,
+                              color: settings.monthlyDivisor == value
+                                  ? AppColors.primary
+                                  : AppColors.faint,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                label,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
             ],
