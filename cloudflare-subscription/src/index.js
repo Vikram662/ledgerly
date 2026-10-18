@@ -72,6 +72,7 @@ async function install(request, env) {
   const installId = requiredString(body.installId, 'installId', 80);
   const name = requiredString(body.name, 'name', 120);
   const phone = optionalString(body.phone, 20);
+  const userType = parseUserType(body.userType);
   const fcmToken = optionalString(body.fcmToken, 4096);
   if (!/^[a-zA-Z0-9-]{16,80}$/.test(installId)) {
     throw new ApiError(400, 'invalid_install', 'Invalid install identifier.');
@@ -91,11 +92,11 @@ async function install(request, env) {
     });
     await env.DB.prepare(
       `INSERT INTO installs
-       (install_id, customer_id, name, phone, fcm_token, platform,
+       (install_id, customer_id, name, phone, user_type, fcm_token, platform,
         notification_updated_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, 'android', ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, 'android', ?, ?)`,
     )
-      .bind(installId, customer.id, name, phone, fcmToken,
+      .bind(installId, customer.id, name, phone, userType, fcmToken,
         fcmToken ? epoch() : null, epoch())
       .run();
     row = await env.DB.prepare(
@@ -115,13 +116,13 @@ async function install(request, env) {
       );
     }
     await env.DB.prepare(
-      `UPDATE installs SET name = ?, phone = ?,
+      `UPDATE installs SET name = ?, phone = ?, user_type = ?,
        fcm_token = COALESCE(?, fcm_token),
        notification_updated_at = CASE WHEN ? IS NULL
          THEN notification_updated_at ELSE ? END,
        updated_at = ? WHERE install_id = ?`,
     )
-      .bind(name, phone, fcmToken, fcmToken, epoch(), epoch(), installId)
+      .bind(name, phone, userType, fcmToken, fcmToken, epoch(), epoch(), installId)
       .run();
     row = await env.DB.prepare(
       'SELECT * FROM installs WHERE install_id = ?',
@@ -137,8 +138,16 @@ async function install(request, env) {
     customerId: row.customer_id,
     subscriptionId: row.subscription_id,
     status: row.subscription_status,
-    user: { installId: row.install_id, name: row.name, phone: row.phone },
+    user: { installId: row.install_id, name: row.name, phone: row.phone, userType: row.user_type },
   });
+}
+
+function parseUserType(value) {
+  const type = optionalString(value, 20) || 'contractor';
+  if (!['contractor', 'shop', 'personal'].includes(type)) {
+    throw new ApiError(400, 'invalid_user_type', 'Invalid user type.');
+  }
+  return type;
 }
 
 async function updateNotificationToken(request, env) {

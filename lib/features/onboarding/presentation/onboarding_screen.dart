@@ -74,7 +74,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             phone: normalizeIndianPhone(_phone.text),
             trades: _trades,
           );
-      unawaited(ref.read(subscriptionControllerProvider.notifier).refresh());
+      await ref.read(subscriptionControllerProvider.notifier).refresh();
       if (!mounted) return;
       context.go(Routes.dashboard);
     } catch (error) {

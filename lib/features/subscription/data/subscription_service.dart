@@ -30,7 +30,8 @@ class SubscriptionService {
 
   Uri _uri(String path) => Uri.parse('${AppConfig.subscriptionApiUrl}$path');
 
-  Future<Map<String, dynamic>> register(String name, String? phone,
+  Future<Map<String, dynamic>> register(
+      String name, String? phone, String userType,
       {String? fcmToken}) async {
     _configured();
     fcmToken ??= await _fcmToken();

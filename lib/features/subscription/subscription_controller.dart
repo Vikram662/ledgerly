@@ -50,8 +50,17 @@ class SubscriptionController
       _db.select(_db.businessProfiles).getSingleOrNull();
 
   Future<void> refresh() async {
-    // Free user types skip the payment server entirely.
-    if ((await _profile())?.userType.isFree == true) {
+    // Personal is free, but still registers identity metadata in D1.
+    final initialProfile = await _profile();
+    if (initialProfile?.userType.isFree == true) {
+      if (AppConfig.subscriptionConfigured) {
+        try {
+          await _service.register(initialProfile!.name, initialProfile.phone,
+              initialProfile.userType.name);
+        } catch (_) {
+          // Free mode remains usable if the optional registry is unavailable.
+        }
+      }
       state = const AsyncData(SubscriptionAccess(AccessKind.free));
       return;
     }
@@ -73,7 +82,8 @@ class SubscriptionController
       } on SubscriptionApiException catch (error) {
         if (!error.message.contains('Registration')) rethrow;
         final restored = await _service.cached();
-        await _service.register(profile.name, profile.phone);
+        await _service.register(
+            profile.name, profile.phone, profile.userType.name);
         final restoredId = restored['subscriptionId'];
         data = restoredId != null && restoredId.isNotEmpty
             ? await _service.link(restoredId)
@@ -99,7 +109,7 @@ class SubscriptionController
 
   Future<void> registerProfile(BusinessProfile profile) async {
     if (!AppConfig.subscriptionConfigured) return;
-    await _service.register(profile.name, profile.phone);
+    await _service.register(profile.name, profile.phone, profile.userType.name);
     await refresh();
   }
 
