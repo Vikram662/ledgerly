@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
@@ -112,6 +114,8 @@ class _DailyAttendanceViewState extends ConsumerState<DailyAttendanceView> {
                 icon: Icons.groups,
                 title: tr('No workers on this day'),
                 message: tr('Add workers first, or pick a later date.'),
+                actionLabel: tr('Add worker'),
+                onAction: () => context.push(Routes.addWorker),
               ),
             ],
           );
@@ -126,8 +130,8 @@ class _DailyAttendanceViewState extends ConsumerState<DailyAttendanceView> {
                   const SizedBox(height: 14),
                   Row(
                     children: [
-                      _CountCard(count(AttendanceStatus.present),
-                          tr('Present'), AppColors.successText),
+                      _CountCard(count(AttendanceStatus.present), tr('Present'),
+                          AppColors.successText),
                       const SizedBox(width: 8),
                       _CountCard(count(AttendanceStatus.half), tr('Half day'),
                           AppColors.warningText),
@@ -475,8 +479,8 @@ class _AttendanceRowTile extends ConsumerWidget {
                     child: Text(
                       tr('{hours} h', {'hours': formatMilli(ot)}),
                       textAlign: TextAlign.center,
-                      style: AppText.tabular.copyWith(
-                          fontSize: 15, fontWeight: FontWeight.w800),
+                      style: AppText.tabular
+                          .copyWith(fontSize: 15, fontWeight: FontWeight.w800),
                     ),
                   ),
                   StepButton(

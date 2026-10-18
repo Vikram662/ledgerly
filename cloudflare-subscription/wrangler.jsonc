@@ -15,6 +15,8 @@
     "APP_LATEST_BUILD": "1",
     "APP_MINIMUM_BUILD": "1",
     "APP_UPDATE_URL": "https://play.google.com/store/apps/details?id=com.ledgerly.app",
-    "APP_UPDATE_MESSAGE": "Thekedaar ka naya version available hai. Abhi update karein."
+    "APP_UPDATE_MESSAGE": "Thekedaar ka naya version available hai. Abhi update karein.",
+    "RAZORPAY_KEY_ID": "rzp_test_Tjj6xsLZulnt2V",
+    "RAZORPAY_PLAN_ID": "plan_Tjhk3m6ZUi8y7d"
   }
 }

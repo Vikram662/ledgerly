@@ -230,7 +230,7 @@ class ClientPickerField extends ConsumerWidget {
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 labelText: tr('Mobile (optional)'),
-                prefixIcon: const Text('+91 '),
+                prefixIcon: const PhoneCountryCode(),
               ),
             ),
           ],

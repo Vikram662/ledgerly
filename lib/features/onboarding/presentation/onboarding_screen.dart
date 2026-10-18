@@ -74,7 +74,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             phone: normalizeIndianPhone(_phone.text),
             trades: _trades,
           );
-      await ref.read(subscriptionControllerProvider.notifier).refresh();
+      unawaited(ref.read(subscriptionControllerProvider.notifier).refresh());
       if (!mounted) return;
       context.go(Routes.dashboard);
     } catch (error) {
@@ -392,7 +392,7 @@ class _DetailsStep extends StatelessWidget {
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             hintText: tr('10-digit number'),
-            prefixIcon: const Text('+91 '),
+            prefixIcon: const PhoneCountryCode(),
           ),
           validator: (value) => (value == null ||
                   value.trim().isEmpty ||

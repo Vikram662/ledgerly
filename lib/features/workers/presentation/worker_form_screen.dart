@@ -188,7 +188,7 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: tr('10-digit number'),
-                  prefixIcon: const Text('+91 '),
+                  prefixIcon: const PhoneCountryCode(),
                 ),
                 validator: (value) => (value == null ||
                         value.trim().isEmpty ||
@@ -210,6 +210,12 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
                     for (final role in list)
                       ChoiceChip(
                         showCheckmark: false,
+                        labelStyle: TextStyle(
+                          color: _roleId == role.id
+                              ? Colors.white
+                              : AppColors.inkSoft,
+                          fontWeight: FontWeight.w700,
+                        ),
                         label: Text(role.name),
                         selected: _roleId == role.id,
                         onSelected: (selected) =>

@@ -40,6 +40,7 @@ class SubscriptionService {
         body: jsonEncode({
           'installId': await _secure.deviceId(),
           'name': name,
+          'userType': userType,
           if (phone != null) 'phone': phone,
           if (fcmToken != null) 'fcmToken': fcmToken,
         }));
@@ -78,7 +79,9 @@ class SubscriptionService {
 
   Future<String?> _fcmToken() async {
     try {
-      return await FirebaseMessaging.instance.getToken();
+      return await FirebaseMessaging.instance
+          .getToken()
+          .timeout(const Duration(seconds: 5));
     } catch (_) {
       return null;
     }
@@ -120,7 +123,11 @@ class SubscriptionService {
       throw const SubscriptionApiException('Registration is not complete.');
     }
     final headers = _headers(token);
-    if (method == 'GET') return _client.get(_uri(path), headers: headers);
+    if (method == 'GET') {
+      return _client
+          .get(_uri(path), headers: headers)
+          .timeout(const Duration(seconds: 15));
+    }
     return _client.post(_uri(path),
         headers: headers, body: jsonEncode(body ?? const {}));
   }

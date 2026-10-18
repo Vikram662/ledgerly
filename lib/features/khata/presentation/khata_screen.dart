@@ -123,7 +123,11 @@ class _KhataHero extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            personal ? tr('Net pending to people') : (shop ? tr('Net pending to staff') : tr('Net pending to workers')),
+            personal
+                ? tr('Net pending to people')
+                : (shop
+                    ? tr('Net pending to staff')
+                    : tr('Net pending to workers')),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -178,6 +182,8 @@ class _Balances extends ConsumerWidget {
         icon: Icons.account_balance_wallet,
         title: tr('No workers yet'),
         message: tr('Add workers to keep their khata.'),
+        actionLabel: tr('Add worker'),
+        onAction: () => context.push(Routes.addWorker),
       );
     }
     return CardList(
@@ -193,7 +199,8 @@ class _BalanceTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(workerSummaryProvider(item.worker.id)).valueOrNull;
+    final summary =
+        ref.watch(workerSummaryProvider(item.worker.id)).valueOrNull;
     final balance = summary?.balancePaise;
     final left = !item.worker.isActive;
     return InkWell(
@@ -303,7 +310,8 @@ class _Entries extends ConsumerWidget {
             )
           : CardList(
               children: [
-                for (final item in list) LedgerTile(item: item, showWorker: true),
+                for (final item in list)
+                  LedgerTile(item: item, showWorker: true),
               ],
             ),
     );

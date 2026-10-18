@@ -532,8 +532,7 @@ class _QuickActions extends ConsumerWidget {
             icon: Icons.receipt_long_outlined,
             label: tr('New bill'),
             style: _QuickStyle.primary,
-            onTap: () =>
-                context.push(Routes.newDocument(DocumentKind.invoice)),
+            onTap: () => context.push(Routes.newDocument(DocumentKind.invoice)),
           ),
           _QuickAction(
             icon: Icons.payments_outlined,
@@ -584,8 +583,16 @@ class _QuickAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (Color bg, Color fg, Color border) = switch (style) {
-      _QuickStyle.primary => (AppColors.primary, Colors.white, AppColors.primary),
-      _QuickStyle.amber => (AppColors.amber500, AppColors.ink, AppColors.amber500),
+      _QuickStyle.primary => (
+          AppColors.primary,
+          Colors.white,
+          AppColors.primary
+        ),
+      _QuickStyle.amber => (
+          AppColors.amber500,
+          AppColors.ink,
+          AppColors.amber500
+        ),
       _QuickStyle.plain => (AppColors.surface, AppColors.ink, AppColors.border),
     };
     return Semantics(
@@ -629,8 +636,8 @@ class _TodayCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final today = DateTime.now();
-    final rows =
-        ref.watch(attendanceDayProvider(isoDate(today))).valueOrNull ?? const [];
+    final rows = ref.watch(attendanceDayProvider(isoDate(today))).valueOrNull ??
+        const [];
     final shop = ref.watch(userTypeProvider) == UserType.shop;
     int count(AttendanceStatus status) =>
         rows.where((r) => r.attendance?.status == status).length;
@@ -651,8 +658,7 @@ class _TodayCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(tr("Today's attendance"),
-                        style: AppText.titleMedium),
+                    Text(tr("Today's attendance"), style: AppText.titleMedium),
                     const SizedBox(height: 2),
                     Text(
                       total == 0
@@ -682,11 +688,11 @@ class _TodayCard extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.small),
                   ),
-                  textStyle:
-                      const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  textStyle: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w700),
                 ),
-                onPressed: () => openRoute(
-                    context, total == 0 ? Routes.addWorker : Routes.attendance()),
+                onPressed: () => openRoute(context,
+                    total == 0 ? Routes.addWorker : Routes.attendance()),
                 child: Text(total == 0 ? tr('Add') : tr('Mark')),
               ),
             ],
@@ -702,7 +708,8 @@ class _TodayCard extends ConsumerWidget {
                     if (present > 0)
                       Expanded(
                           flex: present,
-                          child: const ColoredBox(color: AppColors.successFill)),
+                          child:
+                              const ColoredBox(color: AppColors.successFill)),
                     if (half > 0)
                       Expanded(
                           flex: half,
@@ -727,7 +734,8 @@ class _TodayCard extends ConsumerWidget {
               children: [
                 _Legend(AppColors.successFill,
                     tr('{count} Present', {'count': present})),
-                _Legend(AppColors.amber500, tr('{count} Half', {'count': half})),
+                _Legend(
+                    AppColors.amber500, tr('{count} Half', {'count': half})),
                 _Legend(AppColors.dangerFill,
                     tr('{count} Absent', {'count': absent})),
                 if (left > 0)
@@ -955,7 +963,9 @@ class _RecentActivity extends ConsumerWidget {
     final month =
         ref.watch(calendarMonthProvider((year: now.year, month: now.month)));
     final events = [
-      for (final entry in (month.valueOrNull?.events ?? const <String, List<CalendarEvent>>{}).entries)
+      for (final entry in (month.valueOrNull?.events ??
+              const <String, List<CalendarEvent>>{})
+          .entries)
         for (final e in entry.value)
           if (e.kind != CalendarEventKind.holiday) e,
     ]..sort((a, b) {
@@ -1066,4 +1076,6 @@ IconData eventIcon(CalendarEventKind kind) => switch (kind) {
       CalendarEventKind.purchase => Icons.local_shipping_outlined,
       CalendarEventKind.supplierPaid => Icons.north_east,
       CalendarEventKind.holiday => Icons.celebration_outlined,
+      CalendarEventKind.task => Icons.task_alt_outlined,
+      CalendarEventKind.dueDate => Icons.event_busy_outlined,
     };

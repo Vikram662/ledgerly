@@ -35,10 +35,9 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
     final shop = ref.watch(userTypeProvider) == UserType.shop;
     final activeAsync = ref.watch(activeWorkersProvider);
     final inactive = ref.watch(inactiveWorkersProvider).valueOrNull ?? const [];
-    final today = ref
-            .watch(attendanceDayProvider(isoDate(DateTime.now())))
-            .valueOrNull ??
-        const [];
+    final today =
+        ref.watch(attendanceDayProvider(isoDate(DateTime.now()))).valueOrNull ??
+            const [];
     final status = {
       for (final row in today) row.worker.id: row.attendance?.status,
     };
@@ -50,8 +49,11 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
       ..sort();
 
     final personal = ref.watch(userTypeProvider) == UserType.personal;
-    final title = personal ? tr('People') : (shop ? tr('Staff') : tr('Workers'));
-    final addLabel = personal ? tr('Add person') : (shop ? tr('Add staff') : tr('Add worker'));
+    final title =
+        personal ? tr('People') : (shop ? tr('Staff') : tr('Workers'));
+    final addLabel = personal
+        ? tr('Add person')
+        : (shop ? tr('Add staff') : tr('Add worker'));
 
     return Scaffold(
       appBar: tabAppBar(
@@ -69,15 +71,16 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
       body: activeAsync.when(
         loading: () => const ListSkeleton(),
         error: (error, _) => Center(
-          child: Text(tr('Could not load workers: {error}',
-              {'error': errorText(error)})),
+          child: Text(tr(
+              'Could not load workers: {error}', {'error': errorText(error)})),
         ),
         data: (_) {
           if (active.isEmpty && inactive.isEmpty) {
             return EmptyState(
               icon: Icons.groups,
               title: shop ? tr('No staff yet') : tr('No workers yet'),
-              message: tr('Add your workers to mark attendance and keep khata.'),
+              message:
+                  tr('Add your workers to mark attendance and keep khata.'),
               actionLabel: shop ? tr('Add staff') : tr('Add first worker'),
               onAction: () => context.push(Routes.addWorker),
             );
@@ -100,6 +103,10 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
                 padding: const EdgeInsets.only(right: 8),
                 child: ChoiceChip(
                   showCheckmark: false,
+                  labelStyle: TextStyle(
+                    color: _chip == value ? Colors.white : AppColors.inkSoft,
+                    fontWeight: FontWeight.w700,
+                  ),
                   label: Text(label),
                   selected: _chip == value,
                   onSelected: (_) => setState(() => _chip = value),

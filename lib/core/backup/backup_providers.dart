@@ -181,8 +181,10 @@ class BackupCoordinator with WidgetsBindingObserver {
         return;
       }
       if (!await _meta.getBool(MetaKeys.notificationsAsked)) {
-        await _meta.setBool(MetaKeys.notificationsAsked, true);
-        await AppNotifications.instance.requestPermission();
+        final granted = await AppNotifications.instance.requestPermission();
+        if (granted) {
+          await _meta.setBool(MetaKeys.notificationsAsked, true);
+        }
       }
       await _ref.read(backupSchedulerProvider).scheduleReminders();
     } catch (_) {
@@ -247,8 +249,7 @@ class BackupCoordinator with WidgetsBindingObserver {
     } catch (_) {}
     final last = await _meta.getInt(MetaKeys.lastBackupAt);
     final stale = last == null ||
-        DateTime.now()
-                .difference(DateTime.fromMillisecondsSinceEpoch(last)) >
+        DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(last)) >
             const Duration(hours: 24);
     final dirty = await _meta.getInt(MetaKeys.dirtySince) != null;
     if (stale || dirty) await runNow(BackupTrigger.onChange, quiet: true);

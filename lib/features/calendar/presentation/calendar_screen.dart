@@ -17,18 +17,23 @@ DateFormat get _sheetDate => DateFormat('EEEE, d MMMM yyyy', uiDateLocale);
 (IconData, Color) eventStyle(CalendarEventKind kind) => switch (kind) {
       CalendarEventKind.bill => (Icons.receipt_long, AppColors.blue700),
       CalendarEventKind.quotation => (Icons.request_quote, AppColors.muted),
-      CalendarEventKind.paymentIn =>
-        (Icons.call_received, AppColors.successText),
+      CalendarEventKind.paymentIn => (
+          Icons.call_received,
+          AppColors.successText
+        ),
       CalendarEventKind.workerPaid => (Icons.payments, AppColors.dangerText),
-      CalendarEventKind.workerOther =>
-        (Icons.edit_note, AppColors.warningText),
-      CalendarEventKind.pieceWork => (Icons.construction, AppColors.warningText),
+      CalendarEventKind.workerOther => (Icons.edit_note, AppColors.warningText),
+      CalendarEventKind.pieceWork => (
+          Icons.construction,
+          AppColors.warningText
+        ),
       CalendarEventKind.settlement => (Icons.task_alt, AppColors.dangerText),
       CalendarEventKind.expense => (Icons.shopping_cart, AppColors.dangerText),
       CalendarEventKind.purchase => (Icons.local_shipping, AppColors.muted),
       CalendarEventKind.supplierPaid => (Icons.store, AppColors.dangerText),
-      CalendarEventKind.holiday =>
-        (Icons.celebration, AppColors.warningText),
+      CalendarEventKind.holiday => (Icons.celebration, AppColors.warningText),
+      CalendarEventKind.task => (Icons.task_alt, AppColors.primary),
+      CalendarEventKind.dueDate => (Icons.event_busy, AppColors.dangerText),
     };
 
 /// Business calendar: every bill, payment, khata entry, expense, supplier
@@ -49,8 +54,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(
-        calendarMonthProvider((year: _month.year, month: _month.month)));
+    final async = ref
+        .watch(calendarMonthProvider((year: _month.year, month: _month.month)));
     final data = async.valueOrNull;
 
     return Scaffold(
@@ -62,8 +67,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             child: SmallOutlinedButton(
               icon: Icons.today_outlined,
               label: tr('Today'),
-              onTap: () => setState(() => _month =
-                  DateTime(DateTime.now().year, DateTime.now().month)),
+              onTap: () => setState(() =>
+                  _month = DateTime(DateTime.now().year, DateTime.now().month)),
             ),
           ),
         ],
@@ -152,8 +157,7 @@ class _MonthGrid extends StatelessWidget {
                 child: Center(
                   child: Text(d,
                       style: const TextStyle(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w600)),
+                          color: AppColors.muted, fontWeight: FontWeight.w600)),
                 ),
               ),
           ],
@@ -225,9 +229,7 @@ class _DayCell extends StatelessWidget {
                       ? AppColors.page
                       : null,
           borderRadius: BorderRadius.circular(10),
-          border: holiday
-              ? Border.all(color: AppColors.amber100)
-              : null,
+          border: holiday ? Border.all(color: AppColors.amber100) : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -247,7 +249,8 @@ class _DayCell extends StatelessWidget {
             ),
             if (attendance != null && attendance.present + attendance.half > 0)
               Text(
-                tr('P {count}', {'count': attendance.present + attendance.half}),
+                tr('P {count}',
+                    {'count': attendance.present + attendance.half}),
                 style: const TextStyle(
                   fontSize: 10,
                   color: AppColors.successText,
@@ -306,9 +309,7 @@ class _MonthTotals extends StatelessWidget {
               const SizedBox(height: 2),
               Text(value,
                   style: AppText.tabular.copyWith(
-                      color: color,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800)),
+                      color: color, fontSize: 16, fontWeight: FontWeight.w800)),
             ],
           ),
         );
@@ -429,7 +430,11 @@ class _DaySheet extends StatelessWidget {
               title: Text(tr('Attendance')),
               subtitle: Text(att == null || att.isEmpty
                   ? tr('Not marked')
-                  : tr('Present {present} · Half {half} · Absent {absent}', {'present': att.present, 'half': att.half, 'absent': att.absent})),
+                  : tr('Present {present} · Half {half} · Absent {absent}', {
+                      'present': att.present,
+                      'half': att.half,
+                      'absent': att.absent
+                    })),
               trailing: const Icon(Icons.chevron_right),
               // Future days can't be marked yet.
               onTap: date.isAfter(DateTime.now())

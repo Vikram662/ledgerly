@@ -209,6 +209,27 @@ class AppIconButton extends StatelessWidget {
   }
 }
 
+/// Consistent Indian country-code prefix for mobile number fields.
+class PhoneCountryCode extends StatelessWidget {
+  const PhoneCountryCode({super.key});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 58,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          border: Border(right: BorderSide(color: AppColors.border)),
+        ),
+        child: const Text(
+          '+91',
+          style: TextStyle(
+            color: AppColors.muted,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+}
+
 /// Round avatar with up to two initials ("Raju Kumar" → "RK").
 class InitialsAvatar extends StatelessWidget {
   const InitialsAvatar(this.name, {super.key, this.size = 40});

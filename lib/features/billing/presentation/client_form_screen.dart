@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/theme.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
@@ -94,7 +93,7 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: tr('10-digit number'),
-                  prefixText: '+91 ',
+                  prefixIcon: const PhoneCountryCode(),
                 ),
                 validator: (v) => (v == null ||
                         v.trim().isEmpty ||
@@ -116,8 +115,7 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
           ],
         ),
       ),
-      bottomNavigationBar:
-          BottomActionBar(
+      bottomNavigationBar: BottomActionBar(
           label: tr('Save client'), busy: _saving, onPressed: _save),
     );
   }

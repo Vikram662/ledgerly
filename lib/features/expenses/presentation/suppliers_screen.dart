@@ -206,7 +206,9 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.supplierId == null ? tr('New supplier') : tr('Edit supplier')),
+        title: Text(widget.supplierId == null
+            ? tr('New supplier')
+            : tr('Edit supplier')),
       ),
       body: Form(
         key: _formKey,
@@ -216,7 +218,8 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
             TextFormField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: tr('Shop / supplier name')),
+              decoration:
+                  InputDecoration(labelText: tr('Shop / supplier name')),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? tr('Enter name') : null,
             ),
@@ -226,12 +229,13 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 labelText: tr('Mobile number (optional)'),
-                prefixText: '+91 ',
+                prefixIcon: const PhoneCountryCode(),
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty || normalizeIndianPhone(v) != null)
-                      ? null
-                      : tr('Enter a valid 10-digit mobile number'),
+              validator: (v) => (v == null ||
+                      v.trim().isEmpty ||
+                      normalizeIndianPhone(v) != null)
+                  ? null
+                  : tr('Enter a valid 10-digit mobile number'),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -261,13 +265,11 @@ class SupplierDetailScreen extends ConsumerWidget {
     if (balance == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: async.isLoading
-            ? const ListSkeleton()
-            : const NotFoundBody(),
+        body: async.isLoading ? const ListSkeleton() : const NotFoundBody(),
       );
     }
-    final entries = ref.watch(supplierEntriesProvider(supplierId)).valueOrNull ??
-        const [];
+    final entries =
+        ref.watch(supplierEntriesProvider(supplierId)).valueOrNull ?? const [];
     final due = balance.duePaise;
 
     final phone = balance.supplier.phone;
@@ -384,46 +386,47 @@ class SupplierDetailScreen extends ConsumerWidget {
                 style: TextStyle(color: AppColors.muted))
           else
             CardList(
-                children: [
-                  for (final e in entries)
-                    ListTile(
-                      leading: IconTile(
-                        e.entryType == SupplierEntryType.purchase
-                            ? Icons.shopping_cart_outlined
-                            : Icons.currency_rupee,
-                      ),
-                      title: Text(e.entryType == SupplierEntryType.purchase
-                          ? (e.billNo == null
-                              ? tr('Purchase')
-                              : tr('Purchase · Bill {billNo}', {'billNo': e.billNo}))
-                          : tr('Payment')),
-                      subtitle: Text([
-                        dayFormat.format(parseIsoDate(e.date)),
-                        if (e.mode != null) paymentModeLabel(e.mode!),
-                        if (e.remarks != null && e.remarks!.isNotEmpty)
-                          e.remarks!,
-                      ].join(' · ')),
-                      trailing: Text(
-                        '${e.entryType == SupplierEntryType.purchase ? '+' : '−'}'
-                        '${formatPaise(e.amountPaise)}',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      onLongPress: () async {
-                        final ok = await confirmDialog(
-                          context,
-                          title: tr('Delete this entry?'),
-                          message: formatPaise(e.amountPaise),
-                          confirmLabel: tr('Delete'),
-                          destructive: true,
-                        );
-                        if (ok) {
-                          await ref
-                              .read(expensesRepositoryProvider)
-                              .deleteSupplierEntry(e.id);
-                        }
-                      },
+              children: [
+                for (final e in entries)
+                  ListTile(
+                    leading: IconTile(
+                      e.entryType == SupplierEntryType.purchase
+                          ? Icons.shopping_cart_outlined
+                          : Icons.currency_rupee,
                     ),
-                ],
+                    title: Text(e.entryType == SupplierEntryType.purchase
+                        ? (e.billNo == null
+                            ? tr('Purchase')
+                            : tr('Purchase · Bill {billNo}',
+                                {'billNo': e.billNo}))
+                        : tr('Payment')),
+                    subtitle: Text([
+                      dayFormat.format(parseIsoDate(e.date)),
+                      if (e.mode != null) paymentModeLabel(e.mode!),
+                      if (e.remarks != null && e.remarks!.isNotEmpty)
+                        e.remarks!,
+                    ].join(' · ')),
+                    trailing: Text(
+                      '${e.entryType == SupplierEntryType.purchase ? '+' : '−'}'
+                      '${formatPaise(e.amountPaise)}',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    onLongPress: () async {
+                      final ok = await confirmDialog(
+                        context,
+                        title: tr('Delete this entry?'),
+                        message: formatPaise(e.amountPaise),
+                        confirmLabel: tr('Delete'),
+                        destructive: true,
+                      );
+                      if (ok) {
+                        await ref
+                            .read(expensesRepositoryProvider)
+                            .deleteSupplierEntry(e.id);
+                      }
+                    },
+                  ),
+              ],
             ),
           const SizedBox(height: 32),
         ],
@@ -527,8 +530,8 @@ class _SupplierEntryScreenState extends ConsumerState<SupplierEntryScreen> {
           else
             TextField(
               controller: _billNo,
-              decoration:
-                  InputDecoration(labelText: tr('Supplier bill no. (optional)')),
+              decoration: InputDecoration(
+                  labelText: tr('Supplier bill no. (optional)')),
             ),
           const SizedBox(height: 12),
           TextField(

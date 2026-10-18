@@ -216,7 +216,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: tr('10-digit number'),
-                  prefixIcon: const Text('+91 '),
+                  prefixIcon: const PhoneCountryCode(),
                   helperText: paid
                       ? tr('Paid account phone cannot be changed here')
                       : null,

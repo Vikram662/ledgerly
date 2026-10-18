@@ -135,7 +135,9 @@ ThemeData buildLightTheme() {
 
   const textTheme = TextTheme(
     headlineMedium: TextStyle(
-        fontSize: 30, height: 1.15, fontWeight: FontWeight.w800,
+        fontSize: 30,
+        height: 1.15,
+        fontWeight: FontWeight.w800,
         letterSpacing: -0.6),
     headlineSmall: TextStyle(
         fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.52),
@@ -186,8 +188,7 @@ ThemeData buildLightTheme() {
     ),
     // Back and menu buttons are 44px white circles with a hairline border.
     actionIconTheme: ActionIconThemeData(
-      backButtonIconBuilder: (context) =>
-          const _RoundIcon(Icons.arrow_back),
+      backButtonIconBuilder: (context) => const _RoundIcon(Icons.arrow_back),
       closeButtonIconBuilder: (context) => const _RoundIcon(Icons.close),
       drawerButtonIconBuilder: (context) => const _RoundIcon(Icons.menu),
     ),
@@ -197,8 +198,7 @@ ThemeData buildLightTheme() {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: rounded(
-          AppRadius.card, const BorderSide(color: AppColors.border)),
+      shape: rounded(AppRadius.card, const BorderSide(color: AppColors.border)),
     ),
     // Lists sit on the grey page as white rows.
     listTileTheme: const ListTileThemeData(
@@ -224,11 +224,14 @@ ThemeData buildLightTheme() {
       selectedTileColor: AppColors.primarySurface,
       selectedColor: AppColors.primary,
     ),
-    dividerTheme:
-        const DividerThemeData(color: AppColors.divider, space: 1),
+    dividerTheme: const DividerThemeData(color: AppColors.divider, space: 1),
     // Filter chips: white with a border; selected is solid ink.
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.surface,
+      color: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected)
+              ? AppColors.ink
+              : AppColors.surface),
       selectedColor: AppColors.ink,
       checkmarkColor: Colors.white,
       side: WidgetStateBorderSide.resolveWith(
@@ -343,8 +346,7 @@ ThemeData buildLightTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.surface,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       hintStyle: const TextStyle(color: AppColors.faint),
       labelStyle: const TextStyle(
           color: AppColors.inkSoft, fontWeight: FontWeight.w600),

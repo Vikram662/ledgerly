@@ -22,6 +22,8 @@ enum CalendarEventKind {
   purchase,
   supplierPaid,
   holiday,
+  task,
+  dueDate,
 }
 
 /// Which way the money moved, for colour and sign.
@@ -116,6 +118,7 @@ class CalendarRepository {
           _db.expenses,
           _db.supplierLedger,
           _db.holidays,
+          _db.taskReminders,
           _db.attendances,
         ],
         () => loadMonth(month),
@@ -157,6 +160,22 @@ class CalendarRepository {
       ));
     }
 
+    // Invoice due dates.
+    for (final r in await rows('''
+      SELECT d.id, d.number, d.due_date, c.name AS client
+      FROM documents d JOIN clients c ON c.id = d.client_id
+      WHERE d.due_date BETWEEN ? AND ? AND d.kind = 'invoice'
+        AND d.status != 'cancelled'
+    ''', range)) {
+      events.add(CalendarEvent(
+        kind: CalendarEventKind.dueDate,
+        date: r.read<String>('due_date'),
+        title: tr('Due · Bill {number}', {'number': r.read<String>('number')}),
+        subtitle: r.read<String>('client'),
+        route: Routes.document(r.read<String>('id')),
+        sortKey: 1 << 51,
+      ));
+    }
     // Payments received from clients.
     for (final r in await rows('''
       SELECT p.client_id, p.document_id, p.amount_paise, p.mode, p.date,
@@ -169,7 +188,8 @@ class CalendarRepository {
         kind: CalendarEventKind.paymentIn,
         date: r.read<String>('date'),
         title: tr('Payment received'),
-        subtitle: '${r.read<String>('client')} · ${_mode(r.read<String>('mode'))}',
+        subtitle:
+            '${r.read<String>('client')} · ${_mode(r.read<String>('mode'))}',
         amountPaise: r.read<int>('amount_paise'),
         flow: MoneyFlow.incoming,
         route: docId != null
@@ -191,9 +211,8 @@ class CalendarRepository {
       final paid = type == LedgerType.advance || type == LedgerType.payment;
       final remarks = r.readNullable<String>('remarks');
       events.add(CalendarEvent(
-        kind: paid
-            ? CalendarEventKind.workerPaid
-            : CalendarEventKind.workerOther,
+        kind:
+            paid ? CalendarEventKind.workerPaid : CalendarEventKind.workerOther,
         date: isoDate(at),
         title: '${_ledgerLabel(type)} · ${r.read<String>('worker')}',
         subtitle: remarks,
@@ -230,7 +249,8 @@ class CalendarRepository {
       WHERE s.created_at >= ? AND s.created_at < ?
     ''', msRange)) {
       final at = DateTime.fromMillisecondsSinceEpoch(r.read<int>('created_at'));
-      final reversed = r.read<String>('status') == SettlementStatus.reversed.name;
+      final reversed =
+          r.read<String>('status') == SettlementStatus.reversed.name;
       events.add(CalendarEvent(
         kind: CalendarEventKind.settlement,
         date: isoDate(at),
@@ -259,7 +279,8 @@ class CalendarRepository {
       events.add(CalendarEvent(
         kind: CalendarEventKind.expense,
         date: r.read<String>('date'),
-        title: tr('Expense · {category}', {'category': r.read<String>('category')}),
+        title: tr(
+            'Expense · {category}', {'category': r.read<String>('category')}),
         subtitle: [
           _mode(r.read<String>('mode')),
           if (remarks != null && remarks.isNotEmpty) remarks,
@@ -295,6 +316,29 @@ class CalendarRepository {
         flow: payment ? MoneyFlow.outgoing : MoneyFlow.none,
         route: Routes.supplier(r.read<String>('supplier_id')),
         sortKey: r.read<int>('created_at'),
+      ));
+    }
+    // Task and site reminders.
+    for (final r in await rows('''
+      SELECT id, title, task_type, person_name, scheduled_at, is_completed
+      FROM task_reminders
+      WHERE scheduled_at >= ? AND scheduled_at < ?
+    ''', msRange)) {
+      final taskType = TaskType.values.byName(r.read<String>('task_type'));
+      final person = r.readNullable<String>('person_name');
+      final completed = r.read<bool>('is_completed');
+      final subtitle = [
+        if (person != null && person.isNotEmpty) person,
+        if (completed) tr('Completed'),
+      ].join(' · ');
+      events.add(CalendarEvent(
+        kind: CalendarEventKind.task,
+        date: isoDate(
+            DateTime.fromMillisecondsSinceEpoch(r.read<int>('scheduled_at'))),
+        title: '${taskType.label} · ${r.read<String>('title')}',
+        subtitle: subtitle.isEmpty ? null : subtitle,
+        route: Routes.editTask(r.read<String>('id')),
+        sortKey: r.read<int>('scheduled_at'),
       ));
     }
 
