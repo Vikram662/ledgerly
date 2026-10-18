@@ -1732,6 +1732,7 @@ const hindiStrings = <String, String>{
       'आपका नाम',
   // New design (wireframes).
   'People': 'लोग',
+  'Projects / Sites': 'प्रोजेक्ट / साइट',
   'Add person': 'व्यक्ति जोड़ें',
   'Payments & wages': 'भुगतान और मज़दूरी',
   'Salary and helper payments': 'तनख़्वाह और मददगारों के भुगतान',

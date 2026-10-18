@@ -64,10 +64,9 @@ class MoreScreen extends ConsumerWidget {
     void go(String route) => openRoute(context, route);
 
     final work = <Widget>[
-      if (contractor)
-        NavTile(
+      NavTile(
           icon: Icons.location_city_outlined,
-          label: tr('Jobs / Sites'),
+          label: personal ? tr('Projects / Sites') : tr('Jobs / Sites'),
           detail: activeJobs == null
               ? null
               : tr('{count} active', {'count': activeJobs}),
