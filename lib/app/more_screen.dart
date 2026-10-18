@@ -55,18 +55,18 @@ class MoreScreen extends ConsumerWidget {
         .split(',')
         .map((t) => t.trim())
         .firstWhere((t) => t.isNotEmpty, orElse: () => '');
-    final kindLine = (trade == null || trade.isEmpty || !contractor)
-        ? type.label
-        : trade;
+    final kindLine =
+        (trade == null || trade.isEmpty || !contractor) ? type.label : trade;
     final pro = access?.kind == AccessKind.active ||
         access?.kind == AccessKind.offlineGrace;
 
     void go(String route) => openRoute(context, route);
 
     final work = <Widget>[
-      NavTile(
+      if (!personal)
+        NavTile(
           icon: Icons.location_city_outlined,
-          label: personal ? tr('Projects / Sites') : tr('Jobs / Sites'),
+          label: tr('Jobs / Sites'),
           detail: activeJobs == null
               ? null
               : tr('{count} active', {'count': activeJobs}),
@@ -87,12 +87,13 @@ class MoreScreen extends ConsumerWidget {
         detail: tr('This month'),
         onTap: () => go(Routes.calendar),
       ),
-      NavTile(
-        icon: Icons.grid_view_outlined,
-        label: tr('Attendance register'),
-        detail: tr('Month view'),
-        onTap: () => go(Routes.attendanceMonth),
-      ),
+      if (!personal)
+        NavTile(
+          icon: Icons.grid_view_outlined,
+          label: tr('Attendance register'),
+          detail: tr('Month view'),
+          onTap: () => go(Routes.attendanceMonth),
+        ),
       if (!Routes.isTab(Routes.workers))
         NavTile(
           icon: Icons.groups_outlined,
@@ -120,10 +121,10 @@ class MoreScreen extends ConsumerWidget {
               : tr('{amount} this month', {'amount': formatPaise(spent)}),
           onTap: () => go(Routes.expenses),
         ),
-      ...[
+      if (!personal) ...[
         NavTile(
           icon: Icons.store_outlined,
-          label: personal ? tr('People you pay') : tr('Suppliers'),
+          label: tr('Suppliers'),
           detail: toPay == null
               ? null
               : tr('{amount} to pay', {'amount': formatPaise(toPay)}),
@@ -131,15 +132,13 @@ class MoreScreen extends ConsumerWidget {
         ),
         NavTile(
           icon: Icons.account_balance_outlined,
-          label: personal ? tr('Money in / out') : tr('Lena / Dena'),
+          label: tr('Lena / Dena'),
           detail: tr('Dues report'),
           onTap: () => go(Routes.dues()),
         ),
         NavTile(
           icon: Icons.people_outline,
-          label: personal
-              ? tr('Income sources')
-              : (contractor ? tr('Clients') : tr('Customers')),
+          label: contractor ? tr('Clients') : tr('Customers'),
           detail: clients == null
               ? null
               : (contractor
@@ -157,8 +156,7 @@ class MoreScreen extends ConsumerWidget {
     ];
 
     final backupOn = backup?.configured == true;
-    final lockValue =
-        lock.biometricEnabled ? tr('Fingerprint') : tr('PIN');
+    final lockValue = lock.biometricEnabled ? tr('Fingerprint') : tr('PIN');
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('More'))),
@@ -266,7 +264,7 @@ class MoreScreen extends ConsumerWidget {
                   label: tr('Wage rules & trades'),
                   onTap: () => go(Routes.settings),
                 )
-              else if (!personal)
+              else
                 SettingRow(
                   icon: Icons.rule,
                   label: tr('Work rules'),

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/database.dart';
+import '../db/enums.dart';
 import '../db/providers.dart';
 import 'app_settings.dart';
 
@@ -23,6 +24,12 @@ class SettingsRepository {
   Future<void> saveSettings(AppSettings settings) =>
       _db.update(_db.businessProfiles).write(BusinessProfilesCompanion(
             settingsJson: Value(settings.toJsonString()),
+            updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+          ));
+
+  Future<void> saveUserType(UserType userType) =>
+      _db.update(_db.businessProfiles).write(BusinessProfilesCompanion(
+            userType: Value(userType),
             updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
           ));
 

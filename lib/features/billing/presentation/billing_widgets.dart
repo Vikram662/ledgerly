@@ -24,11 +24,21 @@ StatusChip documentStatusChip(DocumentStatus status, DocumentKind kind) {
         AppColors.warningText,
         Icons.send,
       ),
-    DocumentStatus.partiallyPaid =>
-      (tr('Part paid'), AppColors.blue700, Icons.timelapse),
-    DocumentStatus.paid => (tr('Paid'), AppColors.successText, Icons.check_circle),
-    DocumentStatus.cancelled =>
-      (tr('Cancelled'), AppColors.dangerText, Icons.block),
+    DocumentStatus.partiallyPaid => (
+        tr('Part paid'),
+        AppColors.blue700,
+        Icons.timelapse
+      ),
+    DocumentStatus.paid => (
+        tr('Paid'),
+        AppColors.successText,
+        Icons.check_circle
+      ),
+    DocumentStatus.cancelled => (
+        tr('Cancelled'),
+        AppColors.dangerText,
+        Icons.block
+      ),
   };
   return StatusChip(label: label, color: color, icon: icon);
 }
@@ -162,14 +172,26 @@ class DocumentPill extends StatelessWidget {
           AppColors.warningSurface,
           AppColors.warningText,
         ),
-      DocumentStatus.sent =>
-        (tr('Sent'), AppColors.primaryTint, AppColors.primary),
-      DocumentStatus.partiallyPaid =>
-        (tr('Part paid'), AppColors.primaryTint, AppColors.primary),
-      DocumentStatus.paid =>
-        (tr('Paid'), AppColors.successSurface, AppColors.successText),
-      DocumentStatus.cancelled =>
-        (tr('Cancelled'), AppColors.page, AppColors.muted),
+      DocumentStatus.sent => (
+          tr('Sent'),
+          AppColors.primaryTint,
+          AppColors.primary
+        ),
+      DocumentStatus.partiallyPaid => (
+          tr('Part paid'),
+          AppColors.primaryTint,
+          AppColors.primary
+        ),
+      DocumentStatus.paid => (
+          tr('Paid'),
+          AppColors.successSurface,
+          AppColors.successText
+        ),
+      DocumentStatus.cancelled => (
+          tr('Cancelled'),
+          AppColors.page,
+          AppColors.muted
+        ),
     };
     return TagBadge(text, color: bg, textColor: fg);
   }
@@ -208,7 +230,7 @@ class ClientPickerField extends ConsumerWidget {
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 labelText: tr('Mobile (optional)'),
-                prefixText: '+91 ',
+                prefixIcon: const Text('+91 '),
               ),
             ),
           ],

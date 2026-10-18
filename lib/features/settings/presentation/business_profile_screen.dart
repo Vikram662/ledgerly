@@ -11,6 +11,7 @@ import '../../../core/utils/photos.dart';
 import '../../../core/utils/upi.dart';
 import '../../../core/widgets/common.dart';
 import '../../lock/app_lock_controller.dart';
+import '../../subscription/subscription_controller.dart';
 
 /// Name, phone, address, UPI and number prefixes shown on PDFs (PRD BL-11).
 class BusinessProfileScreen extends ConsumerStatefulWidget {
@@ -34,7 +35,14 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
 
   @override
   void dispose() {
-    for (final c in [_name, _phone, _address, _upi, _invoicePrefix, _quotationPrefix]) {
+    for (final c in [
+      _name,
+      _phone,
+      _address,
+      _upi,
+      _invoicePrefix,
+      _quotationPrefix
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -42,6 +50,19 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final current = ref.read(businessProfileProvider).valueOrNull;
+    final access = ref.read(subscriptionControllerProvider).valueOrNull;
+    final requiresSubscription = current?.userType.isFree != true;
+    final paid = requiresSubscription &&
+        (access?.kind == AccessKind.active ||
+            access?.kind == AccessKind.offlineGrace ||
+            access?.kind == AccessKind.loading);
+    if (paid &&
+        current != null &&
+        normalizeIndianPhone(_phone.text) != current.phone) {
+      showMessage(context, tr('Paid account phone cannot be changed here'));
+      return;
+    }
     setState(() => _saving = true);
     String? opt(TextEditingController c) =>
         c.text.trim().isEmpty ? null : c.text.trim();
@@ -82,13 +103,20 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(businessProfileProvider).valueOrNull;
+    final access = ref.watch(subscriptionControllerProvider).valueOrNull;
+    final requiresSubscription = profile?.userType.isFree != true;
+    final paid = requiresSubscription &&
+        (access?.kind == AccessKind.active ||
+            access?.kind == AccessKind.offlineGrace ||
+            access?.kind == AccessKind.loading);
     if (profile == null) {
       return const SkeletonPage();
     }
     if (!_loaded) {
       _loaded = true;
       _name.text = profile.name;
-      _phone.text = profile.phone == null ? '' : formatIndianPhone(profile.phone!);
+      _phone.text =
+          profile.phone == null ? '' : formatIndianPhone(profile.phone!);
       _address.text = profile.address ?? '';
       _upi.text = profile.upiId ?? '';
       _invoicePrefix.text = profile.invoicePrefix;
@@ -157,8 +185,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                             ),
                             if (profile.logoPath != null)
                               TextButton(
-                                onPressed: () =>
-                                    _removeLogo(profile.logoPath!),
+                                onPressed: () => _removeLogo(profile.logoPath!),
                                 style: TextButton.styleFrom(
                                   foregroundColor: AppColors.dangerText,
                                 ),
@@ -185,10 +212,14 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
               label: tr('Mobile number'),
               child: TextFormField(
                 controller: _phone,
+                readOnly: paid,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: tr('10-digit number'),
-                  prefixText: '+91 ',
+                  prefixIcon: const Text('+91 '),
+                  helperText: paid
+                      ? tr('Paid account phone cannot be changed here')
+                      : null,
                 ),
                 validator: (v) => (v == null ||
                         v.trim().isEmpty ||
@@ -243,7 +274,10 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
             const SizedBox(height: 8),
             Text(
               tr('Numbers restart every financial year, e.g. INV/26-27/0001.'),
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted),
             ),
           ],
         ),

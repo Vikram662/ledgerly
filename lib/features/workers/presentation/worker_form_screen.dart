@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/db/enums.dart';
+import '../../../core/db/providers.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/settings/settings_providers.dart';
 import '../../../core/utils/dates.dart';
@@ -131,17 +132,22 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
       }
       if (!mounted) return;
       HapticFeedback.mediumImpact();
-      showMessage(context, _isEdit ? tr('Saved') : tr('{name} added', {'name': name}));
+      showMessage(
+          context, _isEdit ? tr('Saved') : tr('{name} added', {'name': name}));
       context.pop();
     } catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
-      showMessage(context, tr('Could not save. Please try again. ({error})', {'error': errorText(error)}));
+      showMessage(
+          context,
+          tr('Could not save. Please try again. ({error})',
+              {'error': errorText(error)}));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final personal = ref.watch(userTypeProvider).isFree;
     if (_isEdit) {
       final item = ref.watch(workerProvider(widget.workerId!)).valueOrNull;
       if (item == null) {
@@ -154,7 +160,9 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: const CloseButton(),
-        title: Text(_isEdit ? tr('Edit worker') : tr('Add worker')),
+        title: Text(_isEdit
+            ? (personal ? tr('Edit person') : tr('Edit worker'))
+            : (personal ? tr('Add person') : tr('Add worker'))),
       ),
       body: Form(
         key: _formKey,
@@ -180,7 +188,7 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   hintText: tr('10-digit number'),
-                  prefixText: '+91 ',
+                  prefixIcon: const Text('+91 '),
                 ),
                 validator: (value) => (value == null ||
                         value.trim().isEmpty ||
@@ -255,7 +263,8 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
                           style: AppText.tabular.copyWith(
                               fontSize: 17, fontWeight: FontWeight.w700),
                           decoration: const InputDecoration(prefixText: '₹ '),
-                          validator: (v) => _validateAmount(v, isRequired: true),
+                          validator: (v) =>
+                              _validateAmount(v, isRequired: true),
                         ),
                       ),
                     ),
@@ -309,7 +318,8 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
                     optional: true,
                     child: TextFormField(
                       controller: _upi,
-                      decoration: const InputDecoration(hintText: 'name@okaxis'),
+                      decoration:
+                          const InputDecoration(hintText: 'name@okaxis'),
                       validator: (v) =>
                           (v == null || v.trim().isEmpty || isValidUpiId(v))
                               ? null
