@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>Ledgerly - Construction & Contractor Management Software</title>
-  <meta name="description" content="Ledgerly - Smart site management software for civil contractors, builders, and supervisors. Manage labor attendance, site expenses, material bills, vouchers, and secure Google Drive backup.">
-  <meta name="keywords" content="ledgerly app, construction management, contractor app, site expense tracking, labor attendance, builder software, thekedaar app">
+  <title>Ledgerly - Business & Daily Khata Management App</title>
+  <meta name="description" content="Ledgerly - Complete offline business management app for Contractors (all trades), Shopkeepers, and Personal finances. Track attendance, bills, party ledger, and secure Google Drive backup.">
+  <meta name="keywords" content="ledgerly app, contractor app, shopkeeper billing app, attendance register, khata diary, personal expense tracker, civil contractor software">
 
   <!-- Google Fonts: Manrope -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -196,7 +196,7 @@
     #intro {
       background: linear-gradient(145deg, #0F172A 0%, #1E293B 100%);
       color: var(--white);
-      padding: 80px 0 95px;
+      padding: 85px 0 100px;
       position: relative;
       text-align: center;
       border-bottom: 3px solid var(--primary);
@@ -216,10 +216,10 @@
     }
 
     .intro-title {
-      font-size: 46px;
+      font-size: 44px;
       font-weight: 800;
       color: var(--white);
-      line-height: 1.15;
+      line-height: 1.2;
       margin-bottom: 20px;
       letter-spacing: -0.03em;
     }
@@ -231,7 +231,7 @@
     .intro-desc {
       font-size: 17px;
       color: #CBD5E1;
-      max-width: 720px;
+      max-width: 780px;
       margin: 0 auto 34px;
       font-weight: 400;
       line-height: 1.7;
@@ -317,14 +317,88 @@
       font-weight: 800;
       color: var(--ink);
       letter-spacing: -0.02em;
-      position: relative;
     }
 
     .titlebar p {
-      max-width: 620px;
+      max-width: 680px;
       margin: 12px auto 0;
       font-size: 15px;
       color: var(--muted);
+    }
+
+    /* USER TYPES CARDS */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 45px;
+    }
+
+    .mode-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      padding: 32px 24px;
+      text-align: left;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .mode-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+    }
+
+    .mode-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .badge-pro {
+      background: var(--primary-tint);
+      color: var(--primary);
+    }
+
+    .badge-free {
+      background: var(--success-surface);
+      color: var(--success-text);
+    }
+
+    .mode-card h3 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mode-card p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .mode-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mode-tag {
+      background: var(--page);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      padding: 4px 10px;
+      border-radius: 8px;
     }
 
     /* GRID */
@@ -385,18 +459,25 @@
     .pricing-table-wrap {
       display: flex;
       justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
     }
 
-    .pricing-table {
+    .pricing-card {
       background: var(--surface);
-      border: 2px solid var(--primary);
+      border: 1px solid var(--border);
       border-radius: 20px;
       width: 100%;
-      max-width: 500px;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.08);
+      max-width: 440px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
       overflow: hidden;
       text-align: center;
       position: relative;
+    }
+
+    .pricing-card.featured {
+      border: 2px solid var(--primary);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.08);
     }
 
     .pricing-top {
@@ -451,7 +532,7 @@
 
     .pricing-features {
       list-style: none;
-      padding: 24px 30px;
+      padding: 24px 28px;
       text-align: left;
     }
 
@@ -485,7 +566,7 @@
     }
 
     .pricing-bottom {
-      padding: 0 30px 32px;
+      padding: 0 28px 30px;
     }
 
     /* FOOTER */
@@ -543,6 +624,7 @@
     }
 
     @media (max-width: 991px) {
+      .modes-grid { grid-template-columns: 1fr; }
       .features-grid { grid-template-columns: 1fr 1fr; }
       .counters-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
       .counter-item { border-right: none; }
@@ -586,16 +668,16 @@
         <img src="img/logo.png" alt="Ledgerly App Icon" style="width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 12px 28px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.15);">
       </div>
       <div>
-        <span class="tag-badge">Smart Site & Business Management</span>
+        <span class="tag-badge">Contractor • Shopkeeper • Personal Khata</span>
       </div>
-      <h1 class="intro-title">Construction Management<br><span>Made Simple & Fast</span></h1>
+      <h1 class="intro-title">Complete Business & Khata Management<br><span>Made 100% Offline & Simple</span></h1>
       <p class="intro-desc">
-        Eliminate paperwork and manual registers. Manage daily labor attendance, project expenses, material bills, vouchers, and party ledgers in one secure application. Works 100% offline with encrypted personal Google Drive backup.
+        One smart mobile app for <strong>multi-trade contractors</strong>, <strong>shopkeepers</strong>, and <strong>personal finance</strong>. Manage projects, people, attendance, bills, khata, income, expenses, tasks, calendar reminders, and encrypted Google Drive backups.
       </p>
 
       <div class="intro-buttons">
-        <a href="#pricing-section" class="btn btn-amber">Try 5 Days Free (Then ₹99/mo)</a>
-        <a href="contact.html" class="btn btn-outline-white">Contact Sales</a>
+        <a href="#pricing-section" class="btn btn-amber">Start Free Exploration (Pro ₹99/mo)</a>
+        <a href="contact.html" class="btn btn-outline-white">Contact Support</a>
       </div>
     </div>
   </section>
@@ -606,50 +688,72 @@
       <div class="counters-grid">
         <div class="counter-item">
           <div class="counter-num">100<span>%</span></div>
-          <div class="counter-label">Offline Ready</div>
+          <div class="counter-label">Offline First App</div>
         </div>
         <div class="counter-item">
-          <div class="counter-num">0<span>₹</span></div>
-          <div class="counter-label">Setup / Hidden Fees</div>
+          <div class="counter-num">3<span>-in-1</span></div>
+          <div class="counter-label">Contractor • Shop • Personal</div>
         </div>
         <div class="counter-item">
           <div class="counter-num">AES<span>256</span></div>
-          <div class="counter-label">Encrypted Cloud Sync</div>
+          <div class="counter-label">Encrypted Drive Sync</div>
         </div>
         <div class="counter-item">
-          <div class="counter-num">24<span>x7</span></div>
-          <div class="counter-label">Local Data Privacy</div>
+          <div class="counter-num">₹<span>0</span></div>
+          <div class="counter-label">Personal Mode Forever Free</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ================= ABOUT SECTION ================= -->
+  <!-- ================= 3 USER TYPES SECTION ================= -->
   <section class="section-wrap">
     <div class="container">
       <div class="titlebar">
-        <h3>Who We Are</h3>
-        <h2>Engineered for Modern Contractors & Builders</h2>
-        <p>Built ground-up to solve the real operational challenges faced by site supervisors, shopkeepers, and contractors.</p>
+        <h3>Built For Your Workflow</h3>
+        <h2>Choose Your Business Profile</h2>
+        <p>Ledgerly automatically customizes its bottom navigation, rate lists, role templates, and expense categories based on your role.</p>
       </div>
 
-      <div class="features-grid">
-        <div class="feature-item">
-          <div class="feature-icon-circle">🏗️</div>
-          <h4>Multi-Site Tracking</h4>
-          <p>Maintain separate site budgets, track expense records, and monitor client receipts across all your active construction sites.</p>
+      <div class="modes-grid">
+        <div class="mode-card">
+          <span class="mode-badge badge-pro">Contractor Mode</span>
+          <h3>👷 Contractor & Site Work</h3>
+          <p>For contractors managing site projects, labor attendance, piece-rate theka payouts, and client measurements.</p>
+          <div class="mode-tags">
+            <span class="mode-tag">Civil & Builders</span>
+            <span class="mode-tag">Electrical</span>
+            <span class="mode-tag">Plumbing</span>
+            <span class="mode-tag">Painting</span>
+            <span class="mode-tag">Fabrication</span>
+            <span class="mode-tag">Flooring & POP</span>
+            <span class="mode-tag">Labour Supply</span>
+          </div>
         </div>
 
-        <div class="feature-item">
-          <div class="feature-icon-circle">👷</div>
-          <h4>Labor Attendance Register</h4>
-          <p>Record daily labor presence, half-day shifts, overtime hours, advances, and compute weekly payouts accurately.</p>
+        <div class="mode-card">
+          <span class="mode-badge badge-pro">Shopkeeper Mode</span>
+          <h3>🏪 Retailers & Commercial Shops</h3>
+          <p>For shop owners tracking customer credit/udhar, staff salary advances, daily store expenses, and vendor supply dues.</p>
+          <div class="mode-tags">
+            <span class="mode-tag">Hardware & Sanitary</span>
+            <span class="mode-tag">Kirana & General Store</span>
+            <span class="mode-tag">Cloth & Garments</span>
+            <span class="mode-tag">Medical Store</span>
+            <span class="mode-tag">Staff Wage Khata</span>
+          </div>
         </div>
 
-        <div class="feature-item">
-          <div class="feature-icon-circle">🧾</div>
-          <h4>Bill & Voucher Attachments</h4>
-          <p>Capture and attach instant camera photos of cement, sand, brick, and rebar bills directly to specific project ledgers.</p>
+        <div class="mode-card">
+          <span class="mode-badge badge-free">Personal Mode (100% Free)</span>
+          <h3>👤 Individuals & Families</h3>
+          <p>Completely free personal finance book. Record salary, house rent, maid/help wages, society maintenance, and task alerts.</p>
+          <div class="mode-tags">
+            <span class="mode-tag">Forever Free</span>
+            <span class="mode-tag">Home Expenses</span>
+            <span class="mode-tag">House Help Register</span>
+            <span class="mode-tag">Bill Reminders</span>
+          </div>
         </div>
       </div>
     </div>
@@ -659,28 +763,46 @@
   <section class="section-wrap bg-surface">
     <div class="container">
       <div class="titlebar">
-        <h3>Core Capabilities</h3>
-        <h2>Advanced Field Utilities</h2>
-        <p>Comprehensive supervision tools designed for effortless smartphone use directly on site.</p>
+        <h3>Power Packed Utilities</h3>
+        <h2>Everything Needed In The Field & Store</h2>
+        <p>Engineered for high-speed use right from your pocket, with zero reliance on cloud servers or internet connections.</p>
       </div>
 
       <div class="features-grid">
         <div class="feature-item">
+          <div class="feature-icon-circle">👷</div>
+          <h4>Daily Attendance & Overtime</h4>
+          <p>Mark daily presence (Present, Half-day, Absent), log extra overtime hours, and manage both daily-wage and monthly staff seamlessly.</p>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon-circle">📜</div>
+          <h4>Piece-Rate (Theka) Calculations</h4>
+          <p>Auto-calculate piece-work payouts for tile fixers, plaster teams, painters, and carpenters based on completed units and rates.</p>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon-circle">🧾</div>
+          <h4>Quotations, Bills & WhatsApp PDFs</h4>
+          <p>Create professional bills, itemized estimates (with L × W × H measurements), and send PDF pay-slips directly on WhatsApp.</p>
+        </div>
+
+        <div class="feature-item">
           <div class="feature-icon-circle">💰</div>
-          <h4>Party & Supplier Ledgers</h4>
-          <p>Keep transparent financial records of dues payable to suppliers and pending collections receivable from property owners.</p>
+          <h4>Udhar, Khata & Party Ledgers</h4>
+          <p>Maintain balanced ledgers of party dues, customer advances, supplier payments, and view overall dues at a glance.</p>
         </div>
 
         <div class="feature-item">
           <div class="feature-icon-circle">⏰</div>
           <h4>Site Visits & Task Reminders</h4>
-          <p>Schedule client meetings, architect reviews, and material delivery alerts with timely phone notifications.</p>
+          <p>Never miss architect reviews, client meetings, or vendor payment dates with scheduled push notification alerts.</p>
         </div>
 
         <div class="feature-item">
           <div class="feature-icon-circle">☁️</div>
-          <h4>Private Google Drive Backup</h4>
-          <p>Your business database is stored on your device and backed up to your personal Google Drive with client-side AES-256 encryption.</p>
+          <h4>Encrypted Google Drive Sync</h4>
+          <p>Your ledger stays on your phone first. Optional encrypted Google Drive backup runs four times a day, after major changes, and when internet returns.</p>
         </div>
       </div>
     </div>
@@ -690,42 +812,72 @@
   <section class="section-wrap" id="pricing-section">
     <div class="container">
       <div class="titlebar">
-        <h3>Transparent Subscription</h3>
-        <h2>Ledgerly Pro Membership</h2>
-        <p>A single, affordable, and flexible plan for contractors and builders across India.</p>
+        <h3>Simple, Transparent Pricing</h3>
+        <h2>Choose The Plan Right For You</h2>
+        <p>Explore Ledgerly freely. Contractor and shop users can start the 5-day Pro trial when they need full data entry; personal mode stays free.</p>
       </div>
 
       <div class="pricing-table-wrap">
-        <div class="pricing-table">
+        <!-- Personal Plan -->
+        <div class="pricing-card">
+          <div class="pricing-top" style="background-color: #1E293B;">
+            <span class="mode-badge badge-free" style="margin-bottom: 8px;">PERSONAL USE</span>
+            <h4>Personal Finance</h4>
+            <div class="plan-subtitle">100% Free Forever • Zero Subscription Needed</div>
+          </div>
+
+          <div class="price-amount">
+            <span class="currency">₹</span>
+            <span class="num">0</span>
+            <span class="cycle">free forever for personal tracking</span>
+          </div>
+
+          <ul class="pricing-features">
+            <li><span class="icon-check">✓</span> Track personal salary, income & monthly savings</li>
+            <li><span class="icon-check">✓</span> House rent, maid & maintenance records</li>
+            <li><span class="icon-check">✓</span> Daily personal expense categories</li>
+            <li><span class="icon-check">✓</span> Due date & payment reminders</li>
+            <li><span class="icon-check">✓</span> Encrypted Google Drive backup</li>
+            <li><span class="icon-check">✓</span> Offline mode without internet</li>
+          </ul>
+
+          <div class="pricing-bottom">
+            <a href="contact.html" class="btn btn-primary" style="width: 100%; background: #334155; border-color: #334155;">
+              Use Free (No Subscription)
+            </a>
+          </div>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="pricing-card featured">
           <div class="pricing-top">
-            <span class="tag-badge" style="margin-bottom: 10px;">LEDGERLY PRO</span>
-            <h4>Try 5 Days Free, Then ₹99/Month</h4>
-            <div class="plan-subtitle">Browse free forever • Pro lets you record & manage data</div>
+            <span class="tag-badge" style="margin-bottom: 8px;">LEDGERLY PRO</span>
+            <h4>Contractor & Shop Pro</h4>
+            <div class="plan-subtitle">Try 5 Days Free • Then ₹99 / Month</div>
           </div>
 
           <div class="price-amount">
             <span class="currency">₹</span>
             <span class="num">99</span>
-            <span class="cycle">per month • cancel any time</span>
+            <span class="cycle">per month • cancel anytime</span>
           </div>
 
           <ul class="pricing-features">
-            <li><span class="icon-check">✓</span> 5-day free trial on first activation</li>
-            <li><span class="icon-check">✓</span> Create & manage unlimited construction sites</li>
-            <li><span class="icon-check">✓</span> Record daily worker attendance, overtime & advances</li>
-            <li><span class="icon-check">✓</span> Capture & attach material bills & photos</li>
-            <li><span class="icon-check">✓</span> Maintain party, client & vendor ledgers</li>
-            <li><span class="icon-check">✓</span> Automated encrypted Google Drive backup</li>
-            <li><span class="icon-check">✓</span> Generate shareable PDF & WhatsApp reports</li>
-            <li><span class="icon-check">✓</span> Works offline up to 7 days seamlessly</li>
+            <li><span class="icon-check">✓</span> <strong>5-Day Free Trial</strong> upon first activation</li>
+            <li><span class="icon-check">✓</span> Projects, sites, people and worker registers</li>
+            <li><span class="icon-check">✓</span> Attendance, wages, overtime and piece-work payouts</li>
+            <li><span class="icon-check">✓</span> Quotations, bills, invoices and WhatsApp PDFs</li>
+            <li><span class="icon-check">✓</span> Customer udhar khata & supplier ledgers</li>
+            <li><span class="icon-check">✓</span> Encrypted Google Drive backup: four times daily, after major changes, and when internet returns</li>
+            <li><span class="icon-check">✓</span> Works offline up to 7 days continuously</li>
           </ul>
 
           <div class="pricing-bottom">
             <a href="contact.html" class="btn btn-primary" style="width: 100%;">
               Start 5-Day Free Trial (₹99/mo)
             </a>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 12px; line-height: 1.5;">
-              Payment mandate is set up on day 1 via Razorpay. First ₹99 is charged after 5 days; cancel before then to pay nothing.
+            <p style="font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.5;">
+              Mandate set up via Razorpay UPI Autopay / Card. First charge occurs after 5 days. Cancel anytime with 1 tap.
             </p>
           </div>
         </div>
@@ -742,7 +894,7 @@
             <img src="img/logo.png" alt="Ledgerly App Logo" style="width: 38px; height: 38px; border-radius: 8px;">
             <span class="logo-text" style="color: #FFF;">Ledger<span style="color: #38BDF8;">ly</span></span>
           </div>
-          <p>India's leading mobile application for civil contractors, builders, and construction project supervisors.</p>
+          <p>Offline-first mobile application tailored for civil & multi-trade contractors, shopkeepers, and personal finance management across India.</p>
         </div>
 
         <div class="footer-col">
@@ -758,7 +910,7 @@
 
         <div class="footer-col">
           <h4>Customer Support</h4>
-          <p><strong>Email:</strong> thekedaar.support@gmail.com</p>
+          <p><strong>Email:</strong> ledgerly.support@gmail.com</p>
           <p style="margin-top: 6px;">Monday – Saturday (9:00 AM – 7:00 PM IST)</p>
         </div>
       </div>
