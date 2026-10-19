@@ -29,19 +29,28 @@ class RemindersScreen extends ConsumerWidget {
         .saveSettings(settings.copyWith(reminders: value));
 
     Widget toggle(
-      IconData icon,
       String title,
       String subtitle,
       bool value,
       ReminderSettings Function(bool) update,
     ) =>
         SwitchListTile(
-          secondary: Icon(icon),
           title: Text(title),
           subtitle: Text(subtitle),
           value: value,
           onChanged: (v) => save(update(v)),
         );
+
+    Future<void> sendTest() async {
+      await AppNotifications.instance.requestPermission();
+      await AppNotifications.instance.show(
+        NotificationKind.monthEnd,
+        tr('Ledgerly'),
+        tr('Reminders are working.'),
+      );
+      ref.invalidate(_notificationsEnabledProvider);
+      if (context.mounted) showMessage(context, tr('Test sent'));
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(tr('Reminders'))),
@@ -87,60 +96,69 @@ class RemindersScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              tr('Reminders come at most once a day, between 9 am and 9 pm.'),
-              style: const TextStyle(color: AppColors.muted),
+          if (enabled == true)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+              decoration: BoxDecoration(
+                color: AppColors.successSurface,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline,
+                      size: 20, color: AppColors.successText),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      tr('Reminders are working.'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.successText,
+                      ),
+                    ),
+                  ),
+                  MiniButton(label: tr('Send test'), onTap: sendTest),
+                ],
+              ),
             ),
-          ),
           CardList(children: [
-          toggle(
-            Icons.cloud_off,
-            tr('Backup problems'),
-            tr('Backup failed twice, not done for 24 hours, or phone time wrong'),
-            r.backup,
-            (v) => r.copyWith(backup: v),
-          ),
-          toggle(
-            Icons.request_quote,
-            tr('Overdue bills'),
-            tr('Bills past their due date that are not fully paid'),
-            r.overdueBills,
-            (v) => r.copyWith(overdueBills: v),
-          ),
-          toggle(
-            Icons.event_available,
-            tr('Month-end settlement'),
-            tr('Last day of the month: settle workers\' khata'),
-            r.monthEnd,
-            (v) => r.copyWith(monthEnd: v),
-          ),
-          toggle(
-            Icons.celebration,
-            tr('Holidays'),
-            tr('The day before a holiday you added'),
-            r.holidays,
-            (v) => r.copyWith(holidays: v),
-          ),
+            toggle(
+              tr('Backup problems'),
+              tr('Backup failed twice, not done for 24 hours, or phone time wrong'),
+              r.backup,
+              (v) => r.copyWith(backup: v),
+            ),
+            toggle(
+              tr('Overdue bills'),
+              tr('Bills past their due date that are not fully paid'),
+              r.overdueBills,
+              (v) => r.copyWith(overdueBills: v),
+            ),
+            toggle(
+              tr('Month-end settlement'),
+              tr('Last day of the month: settle workers\' khata'),
+              r.monthEnd,
+              (v) => r.copyWith(monthEnd: v),
+            ),
+            toggle(
+              tr('Holidays'),
+              tr('The day before a holiday you added'),
+              r.holidays,
+              (v) => r.copyWith(holidays: v),
+            ),
           ]),
           const SizedBox(height: 12),
-          CardList(children: [
-          ListTile(
-            leading: const Icon(Icons.notifications_none),
-            title: Text(tr('Send a test notification')),
-            onTap: () async {
-              await AppNotifications.instance.requestPermission();
-              await AppNotifications.instance.show(
-                NotificationKind.monthEnd,
-                tr('Ledgerly'),
-                tr('Reminders are working.'),
-              );
-              ref.invalidate(_notificationsEnabledProvider);
-              if (context.mounted) showMessage(context, tr('Test sent'));
-            },
+          Text(
+            tr('Reminders come at most once a day, between 9 am and 9 pm.'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted,
+            ),
           ),
-          ]),
         ],
       ),
     );

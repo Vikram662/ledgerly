@@ -11,6 +11,7 @@ import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/utils/phone.dart';
+import '../../../core/utils/photos.dart';
 import '../../../core/utils/qty.dart';
 import '../../../core/widgets/common.dart';
 import '../../attendance/presentation/attendance_widgets.dart';
@@ -134,21 +135,15 @@ class WorkerDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.track,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Text(
-                  twoInitials(worker.name),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.inkSoft,
-                  ),
+              GestureDetector(
+                onTap: worker.photoPath == null
+                    ? null
+                    : () => showPhoto(context, worker.photoPath!),
+                child: InitialsAvatar(
+                  worker.name,
+                  size: 64,
+                  radius: 22,
+                  photo: worker.photoPath,
                 ),
               ),
               const SizedBox(width: 14),
@@ -243,13 +238,10 @@ class WorkerDetailScreen extends ConsumerWidget {
             Text(tr('No entries yet.'),
                 style: TextStyle(color: AppColors.muted))
           else
-            Panel(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final entry in ledger.take(20)) LedgerTile(item: entry),
-                ],
-              ),
+            CardList(
+              children: [
+                for (final entry in ledger.take(20)) LedgerTile(item: entry),
+              ],
             ),
           if (pieces.isNotEmpty) ...[
             SectionLabel(tr('Piece work')),

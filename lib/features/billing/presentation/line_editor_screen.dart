@@ -98,11 +98,27 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
         LineType.lumpSum => null,
       };
 
-  Future<void> _pickItem() async {
+  /// Rate-list items of the chosen line type.
+  List<ItemWithUnit> _items(List<ItemWithUnit> all) {
     final kind = _kind;
-    final items = (ref.read(itemsProvider).valueOrNull ?? const [])
-        .where((i) => kind == null || i.item.kind == kind)
-        .toList();
+    if (kind == null) return const [];
+    return all.where((i) => i.item.kind == kind).toList();
+  }
+
+  void _useItem(ItemWithUnit picked) {
+    setState(() {
+      _itemId = picked.item.id;
+      _name.text = picked.item.name;
+      _unitId = picked.unit.id;
+      _unitCode = picked.unit.code;
+      if (picked.item.defaultRatePaise != null) {
+        _rate.text = paiseToInputText(picked.item.defaultRatePaise!);
+      }
+    });
+  }
+
+  Future<void> _pickItem() async {
+    final items = _items(ref.read(itemsProvider).valueOrNull ?? const []);
     final picked = await showPickerSheet<ItemWithUnit>(
       context,
       title: tr('Choose {type} item', {'type': lineTypeLabel(_type).toLowerCase()}),
@@ -114,16 +130,7 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
           tr('last rate {amount}', {'amount': formatPaise(i.item.defaultRatePaise!)}),
       ].join(' · '),
     );
-    if (picked == null) return;
-    setState(() {
-      _itemId = picked.item.id;
-      _name.text = picked.item.name;
-      _unitId = picked.unit.id;
-      _unitCode = picked.unit.code;
-      if (picked.item.defaultRatePaise != null && _rate.text.isEmpty) {
-        _rate.text = paiseToInputText(picked.item.defaultRatePaise!);
-      }
-    });
+    if (picked != null) _useItem(picked);
   }
 
   Future<void> _pickUnit() async {
@@ -183,6 +190,11 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
   Widget build(BuildContext context) {
     final units = ref.watch(unitsProvider).valueOrNull ?? const <Unit>[];
     final unitName = units.where((u) => u.id == _unitId).firstOrNull?.name;
+    final items = _items(ref.watch(itemsProvider).valueOrNull ?? const []);
+    final lastRate =
+        items.where((i) => i.item.id == _itemId).firstOrNull?.item.defaultRatePaise;
+    // A few chips to tap; the list icon in the field opens the full list.
+    const chipCount = 6;
 
     return Scaffold(
       appBar: AppBar(
@@ -227,9 +239,46 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
                         onPressed: _pickItem,
                       ),
               ),
-              onChanged: (_) => _itemId = null,
+              onChanged: (_) => setState(() => _itemId = null),
             ),
           ),
+          if (items.isNotEmpty) ...[
+            Panel(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr('Choose from rate list'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final i in items.take(chipCount))
+                        AppChip(
+                          label: i.item.defaultRatePaise == null
+                              ? i.item.name
+                              : '${i.item.name} · '
+                                  '${formatPaise(i.item.defaultRatePaise!)}',
+                          selected: i.item.id == _itemId,
+                          onTap: () => _useItem(i),
+                        ),
+                      if (items.length > chipCount)
+                        AppChip(label: tr('More…'), onTap: _pickItem),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           if (!_isLumpSum) ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,6 +338,9 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
                 : unitName == null
                     ? tr('Rate')
                     : tr('Rate per {unit}', {'unit': unitName}),
+            help: lastRate == null
+                ? null
+                : tr('last rate {amount}', {'amount': formatPaise(lastRate)}),
             child: TextField(
               controller: _rate,
               keyboardType:
@@ -298,33 +350,14 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
               decoration: const InputDecoration(prefixText: '₹ '),
             ),
           ),
-          Panel(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    tr('Line amount'),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.muted,
-                    ),
-                  ),
-                ),
-                Text(
-                  formatPaise(lineAmountPaise(_qtyMilli, _ratePaise)),
-                  style: AppText.tabular.copyWith(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.48,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
-      bottomNavigationBar: BottomActionBar(label: tr('Done'), onPressed: _save),
+      bottomNavigationBar: BottomActionBar(
+        label: tr('Done'),
+        onPressed: _save,
+        summaryLabel: tr('Line amount'),
+        summaryValue: formatPaise(lineAmountPaise(_qtyMilli, _ratePaise)),
+      ),
     );
   }
 }

@@ -196,7 +196,8 @@ class _WorkerRow extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                InitialsAvatar(item.worker.name),
+                InitialsAvatar(item.worker.name,
+                    photo: item.worker.photoPath),
                 if (dot != null)
                   Positioned(
                     right: -1,

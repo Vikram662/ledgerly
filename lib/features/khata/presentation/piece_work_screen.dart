@@ -62,10 +62,23 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
     return qty == null || rate == null ? 0 : lineAmountPaise(qty, rate);
   }
 
+  /// Labour and work-rate items from the rate list.
+  List<ItemWithUnit> _workItems(List<ItemWithUnit> all) =>
+      all.where((i) => i.item.kind != ItemKind.material).toList();
+
+  void _useItem(ItemWithUnit picked) {
+    setState(() {
+      _itemId = picked.item.id;
+      _description.text = picked.item.name;
+      _unit = picked.unit;
+      if (picked.item.defaultRatePaise != null) {
+        _rate.text = paiseToInputText(picked.item.defaultRatePaise!);
+      }
+    });
+  }
+
   Future<void> _pickItem() async {
-    final items = (ref.read(itemsProvider).valueOrNull ?? const [])
-        .where((i) => i.item.kind != ItemKind.material)
-        .toList();
+    final items = _workItems(ref.read(itemsProvider).valueOrNull ?? const []);
     final picked = await showPickerSheet<ItemWithUnit>(
       context,
       title: tr('Choose work'),
@@ -73,12 +86,7 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
       label: (i) => i.item.name,
       subtitle: (i) => tr('per {name}', {'name': i.unit.name}),
     );
-    if (picked == null) return;
-    setState(() {
-      _itemId = picked.item.id;
-      _description.text = picked.item.name;
-      _unit = picked.unit;
-    });
+    if (picked != null) _useItem(picked);
   }
 
   Future<void> _pickUnit() async {
@@ -143,6 +151,9 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
   Widget build(BuildContext context) {
     final amountStyle =
         AppText.tabular.copyWith(fontSize: 17, fontWeight: FontWeight.w700);
+    final items = _workItems(ref.watch(itemsProvider).valueOrNull ?? const []);
+    // A few chips to tap; the list icon in the field opens the full list.
+    const chipCount = 6;
     return Scaffold(
       appBar: AppBar(
         leading: const CloseButton(),
@@ -158,17 +169,42 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
           const SizedBox(height: 14),
           LabeledField(
             label: tr('Work'),
-            child: TextField(
-              controller: _description,
-              decoration: InputDecoration(
-                hintText: tr('e.g. Floor tiling'),
-                suffixIcon: IconButton(
-                  tooltip: tr('Choose from list'),
-                  icon: const Icon(Icons.list),
-                  onPressed: _pickItem,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (items.isNotEmpty) ...[
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final i in items.take(chipCount))
+                        AppChip(
+                          label: i.item.defaultRatePaise == null
+                              ? i.item.name
+                              : '${i.item.name} · '
+                                  '${formatPaise(i.item.defaultRatePaise!)}/${i.unit.code}',
+                          selected: i.item.id == _itemId,
+                          onTap: () => _useItem(i),
+                        ),
+                      if (items.length > chipCount)
+                        AppChip(label: tr('More…'), onTap: _pickItem),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                TextField(
+                  controller: _description,
+                  decoration: InputDecoration(
+                    hintText: tr('e.g. Floor tiling'),
+                    suffixIcon: IconButton(
+                      tooltip: tr('Choose from list'),
+                      icon: const Icon(Icons.list),
+                      onPressed: _pickItem,
+                    ),
+                  ),
+                  onChanged: (_) => setState(() => _itemId = null),
                 ),
-              ),
-              onChanged: (_) => _itemId = null,
+              ],
             ),
           ),
           Row(
@@ -200,13 +236,13 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
           ),
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _measure,
-              icon: const Icon(Icons.straighten),
-              label: Text(tr('Measure (L × W × H)')),
+            child: SmallOutlinedButton(
+              icon: Icons.straighten,
+              label: tr('Measure (L × W × H)'),
+              onTap: _measure,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 14),
           LabeledField(
             label: _unit == null
                 ? tr('Rate')

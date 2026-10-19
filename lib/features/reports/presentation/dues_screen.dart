@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
@@ -10,10 +9,10 @@ import '../../../core/db/providers.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/pdf/pdf_common.dart';
 import '../../../core/utils/money.dart';
-import '../../../core/utils/upi.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../billing/data/billing_repository.dart';
+import '../../billing/presentation/billing_widgets.dart';
 import '../../expenses/data/expenses_repository.dart';
 import '../../khata/data/khata_repository.dart';
 import '../../lock/app_lock_controller.dart';
@@ -74,28 +73,11 @@ class _DuesScreenState extends ConsumerState<DuesScreen> {
     }
   }
 
-  Future<void> _remind(DueItem item) async {
-    final profile = await ref.read(businessProfileProvider.future);
-    final business = profile?.name ?? '';
-    final upi = profile?.upiId?.trim();
-    var text = tr('Hello {name}, payment of {amount} is pending with {business}. Please pay at the earliest. Thank you.', {'name': item.name, 'amount': formatPaise(item.amountPaise), 'business': business});
-    if (upi != null && isValidUpiId(upi)) {
-      final link = upiPayUri(
-        upiId: upi,
-        payeeName: business,
+  Future<void> _remind(DueItem item) => sharePaymentReminder(
+        ref,
+        name: item.name,
         amountPaise: item.amountPaise,
-        note: tr('Payment to {business}', {'business': business}),
       );
-      text += '\n\nUPI ID: $upi\nPay now: $link';
-    }
-    final lock = ref.read(appLockProvider);
-    lock.suspendRelock = true;
-    try {
-      await SharePlus.instance.share(ShareParams(text: text));
-    } finally {
-      lock.suspendRelock = false;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

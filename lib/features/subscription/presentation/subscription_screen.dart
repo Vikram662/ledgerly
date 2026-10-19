@@ -278,31 +278,35 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
           tooltip: tr("Close"),
           onPressed: () => context.pop(),
         ),
-        title: Text(tr("Ledgerly Pro")),
       ),
       body: RefreshIndicator(
         onRefresh: ref.read(subscriptionControllerProvider.notifier).refresh,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
           children: [
-            Center(
-                child: AppBadge(tr("LEDGERLY PRO"), tone: BadgeTone.pro)),
-            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: AppBadge(tr("LEDGERLY PRO"), tone: BadgeTone.pro),
+            ),
+            const SizedBox(height: 12),
             Text(
               active
                   ? (access?.isTrial == true
                       ? tr("5-day free trial is active")
                       : tr("Pro is active"))
                   : tr("Try 5 days free, then ₹99/month"),
-              textAlign: TextAlign.center,
-              style: AppText.headlineSmall,
+              style: const TextStyle(
+                fontSize: 28,
+                height: 1.15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.56,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               active
                   ? tr("You can record all business data.")
                   : tr("Browse the whole app free. Pro lets you add or change records. Cancel any time."),
-              textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.muted, height: 1.45),
             ),
             const SizedBox(height: 24),
@@ -343,7 +347,6 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               const SizedBox(height: 14),
               Text(
                 tr("Payment mandate is set up on day 1 via Razorpay. First ₹99 is charged after 5 days; cancel before then to pay nothing."),
-                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: AppColors.muted,
                   fontSize: 12,
@@ -398,19 +401,25 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                 : tr("Subscribe · ₹99/month"),
         busy: _opening || value.isLoading,
         onPressed: active ? _cancel : _subscribe,
-        top: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!active)
+        bottom: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            mainAxisAlignment: active
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.spaceBetween,
+            children: [
+              if (!active)
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: AppColors.ink),
+                  onPressed: () => context.pop(),
+                  child: Text(tr("Explore free")),
+                ),
               TextButton(
-                onPressed: () => context.pop(),
-                child: Text(tr("Explore free")),
+                onPressed: _restore,
+                child: Text(tr("Restore subscription")),
               ),
-            TextButton(
-              onPressed: _restore,
-              child: Text(tr("Restore subscription")),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -13,7 +13,10 @@ import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/pickers.dart';
+import '../../../core/pdf/pdf_common.dart';
+import '../../lock/app_lock_controller.dart';
 import '../data/billing_repository.dart';
+import '../domain/statement_pdf.dart';
 import 'billing_widgets.dart';
 
 /// Billing tab (PRD E1): Bills | Quotations | Clients | Payments, with one
@@ -76,11 +79,40 @@ class _BillingScreenState extends ConsumerState<BillingScreen>
     );
   }
 
+  /// Unpaid bills as one PDF statement.
+  Future<void> _shareStatement() async {
+    final bills = await ref.read(documentsProvider(DocumentKind.invoice).future);
+    final open = bills.where(_isOpen).toList();
+    final profile = await ref.read(businessProfileProvider.future);
+    if (profile == null || !mounted) return;
+    if (open.isEmpty) {
+      showMessage(context, tr('No unpaid bills'));
+      return;
+    }
+    final bytes = await buildStatementPdf(open, profile);
+    final lock = ref.read(appLockProvider);
+    lock.suspendRelock = true;
+    try {
+      await sharePdf(bytes, fileName: 'Bills-statement.pdf');
+    } finally {
+      lock.suspendRelock = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final contractor = ref.watch(userTypeProvider) == UserType.contractor;
     return Scaffold(
-      appBar: tabAppBar(tr('Billing')),
+      appBar: tabAppBar(
+        tr('Billing'),
+        actions: [
+          AppIconButton(
+            icon: Icons.ios_share,
+            tooltip: tr('Share statement'),
+            onPressed: _shareStatement,
+          ),
+        ],
+      ),
       floatingActionButton: _fab(contractor),
       body: Column(
         children: [

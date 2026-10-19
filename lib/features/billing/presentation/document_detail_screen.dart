@@ -20,6 +20,7 @@ import '../data/billing_repository.dart';
 import '../domain/document_pdf.dart';
 import 'billing_screen.dart';
 import 'billing_widgets.dart';
+import 'line_editor_screen.dart';
 
 class DocumentDetailScreen extends ConsumerWidget {
   const DocumentDetailScreen({super.key, required this.documentId});
@@ -135,9 +136,19 @@ class DocumentDetailScreen extends ConsumerWidget {
             onSelected: (v) {
               if (v == 'cancel') _cancel(context, ref);
               if (v == 'client') context.push(Routes.client(doc.clientId));
+              if (v == 'remind') {
+                sharePaymentReminder(
+                  ref,
+                  name: detail.client.name,
+                  amountPaise: detail.balancePaise,
+                );
+              }
             },
             itemBuilder: (context) => [
               PopupMenuItem(value: 'client', child: Text(tr('Open client'))),
+              if (isInvoice && !cancelled && detail.balancePaise > 0)
+                PopupMenuItem(
+                    value: 'remind', child: Text(tr('Send reminder'))),
               if (!cancelled)
                 PopupMenuItem(
                     value: 'cancel', child: Text(tr('Cancel document'))),
@@ -199,7 +210,10 @@ class DocumentDetailScreen extends ConsumerWidget {
                           tr('Received {amount}',
                               {'amount': formatPaise(detail.paidPaise)}),
                           style: AppText.tabular.copyWith(
-                              fontSize: 13, fontWeight: FontWeight.w700),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.successText,
+                          ),
                         ),
                       ),
                       Text(
@@ -288,6 +302,8 @@ class DocumentDetailScreen extends ConsumerWidget {
                                           tr('From measurement'),
                                         '${formatMilli(l.line.qtyMilli)} ${l.unitCode ?? ''} × '
                                             '${formatPaise(l.line.ratePaise)}',
+                                        if (l.measurement.isEmpty)
+                                          lineTypeLabel(l.line.lineType),
                                       ].join(' · '),
                                 style: AppText.tabular.merge(grey),
                               ),

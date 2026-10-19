@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
 import '../i18n/i18n.dart';
 import '../utils/money.dart';
+import '../utils/photo_store.dart';
 
 export 'shimmer.dart';
 
@@ -367,23 +370,35 @@ class PhoneCountryCode extends StatelessWidget {
       );
 }
 
-/// Round avatar with up to two initials ("Raju Kumar" → "RK").
+/// Up to two initials ("Raju Kumar" → "RK") in a grey circle, or the
+/// person's photo when [photo] (a stored photo name) is set. [radius] makes
+/// it a rounded square instead.
 class InitialsAvatar extends StatelessWidget {
-  const InitialsAvatar(this.name, {super.key, this.size = 40});
+  const InitialsAvatar(
+    this.name, {
+    super.key,
+    this.size = 40,
+    this.photo,
+    this.radius,
+  });
 
   final String name;
   final double size;
+  final String? photo;
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final decoration = BoxDecoration(
+      color: AppColors.track,
+      shape: radius == null ? BoxShape.circle : BoxShape.rectangle,
+      borderRadius: radius == null ? null : BorderRadius.circular(radius!),
+    );
+    final initials = Container(
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: AppColors.track,
-        shape: BoxShape.circle,
-      ),
+      decoration: decoration,
       child: Text(
         twoInitials(name),
         style: TextStyle(
@@ -392,6 +407,25 @@ class InitialsAvatar extends StatelessWidget {
           color: AppColors.inkSoft,
         ),
       ),
+    );
+    if (photo == null) return initials;
+    return FutureBuilder<File>(
+      future: photoFile(photo!),
+      builder: (context, snapshot) {
+        final file = snapshot.data;
+        if (file == null || !file.existsSync()) return initials;
+        return Container(
+          width: size,
+          height: size,
+          clipBehavior: Clip.antiAlias,
+          decoration: decoration,
+          child: Image.file(
+            file,
+            fit: BoxFit.cover,
+            cacheWidth: (size * 3).round(),
+          ),
+        );
+      },
     );
   }
 }
@@ -1503,6 +1537,7 @@ class BottomActionBar extends StatelessWidget {
     required this.onPressed,
     this.busy = false,
     this.top,
+    this.bottom,
     this.summaryLabel,
     this.summaryValue,
   });
@@ -1511,6 +1546,9 @@ class BottomActionBar extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool busy;
   final Widget? top;
+
+  /// Shown under the button, e.g. secondary links.
+  final Widget? bottom;
 
   /// Optional total shown left of the button ("Amount ₹9,240").
   final String? summaryLabel;
@@ -1594,15 +1632,8 @@ class BottomActionBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (top != null) top!,
-              FilledButton(
-                onPressed: busy ? null : onPressed,
-                child: busy
-                    ? const SizedBox.square(
-                        dimension: 24,
-                        child: CircularProgressIndicator(strokeWidth: 3),
-                      )
-                    : Text(label),
-              ),
+              button,
+              if (bottom != null) bottom!,
             ],
           ),
         ),

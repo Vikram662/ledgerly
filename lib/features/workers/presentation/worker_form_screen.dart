@@ -11,10 +11,12 @@ import '../../../core/settings/settings_providers.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/utils/phone.dart';
+import '../../../core/utils/photos.dart';
 import '../../../core/utils/upi.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/phone_field.dart';
 import '../../../core/widgets/pickers.dart';
+import '../../lock/app_lock_controller.dart';
 import '../data/workers_repository.dart';
 
 /// PRD WK-01 / WK-02: add a worker, or edit name/phone/role/UPI.
@@ -36,15 +38,23 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
   final _rate = TextEditingController();
   final _otRate = TextEditingController();
   String? _roleId;
+
+  /// Photo as saved before this edit, and the one chosen now.
+  String? _savedPhoto;
+  String? _photo;
   WageModel _model = WageModel.daily;
   DateTime _joinDate = dateOnly(DateTime.now());
   bool _saving = false;
   bool _loaded = false;
 
+  /// Set once saved, so [dispose] keeps the chosen photo.
+  bool _saved = false;
+
   bool get _isEdit => widget.workerId != null;
 
   @override
   void dispose() {
+    if (!_saved) _dropUnsavedPhoto();
     for (final c in [_name, _phone, _upi, _rate, _otRate]) {
       c.dispose();
     }
@@ -60,6 +70,57 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
     _upi.text = w.upiId ?? '';
     _roleId = w.roleId;
     _joinDate = parseIsoDate(w.joinDate);
+    _savedPhoto = w.photoPath;
+    _photo = w.photoPath;
+  }
+
+  Future<void> _photoSheet() async {
+    final choice = await showPickerSheet<String>(
+      context,
+      title: tr('Photo'),
+      options: [
+        'camera',
+        'gallery',
+        if (_photo != null) 'view',
+        if (_photo != null) 'remove',
+      ],
+      label: (o) => switch (o) {
+        'camera' => tr('Camera'),
+        'gallery' => tr('Gallery'),
+        'view' => tr('View'),
+        _ => tr('Remove photo'),
+      },
+    );
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case 'view':
+        showPhoto(context, _photo!);
+      case 'remove':
+        await _dropUnsavedPhoto();
+        setState(() => _photo = null);
+      default:
+        final lock = ref.read(appLockProvider);
+        lock.suspendRelock = true;
+        try {
+          final name =
+              await pickProfilePhoto(fromCamera: choice == 'camera');
+          if (name == null) return;
+          await _dropUnsavedPhoto();
+          setState(() => _photo = name);
+        } catch (e) {
+          if (mounted) {
+            showMessage(context,
+                tr('Could not take photo: {e}', {'e': errorText(e)}));
+          }
+        } finally {
+          lock.suspendRelock = false;
+        }
+    }
+  }
+
+  /// Deletes the current pick if it is not the saved photo.
+  Future<void> _dropUnsavedPhoto() async {
+    if (_photo != _savedPhoto) await deletePhoto(_photo);
   }
 
   String? _validateAmount(String? value, {required bool isRequired}) {
@@ -115,7 +176,10 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
           phone: normalizeIndianPhone(_phone.text),
           roleId: _roleId,
           upiId: upi.isEmpty ? null : upi,
+          photoPath: _photo,
         );
+        // The old photo is no longer used.
+        if (_savedPhoto != _photo) await deletePhoto(_savedPhoto);
       } else {
         final settings = await ref.read(appSettingsProvider.future);
         await repo.addWorker(NewWorker(
@@ -123,6 +187,7 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
           phone: normalizeIndianPhone(_phone.text),
           roleId: _roleId,
           upiId: upi.isEmpty ? null : upi,
+          photoPath: _photo,
           joinDate: _joinDate,
           wageModel: _model,
           ratePaise:
@@ -131,6 +196,7 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
           monthlyDivisor: settings.monthlyDivisor,
         ));
       }
+      _saved = true;
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       showMessage(
@@ -170,16 +236,34 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            LabeledField(
-              label: tr('Name'),
-              child: TextFormField(
-                controller: _name,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(hintText: tr('Worker name')),
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? tr('Enter name')
-                    : null,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: _PhotoButton(
+                    name: _name.text,
+                    photo: _photo,
+                    onTap: _photoSheet,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: LabeledField(
+                    label: tr('Name'),
+                    child: TextFormField(
+                      controller: _name,
+                      textCapitalization: TextCapitalization.words,
+                      decoration:
+                          InputDecoration(hintText: tr('Worker name')),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                              ? tr('Enter name')
+                              : null,
+                    ),
+                  ),
+                ),
+              ],
             ),
             LabeledField(
               label: tr('Mobile number'),
@@ -321,6 +405,45 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
         label: _isEdit ? tr('Save') : tr('Save worker'),
         busy: _saving,
         onPressed: _save,
+      ),
+    );
+  }
+}
+
+/// 72px dashed "Add photo" tile; shows the photo once chosen.
+class _PhotoButton extends StatelessWidget {
+  const _PhotoButton({
+    required this.name,
+    required this.photo,
+    required this.onTap,
+  });
+
+  final String name;
+  final String? photo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 72.0;
+    return Semantics(
+      button: true,
+      label: photo == null ? tr('Add photo') : tr('Change photo'),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: photo != null
+            ? InitialsAvatar(name, size: size, photo: photo, radius: 24)
+            : Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: AppColors.page,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.faint, width: 1.5),
+                ),
+                child: const Icon(Icons.add_a_photo_outlined,
+                    color: AppColors.muted),
+              ),
       ),
     );
   }

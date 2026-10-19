@@ -14,6 +14,10 @@ export 'photo_store.dart';
 Future<String?> captureBillPhoto({required bool fromCamera}) =>
     _pickAndStore(fromCamera: fromCamera, maxSize: 1280, quality: 70);
 
+/// Worker photo: small square-ish picture for the avatar.
+Future<String?> pickProfilePhoto({required bool fromCamera}) =>
+    _pickAndStore(fromCamera: fromCamera, maxSize: 600, quality: 85);
+
 /// Business logo from the gallery: smaller and sharper than bill photos.
 /// Stored with the photos, so it is backed up to Drive the same way.
 Future<String?> pickLogo() =>

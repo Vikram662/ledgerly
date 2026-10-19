@@ -10,6 +10,7 @@ import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/pickers.dart';
 import '../../workers/data/workers_repository.dart';
 import '../data/khata_repository.dart';
 import 'khata_widgets.dart';
@@ -28,6 +29,24 @@ class KhataScreen extends StatefulWidget {
 class _KhataScreenState extends State<KhataScreen> {
   late int _tab = (widget.tab ?? 0).clamp(0, 1);
 
+  /// Month shown in Entries. Balances are per open period, not per month.
+  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  Future<void> _pickMonth() async {
+    final now = DateTime.now();
+    final months = [
+      for (var i = 0; i < 24; i++) DateTime(now.year, now.month - i),
+    ];
+    final picked = await showPickerSheet<DateTime>(
+      context,
+      title: tr('Month'),
+      options: months,
+      label: (m) => monthFormat.format(m),
+      selected: _month,
+    );
+    if (picked != null) setState(() => _month = picked);
+  }
+
   @override
   void didUpdateWidget(KhataScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -38,7 +57,12 @@ class _KhataScreenState extends State<KhataScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: tabAppBar(tr('Khata')),
+      appBar: tabAppBar(
+        tr('Khata'),
+        actions: [
+          if (_tab == 1) _MonthPill(month: _month, onTap: _pickMonth),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.amber500,
         foregroundColor: AppColors.ink,
@@ -58,7 +82,7 @@ class _KhataScreenState extends State<KhataScreen> {
             onChanged: (tab) => setState(() => _tab = tab),
           ),
           const SizedBox(height: 14),
-          if (_tab == 0) const _Balances() else const _Entries(),
+          if (_tab == 0) const _Balances() else _Entries(month: _month),
         ],
       ),
     );
@@ -171,7 +195,7 @@ class _BalanceTile extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            InitialsAvatar(item.worker.name),
+            InitialsAvatar(item.worker.name, photo: item.worker.photoPath),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -252,19 +276,55 @@ class _BalanceTile extends ConsumerWidget {
   }
 }
 
+/// "October 2026 ▾" button in the header.
+class _MonthPill extends StatelessWidget {
+  const _MonthPill({required this.month, required this.onTap});
+
+  final DateTime month;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.only(left: 14, right: 10),
+        foregroundColor: AppColors.ink,
+        backgroundColor: AppColors.surface,
+        side: const BorderSide(color: AppColors.border),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(monthFormat.format(month)),
+          const SizedBox(width: 4),
+          const Icon(Icons.expand_more, size: 18),
+        ],
+      ),
+    );
+  }
+}
+
 class _Entries extends ConsumerWidget {
-  const _Entries();
+  const _Entries({required this.month});
+
+  final DateTime month;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final entries = ref.watch(recentLedgerProvider);
+    final entries = ref.watch(
+      monthLedgerProvider((year: month.year, month: month.month)),
+    );
     return entries.when(
       loading: () => const ListSkeleton(),
       error: (e, _) => Center(child: Text(errorText(e))),
       data: (list) => list.isEmpty
           ? EmptyState(
               icon: Icons.receipt,
-              title: tr('No entries yet'),
+              title: tr('No entries this month'),
               message: tr('Advances, bonuses and payments show here.'),
               actionLabel: tr('Add advance'),
               onAction: () =>

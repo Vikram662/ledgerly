@@ -69,11 +69,15 @@ class AttendanceRow {
     required this.worker,
     this.roleName,
     this.attendance,
+    this.wage,
   });
 
   final Worker worker;
   final String? roleName;
   final Attendance? attendance;
+
+  /// Wage rate in force on that day.
+  final WageHistory? wage;
 }
 
 class AttendanceRepository {
@@ -95,14 +99,23 @@ class AttendanceRepository {
       ..where(_db.workers.isActive.equals(true) &
           _db.workers.joinDate.isSmallerOrEqualValue(day))
       ..orderBy([OrderingTerm.asc(_db.workers.name)]);
-    return query.watch().map((rows) => [
-          for (final row in rows)
-            AttendanceRow(
-              worker: row.readTable(_db.workers),
-              roleName: row.readTableOrNull(_db.roles)?.name,
-              attendance: row.readTableOrNull(_db.attendances),
-            ),
-        ]);
+    return query.watch().asyncMap((rows) async {
+      final wageRows = await (_db.select(_db.wageHistories)
+            ..where((w) => w.effectiveFrom.isSmallerOrEqualValue(day))
+            ..orderBy([(w) => OrderingTerm.asc(w.effectiveFrom)]))
+          .get();
+      // Later rows overwrite earlier ones → rate in force on [date].
+      final wages = {for (final w in wageRows) w.workerId: w};
+      return [
+        for (final row in rows)
+          AttendanceRow(
+            worker: row.readTable(_db.workers),
+            roleName: row.readTableOrNull(_db.roles)?.name,
+            attendance: row.readTableOrNull(_db.attendances),
+            wage: wages[row.readTable(_db.workers).id],
+          ),
+      ];
+    });
   }
 
   Stream<Map<String, Attendance>> watchMonth(String workerId, DateTime month) {

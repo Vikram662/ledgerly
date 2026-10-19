@@ -19,16 +19,25 @@ const _totalWidth = 44.0;
 
 /// All workers × all days of a month. Each cell shows P / ½ / A / Off / L;
 /// tap a cell to change it (PRD AT-04).
+/// The month is kept by the parent so its header can share that month's PDF.
 class MonthRegisterView extends ConsumerStatefulWidget {
-  const MonthRegisterView({super.key});
+  const MonthRegisterView({
+    super.key,
+    required this.month,
+    required this.onMonthChanged,
+  });
+
+  final DateTime month;
+  final ValueChanged<DateTime> onMonthChanged;
 
   @override
   ConsumerState<MonthRegisterView> createState() => _MonthRegisterViewState();
 }
 
 class _MonthRegisterViewState extends ConsumerState<MonthRegisterView> {
-  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
   final _horizontal = ScrollController();
+
+  DateTime get _month => widget.month;
 
   bool get _isCurrentMonth {
     final now = DateTime.now();
@@ -55,7 +64,7 @@ class _MonthRegisterViewState extends ConsumerState<MonthRegisterView> {
   }
 
   void _shift(int months) =>
-      setState(() => _month = DateTime(_month.year, _month.month + months));
+      widget.onMonthChanged(DateTime(_month.year, _month.month + months));
 
   @override
   Widget build(BuildContext context) {

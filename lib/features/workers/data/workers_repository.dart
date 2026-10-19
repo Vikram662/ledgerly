@@ -54,6 +54,7 @@ class NewWorker {
     this.phone,
     this.roleId,
     this.upiId,
+    this.photoPath,
     this.otRatePaise = 0,
     this.monthlyDivisor = 30,
   });
@@ -62,6 +63,9 @@ class NewWorker {
   final String? phone;
   final String? roleId;
   final String? upiId;
+
+  /// Stored photo name (see `photo_store.dart`).
+  final String? photoPath;
   final DateTime joinDate;
   final WageModel wageModel;
   final int ratePaise;
@@ -166,6 +170,7 @@ class WorkersRepository {
               phone: Value(input.phone),
               roleId: Value(input.roleId),
               upiId: Value(input.upiId),
+              photoPath: Value(input.photoPath),
               joinDate: joinDate,
             ),
           );
@@ -192,6 +197,7 @@ class WorkersRepository {
     String? phone,
     String? roleId,
     String? upiId,
+    String? photoPath,
   }) async {
     await _db.transaction(() async {
       final before = await (_db.select(_db.workers)
@@ -203,6 +209,7 @@ class WorkersRepository {
           phone: Value(phone),
           roleId: Value(roleId),
           upiId: Value(upiId),
+          photoPath: Value(photoPath),
           updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
         ),
       );

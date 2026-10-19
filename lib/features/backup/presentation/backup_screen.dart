@@ -543,46 +543,48 @@ class _BackupDashboard extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         Panel(
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  IconTile(
-                    ok ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
                     color: ok
                         ? AppColors.successSurface
                         : statusColor == AppColors.warningText
                             ? AppColors.warningSurface
                             : AppColors.dangerSurface,
-                    iconColor: statusColor,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          statusText,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: ok ? AppColors.ink : statusColor,
-                          ),
-                        ),
-                        Text(
-                          state.lastBackupAt == null
-                              ? tr('Last backup: never')
-                              : tr('Last backup: {date}', {
-                                  'date':
-                                      dayTimeFormat.format(state.lastBackupAt!)
-                                }),
-                          style: grey,
-                        ),
-                      ],
-                    ),
+                  child: Icon(
+                    ok ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+                    size: 30,
+                    color: statusColor,
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                statusText,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: ok ? AppColors.ink : statusColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                state.lastBackupAt == null
+                    ? tr('Last backup: never')
+                    : tr('Last backup: {date}', {
+                        'date': dayTimeFormat.format(state.lastBackupAt!)
+                      }),
+                textAlign: TextAlign.center,
+                style: AppText.tabular.merge(grey.copyWith(fontSize: 13)),
               ),
               if (running && progress != null) ...[
                 const SizedBox(height: 12),

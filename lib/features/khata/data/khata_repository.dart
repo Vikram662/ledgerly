@@ -30,8 +30,12 @@ final workerLedgerProvider = StreamProvider.family<List<LedgerItem>, String>(
   (ref, workerId) => ref.watch(khataRepositoryProvider).watchLedger(workerId),
 );
 
-final recentLedgerProvider = StreamProvider<List<LedgerItem>>(
-  (ref) => ref.watch(khataRepositoryProvider).watchLedger(null, limit: 100),
+/// All workers' entries in one month. Key: (year, month).
+final monthLedgerProvider =
+    StreamProvider.family<List<LedgerItem>, ({int year, int month})>(
+  (ref, m) => ref
+      .watch(khataRepositoryProvider)
+      .watchLedger(null, month: DateTime(m.year, m.month)),
 );
 
 final workerPieceWorkProvider =
@@ -224,13 +228,24 @@ class KhataRepository {
     });
   }
 
-  Stream<List<LedgerItem>> watchLedger(String? workerId, {int? limit}) {
+  /// [month] limits it to entries made in that month.
+  Stream<List<LedgerItem>> watchLedger(
+    String? workerId, {
+    int? limit,
+    DateTime? month,
+  }) {
     final query = _db.select(_db.ledgerEntries).join([
       innerJoin(
           _db.workers, _db.workers.id.equalsExp(_db.ledgerEntries.workerId)),
     ]);
     if (workerId != null) {
       query.where(_db.ledgerEntries.workerId.equals(workerId));
+    }
+    if (month != null) {
+      final from = DateTime(month.year, month.month).millisecondsSinceEpoch;
+      final to = DateTime(month.year, month.month + 1).millisecondsSinceEpoch;
+      query.where(_db.ledgerEntries.at.isBiggerOrEqualValue(from) &
+          _db.ledgerEntries.at.isSmallerThanValue(to));
     }
     query.orderBy([OrderingTerm.desc(_db.ledgerEntries.at)]);
     if (limit != null) query.limit(limit);

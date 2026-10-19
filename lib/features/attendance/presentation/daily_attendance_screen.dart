@@ -14,6 +14,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/pickers.dart';
 import '../../subscription/presentation/subscription_screen.dart';
+import '../../workers/data/workers_repository.dart';
 import '../data/attendance_repository.dart';
 import 'attendance_widgets.dart';
 
@@ -394,8 +395,12 @@ class _AttendanceRowTile extends ConsumerWidget {
         ),
       );
     } else {
+      final role = [
+        if (row.roleName != null && row.roleName!.isNotEmpty) row.roleName!,
+        if (row.wage != null) wageLabel(row.wage),
+      ].join(' · ');
       subtitle = Text(
-        other ? statusStyle(current).label : (row.roleName ?? ''),
+        other ? statusStyle(current).label : role,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -412,7 +417,7 @@ class _AttendanceRowTile extends ConsumerWidget {
         children: [
           Row(
             children: [
-              InitialsAvatar(row.worker.name),
+              InitialsAvatar(row.worker.name, photo: row.worker.photoPath),
               const SizedBox(width: 12),
               Expanded(
                 child: InkWell(

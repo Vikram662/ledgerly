@@ -2,32 +2,69 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/enums.dart';
+import '../../../core/db/providers.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/dates.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/utils/phone.dart';
+import '../../../core/utils/upi.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/phone_field.dart';
 import '../../../core/widgets/pickers.dart';
+import '../../lock/app_lock_controller.dart';
 import '../data/billing_repository.dart';
 
-class DocumentTile extends StatelessWidget {
+/// Shares a polite payment reminder (with a UPI pay link when the business
+/// has a UPI ID) through the share sheet, e.g. to WhatsApp.
+Future<void> sharePaymentReminder(
+  WidgetRef ref, {
+  required String name,
+  required int amountPaise,
+}) async {
+  final profile = await ref.read(businessProfileProvider.future);
+  final business = profile?.name ?? '';
+  final upi = profile?.upiId?.trim();
+  var text = tr('Hello {name}, payment of {amount} is pending with {business}. Please pay at the earliest. Thank you.', {'name': name, 'amount': formatPaise(amountPaise), 'business': business});
+  if (upi != null && isValidUpiId(upi)) {
+    final link = upiPayUri(
+      upiId: upi,
+      payeeName: business,
+      amountPaise: amountPaise,
+      note: tr('Payment to {business}', {'business': business}),
+    );
+    text += '\n\nUPI ID: $upi\nPay now: $link';
+  }
+  final lock = ref.read(appLockProvider);
+  lock.suspendRelock = true;
+  try {
+    await SharePlus.instance.share(ShareParams(text: text));
+  } finally {
+    lock.suspendRelock = false;
+  }
+}
+
+class DocumentTile extends ConsumerWidget {
   const DocumentTile({super.key, required this.item});
 
   final DocumentListItem item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final doc = item.document;
     final invoice = doc.kind == DocumentKind.invoice;
     final open = doc.status == DocumentStatus.sent ||
         doc.status == DocumentStatus.partiallyPaid;
     final partPaid = invoice && open && item.paidPaise > 0;
+    final overdue = invoice &&
+        open &&
+        doc.dueDate != null &&
+        doc.dueDate!.compareTo(isoDate(DateTime.now())) < 0;
 
     const muted = TextStyle(
       fontSize: 12,
@@ -95,7 +132,16 @@ class DocumentTile extends StatelessWidget {
               children: [
                 DocumentPill(document: doc),
                 const Spacer(),
-                if (invoice && open)
+                if (overdue)
+                  MiniButton(
+                    label: tr('Send reminder'),
+                    onTap: () => sharePaymentReminder(
+                      ref,
+                      name: item.clientName,
+                      amountPaise: item.balancePaise,
+                    ),
+                  )
+                else if (invoice && open)
                   Text(
                     partPaid
                         ? tr('{paid} of {total}', {
