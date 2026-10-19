@@ -38,6 +38,8 @@ dependencies:
   razorpay_flutter: ^1.4.7
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
+  # System contact picker: no READ_CONTACTS permission needed.
+  flutter_native_contact_picker: ^0.0.12
 
 dev_dependencies:
   flutter_test:

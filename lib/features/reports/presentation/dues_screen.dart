@@ -191,11 +191,7 @@ class _DueList extends ConsumerWidget {
               ),
               if (header != null) ...[
                 const SizedBox(height: 6),
-                TagBadge(
-                  header!,
-                  color: AppColors.dangerSurface,
-                  textColor: AppColors.dangerText,
-                ),
+                AppBadge(header!, tone: BadgeTone.danger),
               ],
             ],
           ),
@@ -257,12 +253,11 @@ class _DueList extends ConsumerWidget {
                                 ),
                               ),
                               if (item.overduePaise > 0)
-                                TagBadge(
+                                AppBadge(
                                   tr('Overdue {amount}', {
                                     'amount': formatPaise(item.overduePaise)
                                   }),
-                                  color: AppColors.dangerSurface,
-                                  textColor: AppColors.dangerText,
+                                  tone: BadgeTone.danger,
                                 ),
                             ],
                           ),

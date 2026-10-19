@@ -50,31 +50,17 @@ class RulesScreen extends ConsumerWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    ChoiceChip(
-                      showCheckmark: false,
-                      labelStyle: TextStyle(
-                        color: settings.weeklyOffDay == null
-                            ? Colors.white
-                            : AppColors.inkSoft,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      label: Text(tr('None')),
+                    AppChip(
+                      label: tr('None'),
                       selected: settings.weeklyOffDay == null,
-                      onSelected: (_) =>
+                      onTap: () =>
                           save(settings.copyWith(weeklyOffDay: () => null)),
                     ),
                     for (final entry in _weekdays.entries)
-                      ChoiceChip(
-                        showCheckmark: false,
-                        labelStyle: TextStyle(
-                          color: settings.weeklyOffDay == entry.key
-                              ? Colors.white
-                              : AppColors.inkSoft,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        label: Text(entry.value),
+                      AppChip(
+                        label: entry.value,
                         selected: settings.weeklyOffDay == entry.key,
-                        onSelected: (_) => save(
+                        onTap: () => save(
                             settings.copyWith(weeklyOffDay: () => entry.key)),
                       ),
                   ],

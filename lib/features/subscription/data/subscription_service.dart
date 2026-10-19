@@ -8,8 +8,12 @@ import '../../../core/config.dart';
 import '../../../core/security/secure_store.dart';
 
 class SubscriptionApiException implements Exception {
-  const SubscriptionApiException(this.message);
+  const SubscriptionApiException(this.message, {this.code, this.details});
   final String message;
+
+  /// Server error code, e.g. `account_exists` or `account_not_found`.
+  final String? code;
+  final Map<String, dynamic>? details;
   @override
   String toString() => message;
 }
@@ -30,9 +34,12 @@ class SubscriptionService {
 
   Uri _uri(String path) => Uri.parse('${AppConfig.subscriptionApiUrl}$path');
 
+  /// Registers this install. With [googleIdToken] the account can later log
+  /// in on another phone. Throws `account_exists` when the phone number or
+  /// Google account already belongs to a user.
   Future<Map<String, dynamic>> register(
       String name, String? phone, String userType,
-      {String? fcmToken}) async {
+      {String? fcmToken, String? googleIdToken, String? trades}) async {
     _configured();
     fcmToken ??= await _fcmToken();
     final response = await _client.post(_uri('/v1/install'),
@@ -42,9 +49,36 @@ class SubscriptionService {
           'name': name,
           'userType': userType,
           if (phone != null) 'phone': phone,
+          if (trades != null) 'trades': trades,
+          if (fcmToken != null) 'fcmToken': fcmToken,
+          if (googleIdToken != null) 'googleIdToken': googleIdToken,
+        }));
+    return _startSession(_decode(response));
+  }
+
+  /// Logs in an existing user on this install with their Google account.
+  /// Returns the session including `user` (name, phone, userType, trades).
+  Future<Map<String, dynamic>> login(String googleIdToken) async {
+    _configured();
+    final fcmToken = await _fcmToken();
+    final response = await _client.post(_uri('/v1/login'),
+        headers: _headers(),
+        body: jsonEncode({
+          'installId': await _secure.deviceId(),
+          'googleIdToken': googleIdToken,
           if (fcmToken != null) 'fcmToken': fcmToken,
         }));
-    final data = _decode(response);
+    return _startSession(_decode(response));
+  }
+
+  /// Links a Google account to the registered install. Returns the email.
+  Future<String> linkGoogle(String googleIdToken) async {
+    final data = _decode(await _authorized(
+        'POST', '/v1/account/google', {'googleIdToken': googleIdToken}));
+    return data['email'] as String;
+  }
+
+  Future<Map<String, dynamic>> _startSession(Map<String, dynamic> data) async {
     await _secure.write(SecureStore.subscriptionToken, data['token'] as String);
     await _cache(data);
     return data;
@@ -142,7 +176,9 @@ class SubscriptionService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final error = data['error'] as Map<String, dynamic>?;
       throw SubscriptionApiException(
-          error?['message'] as String? ?? 'Subscription request failed.');
+          error?['message'] as String? ?? 'Subscription request failed.',
+          code: error?['code'] as String?,
+          details: error);
     }
     return data;
   }

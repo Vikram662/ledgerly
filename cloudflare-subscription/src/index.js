@@ -21,6 +21,10 @@ export default {
         response = appConfig(env);
       } else if (request.method === 'POST' && path === '/v1/install') {
         response = await install(request, env);
+      } else if (request.method === 'POST' && path === '/v1/login') {
+        response = await login(request, env);
+      } else if (request.method === 'POST' && path === '/v1/account/google') {
+        response = await linkGoogle(request, env);
       } else if (request.method === 'POST' && path === '/v1/notifications/token') {
         response = await updateNotificationToken(request, env);
       } else if (
@@ -59,7 +63,7 @@ export default {
       console.error(error);
       const response =
         error instanceof ApiError
-          ? fail(error.status, error.code, error.message)
+          ? fail(error.status, error.code, error.message, error.details)
           : fail(500, 'internal_error', 'Something went wrong.');
       addHeaders(response, cors);
       return response;
@@ -69,20 +73,37 @@ export default {
 
 async function install(request, env) {
   const body = await bodyJson(request);
-  const installId = requiredString(body.installId, 'installId', 80);
+  const installId = parseInstallId(body.installId);
   const name = requiredString(body.name, 'name', 120);
   const phone = optionalString(body.phone, 20);
   const userType = parseUserType(body.userType);
+  const trades = optionalString(body.trades, 500);
   const fcmToken = optionalString(body.fcmToken, 4096);
-  if (!/^[a-zA-Z0-9-]{16,80}$/.test(installId)) {
-    throw new ApiError(400, 'invalid_install', 'Invalid install identifier.');
+  const googleIdToken = optionalString(body.googleIdToken, 4096);
+  const google = googleIdToken ? await verifyGoogle(googleIdToken, env) : null;
+
+  let row = await installRow(env, installId);
+  if (google) {
+    const owner = await env.DB.prepare(
+      'SELECT * FROM installs WHERE google_sub = ?',
+    )
+      .bind(google.sub)
+      .first();
+    if (owner && owner.install_id !== installId) {
+      throw accountExists(owner);
+    }
+    if (row?.google_sub && row.google_sub !== google.sub) {
+      throw new ApiError(409, 'google_mismatch',
+        'This phone is linked to another Google account.');
+    }
+  }
+  // One account per mobile number: a reinstall logs in instead of
+  // registering a second user.
+  if (phone && digits(row?.phone) !== digits(phone)) {
+    const owner = await phoneOwner(env, phone, installId);
+    if (owner) throw accountExists(owner);
   }
 
-  let row = await env.DB.prepare(
-    'SELECT * FROM installs WHERE install_id = ?',
-  )
-    .bind(installId)
-    .first();
   if (!row) {
     const customer = await razorpay(env, '/customers', 'POST', {
       name,
@@ -92,18 +113,14 @@ async function install(request, env) {
     });
     await env.DB.prepare(
       `INSERT INTO installs
-       (install_id, customer_id, name, phone, user_type, fcm_token, platform,
-        notification_updated_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'android', ?, ?)`,
+       (install_id, customer_id, name, phone, user_type, trades, email,
+        google_sub, fcm_token, platform, notification_updated_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'android', ?, ?)`,
     )
-      .bind(installId, customer.id, name, phone, userType, fcmToken,
+      .bind(installId, customer.id, name, phone, userType, trades,
+        google?.email ?? null, google?.sub ?? null, fcmToken,
         fcmToken ? epoch() : null, epoch())
       .run();
-    row = await env.DB.prepare(
-      'SELECT * FROM installs WHERE install_id = ?',
-    )
-      .bind(installId)
-      .first();
   } else {
     if (
       (row.subscription_id || row.subscription_created_at) &&
@@ -117,29 +134,182 @@ async function install(request, env) {
     }
     await env.DB.prepare(
       `UPDATE installs SET name = ?, phone = ?, user_type = ?,
+       trades = COALESCE(?, trades),
+       email = COALESCE(?, email), google_sub = COALESCE(?, google_sub),
        fcm_token = COALESCE(?, fcm_token),
        notification_updated_at = CASE WHEN ? IS NULL
          THEN notification_updated_at ELSE ? END,
        updated_at = ? WHERE install_id = ?`,
     )
-      .bind(name, phone, userType, fcmToken, fcmToken, epoch(), epoch(), installId)
+      .bind(name, phone, userType, trades, google?.email ?? null,
+        google?.sub ?? null, fcmToken, fcmToken, epoch(), epoch(), installId)
       .run();
-    row = await env.DB.prepare(
-      'SELECT * FROM installs WHERE install_id = ?',
-    )
-      .bind(installId)
-      .first();
   }
-  return ok({
+  row = await installRow(env, installId);
+  return ok(await session(row, env));
+}
+
+// A user who reinstalled or changed phones signs in with the Google account
+// they registered with. The account moves to this install, keeping its
+// Razorpay customer and subscription, so no duplicate user is created.
+async function login(request, env) {
+  const body = await bodyJson(request);
+  const installId = parseInstallId(body.installId);
+  const fcmToken = optionalString(body.fcmToken, 4096);
+  const google = await verifyGoogle(
+    requiredString(body.googleIdToken, 'googleIdToken', 4096),
+    env,
+  );
+  const account = await env.DB.prepare(
+    'SELECT * FROM installs WHERE google_sub = ?',
+  )
+    .bind(google.sub)
+    .first();
+  if (!account) {
+    throw new ApiError(404, 'account_not_found',
+      'No account is registered with this Google account.');
+  }
+  if (account.install_id !== installId) {
+    const here = await installRow(env, installId);
+    if (here) {
+      if (here.subscription_id || here.subscription_created_at || here.google_sub) {
+        throw new ApiError(409, 'install_in_use',
+          'This phone already has another account.');
+      }
+      // A half-finished registration on this phone; the real account wins.
+      await env.DB.prepare('DELETE FROM installs WHERE install_id = ?')
+        .bind(installId)
+        .run();
+    }
+    await env.DB.prepare(
+      'UPDATE installs SET install_id = ?, updated_at = ? WHERE install_id = ?',
+    )
+      .bind(installId, epoch(), account.install_id)
+      .run();
+  }
+  await env.DB.prepare(
+    `UPDATE installs SET email = ?, fcm_token = COALESCE(?, fcm_token),
+     updated_at = ? WHERE install_id = ?`,
+  )
+    .bind(google.email, fcmToken, epoch(), installId)
+    .run();
+  return ok(await session(await installRow(env, installId), env));
+}
+
+// Links a Google account to an already registered install, so a user who
+// registered before Google login existed can log in on a new phone.
+async function linkGoogle(request, env) {
+  const user = await authenticated(request, env);
+  const body = await bodyJson(request);
+  const google = await verifyGoogle(
+    requiredString(body.googleIdToken, 'googleIdToken', 4096),
+    env,
+  );
+  const owner = await env.DB.prepare(
+    'SELECT install_id FROM installs WHERE google_sub = ?',
+  )
+    .bind(google.sub)
+    .first();
+  if (owner && owner.install_id !== user.install_id) {
+    throw new ApiError(409, 'google_in_use',
+      'This Google account is already linked to another account.');
+  }
+  if (user.google_sub && user.google_sub !== google.sub) {
+    throw new ApiError(409, 'google_mismatch',
+      'This account is linked to another Google account.');
+  }
+  await env.DB.prepare(
+    `UPDATE installs SET google_sub = ?, email = ?, updated_at = ?
+     WHERE install_id = ?`,
+  )
+    .bind(google.sub, google.email, epoch(), user.install_id)
+    .run();
+  return ok({ email: google.email });
+}
+
+async function session(row, env) {
+  return {
     token: await signToken(
-      { sub: installId, exp: epoch() + 90 * 86400 },
+      { sub: row.install_id, exp: epoch() + 90 * 86400 },
       env.APP_TOKEN_SECRET,
     ),
     customerId: row.customer_id,
     subscriptionId: row.subscription_id,
     status: row.subscription_status,
-    user: { installId: row.install_id, name: row.name, phone: row.phone, userType: row.user_type },
-  });
+    user: {
+      installId: row.install_id,
+      name: row.name,
+      phone: row.phone,
+      userType: row.user_type,
+      trades: row.trades,
+      email: row.email,
+    },
+  };
+}
+
+function installRow(env, installId) {
+  return env.DB.prepare('SELECT * FROM installs WHERE install_id = ?')
+    .bind(installId)
+    .first();
+}
+
+async function phoneOwner(env, phone, exceptInstallId) {
+  const rows = await env.DB.prepare(
+    'SELECT * FROM installs WHERE phone IS NOT NULL AND install_id != ?',
+  )
+    .bind(exceptInstallId)
+    .all();
+  return (rows.results || []).find((row) => digits(row.phone) === digits(phone));
+}
+
+function accountExists(owner) {
+  return new ApiError(
+    409,
+    'account_exists',
+    owner.google_sub
+      ? 'You are already registered. Log in with your Google account.'
+      : 'This mobile number is already registered.',
+    { email: maskEmail(owner.email), canLogin: Boolean(owner.google_sub) },
+  );
+}
+
+function maskEmail(email) {
+  if (!email) return null;
+  const [user, domain] = String(email).split('@');
+  return `${user.slice(0, 2)}${'*'.repeat(Math.max(1, user.length - 2))}@${domain}`;
+}
+
+// Verifies a Google ID token issued to our OAuth web client (no OTP service
+// needed: Google has already verified the email).
+async function verifyGoogle(idToken, env) {
+  if (!env.GOOGLE_CLIENT_ID) {
+    throw new ApiError(503, 'google_not_configured',
+      'Google login is not set up on the server.');
+  }
+  const response = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
+  );
+  const data = await response.json().catch(() => ({}));
+  if (
+    !response.ok ||
+    data.aud !== env.GOOGLE_CLIENT_ID ||
+    !['accounts.google.com', 'https://accounts.google.com'].includes(data.iss) ||
+    String(data.email_verified) !== 'true' ||
+    !data.sub ||
+    Number(data.exp) < epoch()
+  ) {
+    throw new ApiError(401, 'invalid_google_login',
+      'Google login could not be verified.');
+  }
+  return { sub: String(data.sub), email: String(data.email).toLowerCase() };
+}
+
+function parseInstallId(value) {
+  const installId = requiredString(value, 'installId', 80);
+  if (!/^[a-zA-Z0-9-]{16,80}$/.test(installId)) {
+    throw new ApiError(400, 'invalid_install', 'Invalid install identifier.');
+  }
+  return installId;
 }
 
 function parseUserType(value) {
@@ -220,6 +390,7 @@ async function subscriptionStatus(request, env) {
       ...complimentary,
       subscriptionId: user.subscription_id,
       trialEligible,
+      accountEmail: user.email,
     });
   }
   if (!user.subscription_id) {
@@ -229,6 +400,7 @@ async function subscriptionStatus(request, env) {
       status: 'none',
       active: false,
       trialEligible,
+      accountEmail: user.email,
     });
   }
   const subscription = await razorpay(
@@ -242,7 +414,11 @@ async function subscriptionStatus(request, env) {
     null,
     subscription.created_at,
   );
-  return ok({ ...statusPayload(subscription), trialEligible: false });
+  return ok({
+    ...statusPayload(subscription),
+    trialEligible: false,
+    accountEmail: user.email,
+  });
 }
 
 async function hasUsedTrial(env, user) {
@@ -306,8 +482,9 @@ async function setComplimentaryAccess(request, env) {
   }
   if (!changes) {
     throw new ApiError(404, 'user_not_found', 'No registered user matched.');
-  }  return ok({
-    updated: result.meta.changes,
+  }
+  return ok({
+    updated: changes,
     mode,
     expiresAt: until === -1 ? null : until,
   });
@@ -659,17 +836,18 @@ function ok(data, status = 200) {
   });
 }
 
-function fail(status, code, message) {
-  return new Response(JSON.stringify({ error: { code, message } }), {
+function fail(status, code, message, details = null) {
+  return new Response(JSON.stringify({ error: { code, message, ...details } }), {
     status,
     headers: JSON_HEADERS,
   });
 }
 
 class ApiError extends Error {
-  constructor(status, code, message) {
+  constructor(status, code, message, details = null) {
     super(message);
     this.status = status;
     this.code = code;
+    this.details = details;
   }
 }

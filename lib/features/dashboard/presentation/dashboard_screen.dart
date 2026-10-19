@@ -415,7 +415,7 @@ class _Figure extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           if (badge != null)
-            StatusChip(label: badge!, color: AppColors.dangerText)
+            AppBadge(badge!, tone: BadgeTone.danger)
           else
             Text(
               note ?? ' ',
@@ -732,12 +732,21 @@ class _TodayCard extends ConsumerWidget {
               spacing: 16,
               runSpacing: 6,
               children: [
-                _Legend(AppColors.successFill,
-                    tr('{count} Present', {'count': present})),
-                _Legend(
-                    AppColors.amber500, tr('{count} Half', {'count': half})),
-                _Legend(AppColors.dangerFill,
-                    tr('{count} Absent', {'count': absent})),
+                LegendDot(
+                  color: AppColors.successFill,
+                  label: tr('{count} Present', {'count': present}),
+                  labelColor: AppColors.ink,
+                ),
+                LegendDot(
+                  color: AppColors.amber500,
+                  label: tr('{count} Half', {'count': half}),
+                  labelColor: AppColors.ink,
+                ),
+                LegendDot(
+                  color: AppColors.dangerFill,
+                  label: tr('{count} Absent', {'count': absent}),
+                  labelColor: AppColors.ink,
+                ),
                 if (left > 0)
                   Text(
                     tr('{count} left', {'count': left}),
@@ -752,33 +761,6 @@ class _TodayCard extends ConsumerWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _Legend extends StatelessWidget {
-  const _Legend(this.color, this.text);
-
-  final Color color;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: AppText.tabular
-              .copyWith(fontSize: 12, fontWeight: FontWeight.w700),
-        ),
-      ],
     );
   }
 }

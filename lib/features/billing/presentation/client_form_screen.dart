@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/phone_field.dart';
 import '../data/billing_repository.dart';
 
 /// PRD BL-01: client name, phone, address.
@@ -88,19 +89,7 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
               label: tr('Mobile number'),
               optional: true,
               help: tr('Used for WhatsApp bills and payment reminders.'),
-              child: TextFormField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  hintText: tr('10-digit number'),
-                  prefixIcon: const PhoneCountryCode(),
-                ),
-                validator: (v) => (v == null ||
-                        v.trim().isEmpty ||
-                        normalizeIndianPhone(v) != null)
-                    ? null
-                    : tr('Enter a valid 10-digit mobile number'),
-              ),
+              child: PhoneField(controller: _phone, name: _name),
             ),
             LabeledField(
               label: tr('Address'),

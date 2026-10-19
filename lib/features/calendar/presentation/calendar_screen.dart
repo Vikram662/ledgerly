@@ -330,22 +330,8 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget dot(Color color, String label) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 4),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.muted)),
-          ],
-        );
+    Widget dot(Color color, String label) =>
+        LegendDot(color: color, label: label);
     return Wrap(
       spacing: 14,
       runSpacing: 6,

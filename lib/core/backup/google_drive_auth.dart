@@ -44,6 +44,18 @@ class GoogleDriveAuth {
     return account.email;
   }
 
+  /// Interactive sign-in for the Ledgerly account (login on a new phone).
+  /// The ID token is checked by the subscription server.
+  Future<({String email, String idToken})> accountToken() async {
+    await _ensureInitialized();
+    final account = await GoogleSignIn.instance.authenticate();
+    final idToken = account.authentication.idToken;
+    if (idToken == null) {
+      throw StateError('Google did not return a sign-in token.');
+    }
+    return (email: account.email, idToken: idToken);
+  }
+
   /// HTTP client with a Drive access token, or null if the user has to sign
   /// in again. Never shows UI unless [interactive] is true, so it is safe in
   /// the background backup job.

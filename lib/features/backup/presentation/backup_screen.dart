@@ -741,10 +741,11 @@ class _BackupDashboard extends ConsumerWidget {
                     if (log.status == BackupStatus.failed && log.error != null)
                       log.error!,
                   ].join(' · ')),
-                  trailing: TagBadge(
+                  trailing: AppBadge(
                     _triggerLabel(log.triggerType),
-                    color: AppColors.track,
-                    textColor: AppColors.inkSoft,
+                    tone: log.triggerType == BackupTrigger.internetBack
+                        ? BadgeTone.info
+                        : BadgeTone.neutral,
                   ),
                 ),
             ],

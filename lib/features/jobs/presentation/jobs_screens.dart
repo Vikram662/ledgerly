@@ -14,23 +14,22 @@ import '../../../core/widgets/empty_state.dart';
 import '../../billing/presentation/billing_widgets.dart';
 import '../data/jobs_repository.dart';
 
-StatusChip jobStatusChip(JobStatus status) => switch (status) {
-      JobStatus.planned => StatusChip(
-          label: jobStatusLabel(status),
-          color: AppColors.muted,
-          icon: Icons.schedule,
-        ),
-      JobStatus.inProgress => StatusChip(
-          label: jobStatusLabel(status),
-          color: AppColors.blue700,
-          icon: Icons.construction,
-        ),
-      JobStatus.completed => StatusChip(
-          label: jobStatusLabel(status),
-          color: AppColors.successText,
-          icon: Icons.check_circle,
-        ),
-    };
+/// Status pill of a job (wireframe Jobs: Active is blue).
+class JobStatusBadge extends StatelessWidget {
+  const JobStatusBadge(this.status, {super.key});
+
+  final JobStatus status;
+
+  @override
+  Widget build(BuildContext context) => AppBadge(
+        jobStatusLabel(status),
+        tone: switch (status) {
+          JobStatus.planned => BadgeTone.neutral,
+          JobStatus.inProgress => BadgeTone.info,
+          JobStatus.completed => BadgeTone.success,
+        },
+      );
+}
 
 enum _JobFilter { active, done, all }
 
@@ -122,11 +121,6 @@ class _JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final job = item.job;
-    final (bg, fg) = switch (job.status) {
-      JobStatus.planned => (AppColors.track, AppColors.inkSoft),
-      JobStatus.inProgress => (AppColors.successSurface, AppColors.successText),
-      JobStatus.completed => (AppColors.primarySurface, AppColors.primary),
-    };
     final spent = item.expensesPaise + item.piecePaise;
     final profit = item.profitPaise;
     Widget figure(String label, int paise, Color color) => Expanded(
@@ -187,7 +181,7 @@ class _JobCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                TagBadge(jobStatusLabel(job.status), color: bg, textColor: fg),
+                JobStatusBadge(job.status),
               ],
             ),
             const SizedBox(height: 12),
@@ -379,7 +373,7 @@ class JobDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              jobStatusChip(job.status),
+              JobStatusBadge(job.status),
               const SizedBox(width: 8),
               Expanded(
                 child: InkWell(
@@ -467,7 +461,7 @@ class JobDetailScreen extends ConsumerWidget {
                       title: Text(b.number),
                       subtitle: Row(
                         children: [
-                          documentStatusChip(b.status, b.kind),
+                          DocumentPill(document: b),
                           const SizedBox(width: 8),
                           Text(dayFormat.format(parseIsoDate(b.date))),
                         ],

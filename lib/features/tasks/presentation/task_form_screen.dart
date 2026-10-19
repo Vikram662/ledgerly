@@ -8,6 +8,7 @@ import '../../../core/db/database.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/phone_field.dart';
 import '../../../core/widgets/pickers.dart';
 import '../../jobs/data/jobs_repository.dart';
 import '../data/tasks_repository.dart';
@@ -246,11 +247,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 runSpacing: 8,
                 children: [
                   for (final type in TaskType.values)
-                    ChoiceChip(
-                      showCheckmark: false,
-                      label: Text(type.label),
+                    AppChip(
+                      label: type.label,
                       selected: _taskType == type,
-                      onSelected: (_) => setState(() => _taskType = type),
+                      onTap: () => setState(() => _taskType = type),
                     ),
                 ],
               ),
@@ -320,10 +320,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 Expanded(
                   child: LabeledField(
                     label: tr('Phone'),
-                    child: TextFormField(
+                    child: PhoneField(
                       controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(hintText: '9876543210'),
+                      name: _personNameController,
+                      hint: '9876543210',
+                      validate: false,
+                      countryCode: false,
                     ),
                   ),
                 ),
@@ -346,23 +348,15 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               const SizedBox(height: 14),
               LabeledField(
                 label: tr('Repeat'),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final mins in _intervalOptions)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            showCheckmark: false,
-                            label: Text(_intervalLabel(mins)),
-                            selected: _intervalMinutes == mins,
-                            onSelected: (_) =>
-                                setState(() => _intervalMinutes = mins),
-                          ),
-                        ),
-                    ],
-                  ),
+                child: ChipRow(
+                  children: [
+                    for (final mins in _intervalOptions)
+                      AppChip(
+                        label: _intervalLabel(mins),
+                        selected: _intervalMinutes == mins,
+                        onTap: () => setState(() => _intervalMinutes = mins),
+                      ),
+                  ],
                 ),
               ),
             ] else

@@ -213,13 +213,9 @@ class MoreScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    if (pro) TagBadge(tr('PRO')),
+                    if (pro) AppBadge(tr('PRO'), tone: BadgeTone.pro),
                     if (type.isFree)
-                      TagBadge(
-                        tr('FREE'),
-                        color: AppColors.successSurface,
-                        textColor: AppColors.successText,
-                      ),
+                      AppBadge(tr('FREE'), tone: BadgeTone.success),
                   ],
                 ),
               ),

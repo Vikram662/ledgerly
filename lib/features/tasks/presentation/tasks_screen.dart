@@ -22,13 +22,11 @@ IconData taskTypeIcon(TaskType type) => switch (type) {
       TaskType.other => Icons.task_alt_outlined,
     };
 
-Color taskTypeColor(TaskType type) => switch (type) {
-      TaskType.siteVisit => AppColors.primary,
-      TaskType.clientMeeting => AppColors.warningText,
-      TaskType.materialProcurement => AppColors.inkSoft,
-      TaskType.workerPayment => AppColors.successText,
-      TaskType.engineerReview => AppColors.primary,
-      TaskType.other => AppColors.muted,
+BadgeTone taskTypeTone(TaskType type) => switch (type) {
+      TaskType.siteVisit || TaskType.engineerReview => BadgeTone.info,
+      TaskType.clientMeeting => BadgeTone.warning,
+      TaskType.workerPayment => BadgeTone.success,
+      TaskType.materialProcurement || TaskType.other => BadgeTone.neutral,
     };
 
 enum _Filter { upcoming, completed, all }
@@ -318,12 +316,12 @@ class _TaskRow extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 6,
                       children: [
-                        _Tag(
+                        AppBadge(
                           task.taskType.label,
                           icon: taskTypeIcon(task.taskType),
-                          color: taskTypeColor(task.taskType),
+                          tone: taskTypeTone(task.taskType),
                         ),
-                        if (item.jobTitle != null) _Tag(item.jobTitle!),
+                        if (item.jobTitle != null) AppBadge(item.jobTitle!),
                         if (phone != null) ...[
                           _MiniButton(
                             label: tr('Call'),
@@ -357,42 +355,6 @@ class _TaskRow extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag(this.text, {this.icon, this.color = AppColors.inkSoft});
-
-  final String text;
-  final IconData? icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.page,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 13, color: color),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
       ),
     );
   }

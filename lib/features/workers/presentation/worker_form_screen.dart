@@ -13,6 +13,7 @@ import '../../../core/utils/money.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/utils/upi.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/phone_field.dart';
 import '../../../core/widgets/pickers.dart';
 import '../data/workers_repository.dart';
 
@@ -183,19 +184,7 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
             LabeledField(
               label: tr('Mobile number'),
               optional: true,
-              child: TextFormField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  hintText: tr('10-digit number'),
-                  prefixIcon: const PhoneCountryCode(),
-                ),
-                validator: (value) => (value == null ||
-                        value.trim().isEmpty ||
-                        normalizeIndianPhone(value) != null)
-                    ? null
-                    : tr('Enter a valid 10-digit mobile number'),
-              ),
+              child: PhoneField(controller: _phone, name: _name),
             ),
             LabeledField(
               label: tr('Role'),
@@ -208,23 +197,13 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
                   runSpacing: AppSizes.gap,
                   children: [
                     for (final role in list)
-                      ChoiceChip(
-                        showCheckmark: false,
-                        labelStyle: TextStyle(
-                          color: _roleId == role.id
-                              ? Colors.white
-                              : AppColors.inkSoft,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        label: Text(role.name),
+                      AppChip(
+                        label: role.name,
                         selected: _roleId == role.id,
-                        onSelected: (selected) =>
-                            setState(() => _roleId = selected ? role.id : null),
+                        onTap: () => setState(() =>
+                            _roleId = _roleId == role.id ? null : role.id),
                       ),
-                    ActionChip(
-                      label: Text(tr('+ New role')),
-                      onPressed: _addRole,
-                    ),
+                    AppChip(label: tr('+ New role'), onTap: _addRole),
                   ],
                 ),
               ),

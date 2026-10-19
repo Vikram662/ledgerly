@@ -155,7 +155,7 @@ class DocumentDetailScreen extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    DocumentPill(document: doc, paidPaise: detail.paidPaise),
+                    DocumentPill(document: doc),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(kindLine,

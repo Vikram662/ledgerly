@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/backup/backup_providers.dart';
+import '../../core/backup/google_drive_auth.dart';
 import '../../core/config.dart';
 import '../../core/db/database.dart';
 import '../../core/db/providers.dart';
@@ -16,13 +18,17 @@ class SubscriptionAccess {
       this.subscriptionId,
       this.message,
       this.trialEndsAt,
-      this.trialEligible = false});
+      this.trialEligible = false,
+      this.accountEmail});
   final AccessKind kind;
   final String status;
   final String? subscriptionId;
   final String? message;
   final int? trialEndsAt;
   final bool trialEligible;
+
+  /// Google account used to log in on another phone; null if not linked.
+  final String? accountEmail;
   bool get isTrial => status == 'authenticated';
   bool get canWrite =>
       kind == AccessKind.active ||
@@ -35,16 +41,17 @@ final subscriptionServiceProvider = Provider<SubscriptionService>(
 
 final subscriptionControllerProvider = StateNotifierProvider<
         SubscriptionController, AsyncValue<SubscriptionAccess>>(
-    (ref) => SubscriptionController(
-        ref.watch(subscriptionServiceProvider), ref.watch(databaseProvider)));
+    (ref) => SubscriptionController(ref.watch(subscriptionServiceProvider),
+        ref.watch(databaseProvider), ref.watch(googleDriveAuthProvider)));
 
 class SubscriptionController
     extends StateNotifier<AsyncValue<SubscriptionAccess>> {
-  SubscriptionController(this._service, this._db)
+  SubscriptionController(this._service, this._db, this._google)
       : super(const AsyncData(SubscriptionAccess(AccessKind.loading)));
 
   final SubscriptionService _service;
   final AppDatabase _db;
+  final GoogleDriveAuth _google;
 
   Future<BusinessProfile?> _profile() =>
       _db.select(_db.businessProfiles).getSingleOrNull();
@@ -113,6 +120,15 @@ class SubscriptionController
     await refresh();
   }
 
+  /// Links a Google account so this user can log in on a new phone.
+  /// Returns the linked email.
+  Future<String> linkGoogle() async {
+    final google = await _google.accountToken();
+    final email = await _service.linkGoogle(google.idToken);
+    await refresh();
+    return email;
+  }
+
   Future<CheckoutSession> createCheckout() => _service.createSubscription();
 
   Future<void> link(String id) async {
@@ -138,6 +154,7 @@ class SubscriptionController
         status: status,
         subscriptionId: data['subscriptionId'] as String?,
         trialEndsAt: data['trialEndsAt'] as int?,
-        trialEligible: data['trialEligible'] == true);
+        trialEligible: data['trialEligible'] == true,
+        accountEmail: data['accountEmail'] as String?);
   }
 }

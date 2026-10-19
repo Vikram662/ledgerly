@@ -217,6 +217,17 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     }
   }
 
+  Future<void> _linkGoogle() async {
+    try {
+      final email =
+          await ref.read(subscriptionControllerProvider.notifier).linkGoogle();
+      _say(tr('Linked to {email}. Use it to log in on a new phone.',
+          {'email': email}));
+    } catch (error) {
+      _say(errorText(error));
+    }
+  }
+
   Future<void> _cancel() async {
     final yes = await showDialog<bool>(
       context: context,
@@ -274,7 +285,8 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
           children: [
-            Center(child: TagBadge(tr("LEDGERLY PRO"))),
+            Center(
+                child: AppBadge(tr("LEDGERLY PRO"), tone: BadgeTone.pro)),
             const SizedBox(height: 16),
             Text(
               active
@@ -356,6 +368,13 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                 ),
               ),
             ],
+            if (access != null &&
+                AppConfig.driveConfigured &&
+                access.kind != AccessKind.setupRequired &&
+                access.kind != AccessKind.loading) ...[
+              const SizedBox(height: 16),
+              _AccountTile(email: access.accountEmail, onLink: _linkGoogle),
+            ],
             if (value.isLoading) ...[
               const SizedBox(height: 20),
               const Center(child: CircularProgressIndicator()),
@@ -397,6 +416,47 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     );
   }
 
+}
+
+/// Google account used to log in again after a reinstall or on a new phone.
+class _AccountTile extends StatelessWidget {
+  const _AccountTile({required this.email, required this.onLink});
+
+  final String? email;
+  final VoidCallback onLink;
+
+  @override
+  Widget build(BuildContext context) {
+    return Panel(
+      child: Row(
+        children: [
+          Icon(email == null ? Icons.link_off : Icons.account_circle_outlined,
+              color: email == null ? AppColors.warningText : AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  email ?? tr('Google account not linked'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  tr('Log in with it on a new phone to get your plan back.'),
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          if (email == null)
+            TextButton(onPressed: onLink, child: Text(tr('Link'))),
+        ],
+      ),
+    );
+  }
 }
 
 class _FeatureRow extends StatelessWidget {

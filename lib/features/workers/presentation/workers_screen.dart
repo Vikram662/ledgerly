@@ -99,18 +99,10 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
                       (w.worker.phone ?? '').contains(q))
                   .toList();
 
-          Widget chip(String? value, String label) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  showCheckmark: false,
-                  labelStyle: TextStyle(
-                    color: _chip == value ? Colors.white : AppColors.inkSoft,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  label: Text(label),
-                  selected: _chip == value,
-                  onSelected: (_) => setState(() => _chip = value),
-                ),
+          Widget chip(String? value, String label) => AppChip(
+                label: label,
+                selected: _chip == value,
+                onTap: () => setState(() => _chip = value),
               );
 
           return ListView(
@@ -122,15 +114,12 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
                     setState(() => _query = v.trim().toLowerCase()),
               ),
               const SizedBox(height: 14),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    chip(null, tr('All')),
-                    for (final role in roles) chip(role, role),
-                    if (inactive.isNotEmpty) chip(_left, tr('Left')),
-                  ],
-                ),
+              ChipRow(
+                children: [
+                  chip(null, tr('All')),
+                  for (final role in roles) chip(role, role),
+                  if (inactive.isNotEmpty) chip(_left, tr('Left')),
+                ],
               ),
               const SizedBox(height: 14),
               if (items.isEmpty)
@@ -162,10 +151,15 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
                   spacing: 14,
                   runSpacing: 6,
                   children: [
-                    _Legend(AppColors.successFill, tr('Present today')),
-                    _Legend(AppColors.amber500, tr('Half')),
-                    _Legend(AppColors.dangerFill, tr('Absent')),
-                    _Legend(AppColors.inputBorder, tr('Not marked')),
+                    LegendDot(
+                        color: AppColors.successFill,
+                        label: tr('Present today')),
+                    LegendDot(color: AppColors.amber500, label: tr('Half')),
+                    LegendDot(
+                        color: AppColors.dangerFill, label: tr('Absent')),
+                    LegendDot(
+                        color: AppColors.inputBorder,
+                        label: tr('Not marked')),
                   ],
                 ),
               ],
@@ -236,8 +230,8 @@ class _WorkerRow extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 4,
                     children: [
-                      if (item.roleName != null) _Tag(item.roleName!),
-                      _Tag(wageLabel(item.wage)),
+                      if (item.roleName != null) AppBadge(item.roleName!),
+                      AppBadge(wageLabel(item.wage)),
                     ],
                   ),
                 ],
@@ -247,61 +241,6 @@ class _WorkerRow extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.page,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: AppText.tabular.copyWith(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: AppColors.inkSoft,
-        ),
-      ),
-    );
-  }
-}
-
-class _Legend extends StatelessWidget {
-  const _Legend(this.color, this.text);
-
-  final Color color;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: AppColors.muted,
-          ),
-        ),
-      ],
     );
   }
 }

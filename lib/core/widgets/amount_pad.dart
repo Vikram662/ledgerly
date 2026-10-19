@@ -166,3 +166,50 @@ class AmountDisplay extends StatelessWidget {
     );
   }
 }
+
+/// Bottom bar of an amount entry screen: numpad plus the save button.
+class AmountPadFooter extends StatelessWidget {
+  const AmountPadFooter({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.saveLabel,
+    required this.onSave,
+    this.saving = false,
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+  final String saveLabel;
+  final VoidCallback onSave;
+  final bool saving;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: AppColors.surface),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AmountPad(value: value, onChanged: onChanged),
+              const SizedBox(height: 4),
+              FilledButton(
+                onPressed: saving ? null : onSave,
+                child: saving
+                    ? const SizedBox.square(
+                        dimension: 24,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      )
+                    : Text(saveLabel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

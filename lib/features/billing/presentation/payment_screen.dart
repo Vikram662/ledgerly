@@ -201,75 +201,31 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                   onChanged: (m) => setState(() => _mode = m),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                NoteDateField(
                   controller: _remarks,
-                  decoration: InputDecoration(
-                    hintText: _mode == PaymentMode.cheque
-                        ? tr('Cheque no. and bank (optional)')
-                        : tr('Note (optional)'),
-                    isDense: true,
-                    fillColor: AppColors.page,
-                    prefixIcon:
-                        const Icon(Icons.edit_note, color: AppColors.muted),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                      borderSide: BorderSide.none,
-                    ),
-                    suffixIcon: TextButton(
-                      onPressed: () async {
-                        final picked = await pickDate(context,
-                            initial: _date, last: DateTime.now());
-                        if (picked != null) {
-                          setState(() => _date = dateOnly(picked));
-                        }
-                      },
-                      child: Text(
-                        _date == dateOnly(DateTime.now())
-                            ? tr('Today')
-                            : dayFormat.format(_date),
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
+                  hint: _mode == PaymentMode.cheque
+                      ? tr('Cheque no. and bank (optional)')
+                      : null,
+                  dateLabel: dayButtonLabel(_date),
+                  onPickDate: () async {
+                    final picked = await pickDate(context,
+                        initial: _date, last: DateTime.now());
+                    if (picked != null) {
+                      setState(() => _date = dateOnly(picked));
+                    }
+                  },
                 ),
               ],
             ),
           ),
-          DecoratedBox(
-            decoration: const BoxDecoration(color: AppColors.surface),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AmountPad(
-                      value: _amount,
-                      onChanged: (v) => setState(() => _amount = v),
-                    ),
-                    const SizedBox(height: 4),
-                    FilledButton(
-                      onPressed: _saving ? null : _save,
-                      child: _saving
-                          ? const SizedBox.square(
-                              dimension: 24,
-                              child: CircularProgressIndicator(strokeWidth: 3),
-                            )
-                          : Text(paise > 0
-                              ? tr('Save {amount}',
-                                  {'amount': formatPaise(paise)})
-                              : tr('Save')),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          AmountPadFooter(
+            value: _amount,
+            onChanged: (v) => setState(() => _amount = v),
+            saving: _saving,
+            onSave: _save,
+            saveLabel: paise > 0
+                ? tr('Save {amount}', {'amount': formatPaise(paise)})
+                : tr('Save'),
           ),
         ],
       ),

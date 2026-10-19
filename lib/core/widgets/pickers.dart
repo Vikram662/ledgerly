@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../db/enums.dart';
 import '../i18n/i18n.dart';
+import 'common.dart';
 
 /// Bottom sheet list picker. Returns the chosen value or null.
 Future<T?> showPickerSheet<T>(
@@ -153,22 +154,15 @@ class PaymentModeChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final mode in PaymentMode.values)
-            Padding(
-              padding: const EdgeInsets.only(right: AppSizes.gap),
-              child: ChoiceChip(
-                showCheckmark: false,
-                label: Text(paymentModeLabel(mode)),
-                selected: value == mode,
-                onSelected: (_) => onChanged(mode),
-              ),
-            ),
-        ],
-      ),
+    return ChipRow(
+      children: [
+        for (final mode in PaymentMode.values)
+          AppChip(
+            label: paymentModeLabel(mode),
+            selected: value == mode,
+            onTap: () => onChanged(mode),
+          ),
+      ],
     );
   }
 }

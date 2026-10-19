@@ -92,11 +92,7 @@ class WorkerSummaryCard extends StatelessWidget {
                   ),
                 ),
               ),
-              TagBadge(
-                tr('Open period'),
-                color: AppColors.successSurface,
-                textColor: AppColors.successText,
-              ),
+              AppBadge(tr('Open period'), tone: BadgeTone.success),
             ],
           ),
           const SizedBox(height: 14),
