@@ -135,27 +135,10 @@ class _Legend extends StatelessWidget {
               AttendanceStatus.off,
               AttendanceStatus.leavePaid,
             ])
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: markColors(s).$1,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    statusStyle(s).label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.muted,
-                    ),
-                  ),
-                ],
+              LegendDot(
+                color: markColors(s).$1,
+                label: statusStyle(s).label,
+                square: true,
               ),
           ],
         ),

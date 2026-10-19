@@ -189,60 +189,18 @@ class _LedgerEntryScreenState extends ConsumerState<LedgerEntryScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
               children: [
-                Material(
-                  color: AppColors.surface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                    side: const BorderSide(color: AppColors.border),
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                    onTap: choose,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      child: Row(
-                        children: [
-                          worker == null
-                              ? const IconTile(Icons.person_outline,
-                                  color: AppColors.track)
-                              : InitialsAvatar(worker.name),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  worker?.name ?? tr('Choose worker'),
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800),
-                                ),
-                                if (balance != null)
-                                  Text(
-                                    tr('Balance {balance}',
-                                        {'balance': balanceText(balance)}),
-                                    style: AppText.tabular.copyWith(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.muted,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            worker == null ? tr('Choose') : tr('Change'),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                ChoiceCard(
+                  leading: worker == null
+                      ? const IconTile(Icons.person_outline,
+                          color: AppColors.track)
+                      : InitialsAvatar(worker.name),
+                  title: worker?.name ?? tr('Choose worker'),
+                  subtitle: balance == null
+                      ? null
+                      : tr('Balance {balance}',
+                          {'balance': balanceText(balance)}),
+                  actionLabel: worker == null ? tr('Choose') : null,
+                  onTap: choose,
                 ),
                 const SizedBox(height: 14),
                 SegmentedTabs<LedgerType>(
@@ -280,70 +238,25 @@ class _LedgerEntryScreenState extends ConsumerState<LedgerEntryScreen> {
                   ],
                   const SizedBox(height: 12),
                 ],
-                TextField(
+                NoteDateField(
                   controller: _note,
-                  decoration: InputDecoration(
-                    hintText: tr('Note (optional)'),
-                    isDense: true,
-                    filled: true,
-                    fillColor: AppColors.page,
-                    prefixIcon: const Icon(Icons.edit_note, color: AppColors.muted),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                      borderSide: BorderSide.none,
-                    ),
-                    suffixIcon: TextButton(
-                      onPressed: _pickDateTime,
-                      child: Text(
-                        isToday
-                            ? tr('Today, {time}', {
-                                'time': TimeOfDay.fromDateTime(_at)
-                                    .format(context)
-                              })
-                            : dayTimeFormat.format(_at),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
+                  dateLabel: isToday
+                      ? tr('Today, {time}', {
+                          'time': TimeOfDay.fromDateTime(_at).format(context)
+                        })
+                      : dayTimeFormat.format(_at),
+                  onPickDate: _pickDateTime,
                 ),
               ],
             ),
           ),
-          DecoratedBox(
-            decoration: const BoxDecoration(color: AppColors.surface),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AmountPad(
-                      value: _amount,
-                      onChanged: (v) => setState(() => _amount = v),
-                    ),
-                    const SizedBox(height: 4),
-                    FilledButton(
-                      onPressed: _saving ? null : _save,
-                      child: _saving
-                          ? const SizedBox.square(
-                              dimension: 24,
-                              child: CircularProgressIndicator(strokeWidth: 3),
-                            )
-                          : Text(tr('Save {type}',
-                              {'type': ledgerTypeLabel(_type).toLowerCase()})),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          AmountPadFooter(
+            value: _amount,
+            onChanged: (v) => setState(() => _amount = v),
+            saving: _saving,
+            onSave: _save,
+            saveLabel: tr('Save {type}',
+                {'type': ledgerTypeLabel(_type).toLowerCase()}),
           ),
         ],
       ),

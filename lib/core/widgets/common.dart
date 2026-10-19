@@ -48,17 +48,35 @@ Future<bool> confirmDialog(
   return result ?? false;
 }
 
-/// Status pill with icon + label, never color alone (PRD I-D3).
-class StatusChip extends StatelessWidget {
-  const StatusChip({
+/// Colours of a badge. Each tone pairs a pale fill with the dark text colour
+/// made for it, so badge text is always readable (PRD I-D1). Badges take a
+/// tone, never free colours.
+enum BadgeTone {
+  neutral(AppColors.page, AppColors.inkSoft),
+  info(AppColors.primaryTint, AppColors.primary),
+  success(AppColors.successSurface, AppColors.successText),
+  warning(AppColors.warningSurface, AppColors.warningText),
+  danger(AppColors.dangerSurface, AppColors.dangerText),
+  pro(AppColors.amber100, Color(0xFF92400E));
+
+  const BadgeTone(this.background, this.foreground);
+
+  final Color background;
+  final Color foreground;
+}
+
+/// The one badge / status pill / tag of the app (wireframe `.pill`, `.tag`):
+/// 11px bold text on a pale fill, optional icon.
+class AppBadge extends StatelessWidget {
+  const AppBadge(
+    this.text, {
     super.key,
-    required this.label,
-    required this.color,
+    this.tone = BadgeTone.neutral,
     this.icon,
   });
 
-  final String label;
-  final Color color;
+  final String text;
+  final BadgeTone tone;
   final IconData? icon;
 
   @override
@@ -66,26 +84,145 @@ class StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withAlpha(26),
+        color: tone.background,
         borderRadius: BorderRadius.circular(AppRadius.badge),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: color),
+            Icon(icon, size: 13, color: tone.foreground),
             const SizedBox(width: 4),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.tabular.copyWith(
+                color: tone.foreground,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The one filter / choice chip (wireframe `.chip`, `.mode`): white with a
+/// hairline border; selected is solid ink with white text.
+class AppChip extends StatelessWidget {
+  const AppChip({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = StadiumBorder(
+      side: BorderSide(color: selected ? AppColors.ink : AppColors.border),
+    );
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: selected ? AppColors.ink : AppColors.surface,
+        shape: shape,
+        child: InkWell(
+          customBorder: shape,
+          onTap: onTap,
+          child: Container(
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: AppText.tabular.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : AppColors.inkSoft,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row of [AppChip]s that scrolls sideways (filters, payment modes).
+class ChipRow extends StatelessWidget {
+  const ChipRow({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(width: AppSizes.gap),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Coloured dot with a label, for legends under bars and grids.
+class LegendDot extends StatelessWidget {
+  const LegendDot({
+    super.key,
+    required this.color,
+    required this.label,
+    this.labelColor = AppColors.muted,
+    this.square = false,
+  });
+
+  final Color color;
+  final String label;
+  final Color labelColor;
+
+  /// A 16px rounded square (cell legends) instead of an 8px dot.
+  final bool square;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: square ? 16 : 8,
+          height: square ? 16 : 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: square ? BoxShape.rectangle : BoxShape.circle,
+            borderRadius: square ? BorderRadius.circular(5) : null,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: AppText.tabular.copyWith(
+            fontSize: square ? 12 : 11,
+            fontWeight: FontWeight.w700,
+            color: labelColor,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -488,6 +625,7 @@ class ChoiceCard extends StatelessWidget {
     required this.onTap,
     this.overline,
     this.subtitle,
+    this.actionLabel,
   });
 
   final Widget leading;
@@ -495,6 +633,9 @@ class ChoiceCard extends StatelessWidget {
   final String? overline;
   final String? subtitle;
   final VoidCallback onTap;
+
+  /// Defaults to "Change".
+  final String? actionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -536,7 +677,7 @@ class ChoiceCard extends StatelessWidget {
                 ),
               ),
               Text(
-                tr('Change'),
+                actionLabel ?? tr('Change'),
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -1075,39 +1216,6 @@ class DateTile extends StatelessWidget {
   }
 }
 
-/// Small coloured badge ("PRO", "FREE", "Overdue").
-class TagBadge extends StatelessWidget {
-  const TagBadge(
-    this.text, {
-    super.key,
-    this.color = AppColors.amber100,
-    this.textColor = const Color(0xFF92400E),
-  });
-
-  final String text;
-  final Color color;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadius.badge),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-}
-
 /// Grey search field with a magnifier (lists).
 class SearchField extends StatelessWidget {
   const SearchField({super.key, required this.hint, required this.onChanged});
@@ -1260,3 +1368,52 @@ String twoInitials(String name) {
   if (words.isEmpty) return '?';
   return words.take(2).map((w) => w.characters.first.toUpperCase()).join();
 }
+
+/// Grey note field with the entry's date as a button on the right
+/// (wireframe Payment / Advance / Expense entry).
+class NoteDateField extends StatelessWidget {
+  const NoteDateField({
+    super.key,
+    required this.controller,
+    required this.dateLabel,
+    required this.onPickDate,
+    this.hint,
+  });
+
+  final TextEditingController controller;
+  final String dateLabel;
+  final VoidCallback onPickDate;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.small),
+      borderSide: BorderSide.none,
+    );
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hint ?? tr('Note (optional)'),
+        isDense: true,
+        filled: true,
+        fillColor: AppColors.page,
+        prefixIcon: const Icon(Icons.edit_note, color: AppColors.muted),
+        border: border,
+        enabledBorder: border,
+        suffixIcon: TextButton(
+          onPressed: onPickDate,
+          child: Text(
+            dateLabel,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Today" or the short date, for a date button.
+String dayButtonLabel(DateTime date) => DateUtils.isSameDay(date, DateTime.now())
+    ? tr('Today')
+    : dayFormat.format(date);

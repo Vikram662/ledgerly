@@ -188,10 +188,9 @@ class WorkerDetailScreen extends ConsumerWidget {
                     if (!worker.isActive)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: TagBadge(
+                        child: AppBadge(
                           tr('Inactive (left)'),
-                          color: AppColors.dangerSurface,
-                          textColor: AppColors.dangerText,
+                          tone: BadgeTone.danger,
                         ),
                       ),
                   ],
@@ -212,10 +211,8 @@ class WorkerDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 14),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
+          ChipRow(
+            children: [
                 for (final (label, onTap) in [
                   (
                     tr('+ Piece work'),
@@ -236,12 +233,8 @@ class WorkerDetailScreen extends ConsumerWidget {
                     () => context.push(Routes.changeWage(workerId))
                   ),
                 ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ActionChip(label: Text(label), onPressed: onTap),
-                  ),
-              ],
-            ),
+                  AppChip(label: label, onTap: onTap),
+            ],
           ),
           SectionLabel(tr('Attendance')),
           AttendanceCalendar(worker: worker),

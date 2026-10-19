@@ -1975,4 +1975,42 @@ const hindiStrings = <String, String>{
   '{paid} of {total}': '{total} में से {paid}',
   '₹99 / month': '₹99 / महीना',
   '− Deduction': '− कटौती',
+  'Already registered':
+      'पहले से रजिस्टर्ड',
+  'Already registered? Log in':
+      'पहले से रजिस्टर्ड हैं? लॉग इन करें',
+  'Continue without restoring':
+      'बिना रिस्टोर किए आगे बढ़ें',
+  'Could not log in. ({error})':
+      'लॉग इन नहीं हो सका। ({error})',
+  'Could not open contacts. ({error})':
+      'कॉन्टैक्ट नहीं खुल सके। ({error})',
+  'Google account not linked':
+      'Google अकाउंट जुड़ा नहीं है',
+  'Link':
+      'जोड़ें',
+  'Linked to {email}. Use it to log in on a new phone.':
+      '{email} से जुड़ गया। नए फ़ोन पर इसी से लॉग इन करें।',
+  'Log in':
+      'लॉग इन',
+  'Log in with it on a new phone to get your plan back.':
+      'नए फ़ोन पर इससे लॉग इन करें, आपका प्लान वापस मिल जाएगा।',
+  'No account found for this Google account. Tap Get started to create one.':
+      'इस Google अकाउंट से कोई अकाउंट नहीं मिला। नया बनाने के लिए शुरू करें दबाएँ।',
+  'Pick from contacts':
+      'कॉन्टैक्ट से चुनें',
+  'Restore my data':
+      'मेरा डेटा रिस्टोर करें',
+  'Sign in with Google to create your account. It lets you log in again on a new phone.':
+      'अकाउंट बनाने के लिए Google से साइन इन करें। इससे आप नए फ़ोन पर फिर से लॉग इन कर पाएँगे।',
+  'This mobile number is already registered. On your old phone, open Subscription and link a Google account, then log in here.':
+      'यह मोबाइल नंबर पहले से रजिस्टर्ड है। पुराने फ़ोन में सब्सक्रिप्शन खोलकर Google अकाउंट जोड़ें, फिर यहाँ लॉग इन करें।',
+  'Welcome back, {name}':
+      'फिर से स्वागत है, {name}',
+  'You already have an account ({email}). Log in to get your plan and data back.':
+      'आपका अकाउंट पहले से है ({email})। प्लान और डेटा वापस पाने के लिए लॉग इन करें।',
+  'You already have an account. Log in to get your plan and data back.':
+      'आपका अकाउंट पहले से है। प्लान और डेटा वापस पाने के लिए लॉग इन करें।',
+  'Your plan is linked to this phone. Restore your data from the backup, or continue with an empty app.':
+      'आपका प्लान इस फ़ोन से जुड़ गया। बैकअप से डेटा रिस्टोर करें, या खाली ऐप के साथ आगे बढ़ें।',
 };

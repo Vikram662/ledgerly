@@ -16,27 +16,36 @@ import '../data/attendance_repository.dart';
 
 /// Icon + short label + colour per status (PRD I-D3: never colour alone).
 class StatusStyle {
-  const StatusStyle(this.short, this.label, this.icon, this.color);
+  const StatusStyle(this.short, this.label, this.icon, this.color, this.tone);
 
   final String short;
   final String label;
   final IconData icon;
   final Color color;
+
+  /// Badge colours for this status (see [AppBadge]).
+  final BadgeTone tone;
 }
 
 StatusStyle statusStyle(AttendanceStatus status) => switch (status) {
       AttendanceStatus.present =>
-        StatusStyle('P', tr('Present'), Icons.check, AppColors.successText),
+        StatusStyle('P', tr('Present'), Icons.check, AppColors.successText,
+            BadgeTone.success),
       AttendanceStatus.half => StatusStyle(
-          '½', tr('Half day'), Icons.timelapse, AppColors.warningText),
+          '½', tr('Half day'), Icons.timelapse, AppColors.warningText,
+          BadgeTone.warning),
       AttendanceStatus.absent =>
-        StatusStyle('A', tr('Absent'), Icons.close, AppColors.dangerText),
+        StatusStyle('A', tr('Absent'), Icons.close, AppColors.dangerText,
+            BadgeTone.danger),
       AttendanceStatus.leavePaid => StatusStyle(
-          'PL', tr('Paid leave'), Icons.beach_access, AppColors.blue700),
+          'PL', tr('Paid leave'), Icons.beach_access, AppColors.blue700,
+          BadgeTone.info),
       AttendanceStatus.leaveUnpaid => StatusStyle(
-          'UL', tr('Unpaid leave'), Icons.event_busy, AppColors.muted),
+          'UL', tr('Unpaid leave'), Icons.event_busy, AppColors.muted,
+          BadgeTone.neutral),
       AttendanceStatus.off => StatusStyle(
-          'Off', tr('Weekly off'), Icons.weekend, AppColors.muted),
+          'Off', tr('Weekly off'), Icons.weekend, AppColors.muted,
+          BadgeTone.neutral),
     };
 
 /// Sets one worker's status for one day, showing lock errors as a message.
@@ -250,9 +259,9 @@ class _MonthTotals extends StatelessWidget {
       children: [
         for (final status in AttendanceStatus.values)
           if (counts[status] != null)
-            StatusChip(
-              label: '${statusStyle(status).short} ${counts[status]}',
-              color: statusStyle(status).color,
+            AppBadge(
+              '${statusStyle(status).short} ${counts[status]}',
+              tone: statusStyle(status).tone,
               icon: statusStyle(status).icon,
             ),
       ],

@@ -12,36 +12,9 @@ import '../../../core/utils/dates.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/phone_field.dart';
 import '../../../core/widgets/pickers.dart';
 import '../data/billing_repository.dart';
-
-/// Status pill with icon + label (PRD BL-15, I-D3).
-StatusChip documentStatusChip(DocumentStatus status, DocumentKind kind) {
-  final (label, color, icon) = switch (status) {
-    DocumentStatus.draft => (tr('Draft'), AppColors.muted, Icons.edit_note),
-    DocumentStatus.sent => (
-        kind == DocumentKind.invoice ? tr('Unpaid') : tr('Sent'),
-        AppColors.warningText,
-        Icons.send,
-      ),
-    DocumentStatus.partiallyPaid => (
-        tr('Part paid'),
-        AppColors.blue700,
-        Icons.timelapse
-      ),
-    DocumentStatus.paid => (
-        tr('Paid'),
-        AppColors.successText,
-        Icons.check_circle
-      ),
-    DocumentStatus.cancelled => (
-        tr('Cancelled'),
-        AppColors.dangerText,
-        Icons.block
-      ),
-  };
-  return StatusChip(label: label, color: color, icon: icon);
-}
 
 class DocumentTile extends StatelessWidget {
   const DocumentTile({super.key, required this.item});
@@ -113,7 +86,7 @@ class DocumentTile extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                DocumentPill(document: doc, paidPaise: item.paidPaise),
+                DocumentPill(document: doc),
                 const Spacer(),
                 if (invoice && open)
                   Text(
@@ -137,14 +110,9 @@ class DocumentTile extends StatelessWidget {
 
 /// Status pill of a bill: overdue days, unpaid with due date, part paid…
 class DocumentPill extends StatelessWidget {
-  const DocumentPill({
-    super.key,
-    required this.document,
-    required this.paidPaise,
-  });
+  const DocumentPill({super.key, required this.document});
 
   final BillDocument document;
-  final int paidPaise;
 
   @override
   Widget build(BuildContext context) {
@@ -157,43 +125,25 @@ class DocumentPill extends StatelessWidget {
     final lateDays = due == null ? 0 : today.difference(due).inDays;
     final overdue = invoice && open && lateDays > 0;
 
-    final (String text, Color bg, Color fg) = switch (doc.status) {
+    final (String text, BadgeTone tone) = switch (doc.status) {
       _ when overdue => (
           trPlural(lateDays, 'Overdue 1 day', 'Overdue {count} days'),
-          AppColors.dangerSurface,
-          AppColors.dangerText,
+          BadgeTone.danger,
         ),
-      DocumentStatus.draft => (tr('Draft'), AppColors.page, AppColors.muted),
+      DocumentStatus.draft => (tr('Draft'), BadgeTone.neutral),
       DocumentStatus.sent when invoice => (
           due == null
               ? tr('Unpaid')
               : tr('Unpaid · due {date}',
                   {'date': DateFormat('d MMM', uiDateLocale).format(due)}),
-          AppColors.warningSurface,
-          AppColors.warningText,
+          BadgeTone.warning,
         ),
-      DocumentStatus.sent => (
-          tr('Sent'),
-          AppColors.primaryTint,
-          AppColors.primary
-        ),
-      DocumentStatus.partiallyPaid => (
-          tr('Part paid'),
-          AppColors.primaryTint,
-          AppColors.primary
-        ),
-      DocumentStatus.paid => (
-          tr('Paid'),
-          AppColors.successSurface,
-          AppColors.successText
-        ),
-      DocumentStatus.cancelled => (
-          tr('Cancelled'),
-          AppColors.page,
-          AppColors.muted
-        ),
+      DocumentStatus.sent => (tr('Sent'), BadgeTone.info),
+      DocumentStatus.partiallyPaid => (tr('Part paid'), BadgeTone.info),
+      DocumentStatus.paid => (tr('Paid'), BadgeTone.success),
+      DocumentStatus.cancelled => (tr('Cancelled'), BadgeTone.neutral),
     };
-    return TagBadge(text, color: bg, textColor: fg);
+    return AppBadge(text, tone: tone);
   }
 }
 
@@ -225,13 +175,11 @@ class ClientPickerField extends ConsumerWidget {
               decoration: InputDecoration(labelText: tr('Name')),
             ),
             const SizedBox(height: 12),
-            TextField(
+            PhoneField(
               controller: phone,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: tr('Mobile (optional)'),
-                prefixIcon: const PhoneCountryCode(),
-              ),
+              name: name,
+              label: tr('Mobile (optional)'),
+              validate: false,
             ),
           ],
         ),

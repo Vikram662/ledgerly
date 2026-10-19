@@ -22,6 +22,14 @@ subscription state.
    npx wrangler secret put ADMIN_API_SECRET
    ```
 
+   Google login (log in again after a reinstall or on a new phone) needs the
+   same **Web OAuth client id** the app is built with
+   (`GOOGLE_SERVER_CLIENT_ID`). It is not secret, but keep it with the others:
+
+   ```text
+   npx wrangler secret put GOOGLE_CLIENT_ID
+   ```
+
 6. `npm run deploy`
 7. Razorpay webhook URL: `https://<worker>.workers.dev/v1/webhooks/razorpay`
    Enable subscription authenticated/activated/charged/pending/halted/cancelled
@@ -29,6 +37,22 @@ subscription state.
 
 Use Razorpay Test Mode keys first. Configure the Flutter build with
 `--dart-define=SUBSCRIPTION_API_URL=https://<worker>.workers.dev`.
+
+## Accounts and login (no OTP)
+
+- `POST /v1/install` registers a new install. With `googleIdToken` the account
+  is tied to that verified Google account. It answers `409 account_exists`
+  when the phone number or the Google account already belongs to a user, so
+  a reinstall never creates a second user or a second free trial.
+- `POST /v1/login` (`installId`, `googleIdToken`) finds the account by its
+  Google account and moves it to the new install. The Razorpay customer and
+  subscription stay the same, so the plan comes back automatically. The old
+  install is signed out (one phone per account).
+- `POST /v1/account/google` (authorized) links a Google account to a user
+  who registered before Google login existed.
+
+Run `npm run db:remote` after pulling: migration `0005_google_account.sql`
+adds the `email`, `google_sub` and `trades` columns.
 
 ## Complimentary access (owner/admin)
 

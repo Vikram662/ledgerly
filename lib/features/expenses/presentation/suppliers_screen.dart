@@ -14,6 +14,7 @@ import '../../../core/utils/phone.dart';
 import '../../../core/widgets/amount_pad.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/phone_field.dart';
 import '../../../core/widgets/pickers.dart';
 import '../data/expenses_repository.dart';
 
@@ -224,18 +225,10 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
                   (v == null || v.trim().isEmpty) ? tr('Enter name') : null,
             ),
             const SizedBox(height: 12),
-            TextFormField(
+            PhoneField(
               controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: tr('Mobile number (optional)'),
-                prefixIcon: const PhoneCountryCode(),
-              ),
-              validator: (v) => (v == null ||
-                      v.trim().isEmpty ||
-                      normalizeIndianPhone(v) != null)
-                  ? null
-                  : tr('Enter a valid 10-digit mobile number'),
+              name: _name,
+              label: tr('Mobile number (optional)'),
             ),
             const SizedBox(height: 12),
             TextFormField(

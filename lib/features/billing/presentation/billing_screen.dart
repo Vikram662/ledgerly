@@ -197,10 +197,8 @@ class _DocumentsTabState extends ConsumerState<_DocumentsTab> {
             if (isInvoice) ...[
               const _BillSummary(),
               const SizedBox(height: 14),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
+              ChipRow(
+                children: [
                     for (final (filter, label) in [
                       (
                         _BillFilter.all,
@@ -216,17 +214,12 @@ class _DocumentsTabState extends ConsumerState<_DocumentsTab> {
                       ),
                       (_BillFilter.paid, tr('Paid')),
                     ])
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          showCheckmark: false,
-                          label: Text(label),
-                          selected: _filter == filter,
-                          onSelected: (_) => setState(() => _filter = filter),
-                        ),
+                      AppChip(
+                        label: label,
+                        selected: _filter == filter,
+                        onTap: () => setState(() => _filter = filter),
                       ),
-                  ],
-                ),
+                ],
               ),
               const SizedBox(height: 14),
             ],

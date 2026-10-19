@@ -6,17 +6,25 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
+import '../../../core/backup/backup_providers.dart';
+import '../../../core/config.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/language_picker.dart';
+import '../../subscription/data/subscription_service.dart';
 import '../../subscription/subscription_controller.dart';
 import '../data/onboarding_repository.dart';
 
 /// First launch (wireframes A1–A3): Welcome, then "Who will use this app?"
 /// (PRD C10), then name, phone and, for a contractor, trades (C0 TR-01).
 /// Step 3, the PIN, is the lock gate's PIN setup screen.
+///
+/// Accounts: a new user signs in with Google and is registered online before
+/// anything is saved, so a phone number that is already registered is sent
+/// to "Log in" instead of becoming a second user. "Log in" finds the account
+/// by its Google account and brings back the profile and the plan.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -24,7 +32,11 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-enum _Step { welcome, type, details }
+enum _Step { welcome, type, details, welcomeBack }
+
+/// Accounts need Google sign-in and the subscription server in this build.
+bool get _accountsEnabled =>
+    AppConfig.driveConfigured && AppConfig.subscriptionConfigured;
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -34,6 +46,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   var _step = _Step.welcome;
   UserType? _type;
   bool _saving = false;
+
+  /// Google ID token from this session, reused if registration is retried.
+  String? _idToken;
+
+  /// Account found by "Log in" (name, phone, userType, trades, email).
+  Map<String, dynamic>? _account;
 
   @override
   void initState() {
@@ -67,12 +85,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
+    final phone = normalizeIndianPhone(_phone.text);
+    if (_accountsEnabled && !await _registerOnline(phone)) {
+      if (mounted) setState(() => _saving = false);
+      return;
+    }
+    await _saveProfile(
+      userType: _type!,
+      name: _name.text.trim(),
+      phone: phone,
+      trades: _trades,
+    );
+  }
+
+  Future<void> _saveProfile({
+    required UserType userType,
+    required String name,
+    required String? phone,
+    required Set<Trade> trades,
+  }) async {
+    setState(() => _saving = true);
     try {
       await ref.read(onboardingRepositoryProvider).complete(
-            userType: _type!,
-            businessName: _name.text.trim(),
-            phone: normalizeIndianPhone(_phone.text),
-            trades: _trades,
+            userType: userType,
+            businessName: name,
+            phone: phone,
+            trades: trades,
           );
       unawaited(ref.read(subscriptionControllerProvider.notifier).refresh());
       if (!mounted) return;
@@ -88,19 +126,161 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  /// Registers the new user online before saving on the phone. False when
+  /// onboarding must stop: Google sign-in was cancelled, or the number or
+  /// Google account is already registered (then "Log in" is offered).
+  /// Without internet it continues; the app registers later.
+  Future<bool> _registerOnline(String? phone) async {
+    try {
+      _idToken ??=
+          (await ref.read(googleDriveAuthProvider).accountToken()).idToken;
+    } catch (_) {
+      if (mounted) {
+        showMessage(context,
+            tr('Sign in with Google to create your account. It lets you log in again on a new phone.'));
+      }
+      return false;
+    }
+    final service = ref.read(subscriptionServiceProvider);
+    final chosen = _type!.usesTrades ? _trades : const <Trade>{};
+    Future<void> register(String? idToken) => service.register(
+          _name.text.trim(),
+          phone,
+          _type!.name,
+          googleIdToken: idToken,
+          trades: Trade.encode(chosen),
+        );
+    try {
+      await register(_idToken);
+      return true;
+    } on SubscriptionApiException catch (error) {
+      var failure = error;
+      if (error.code == 'google_not_configured') {
+        // Server without Google login yet: register by phone only.
+        try {
+          await register(null);
+          return true;
+        } on SubscriptionApiException catch (retry) {
+          failure = retry;
+        }
+      }
+      if (failure.code == 'invalid_google_login') _idToken = null;
+      if (failure.code == 'account_exists') {
+        await _offerLogin(failure);
+      } else if (mounted) {
+        showMessage(context, errorText(failure));
+      }
+      return false;
+    } catch (_) {
+      // No internet: keep working offline; registration retries on refresh.
+      return true;
+    }
+  }
+
+  Future<void> _offerLogin(SubscriptionApiException error) async {
+    if (!mounted) return;
+    final canLogin = error.details?['canLogin'] == true;
+    final email = error.details?['email'] as String?;
+    final login = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(tr('Already registered')),
+        content: Text(canLogin
+            ? (email == null
+                ? tr('You already have an account. Log in to get your plan and data back.')
+                : tr('You already have an account ({email}). Log in to get your plan and data back.',
+                    {'email': email}))
+            : tr('This mobile number is already registered. On your old phone, open Subscription and link a Google account, then log in here.')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(tr('Cancel')),
+          ),
+          if (canLogin)
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(tr('Log in')),
+            ),
+        ],
+      ),
+    );
+    if (login == true) await _login();
+  }
+
+  /// "Log in": Google account → existing account and plan on this phone.
+  Future<void> _login() async {
+    setState(() => _saving = true);
+    try {
+      final google = await ref.read(googleDriveAuthProvider).accountToken();
+      final session =
+          await ref.read(subscriptionServiceProvider).login(google.idToken);
+      if (!mounted) return;
+      setState(() {
+        _account = {
+          ...(session['user'] as Map<String, dynamic>? ?? const {}),
+          'email': google.email,
+        };
+        _step = _Step.welcomeBack;
+      });
+    } on SubscriptionApiException catch (error) {
+      if (!mounted) return;
+      showMessage(
+        context,
+        error.code == 'account_not_found'
+            ? tr('No account found for this Google account. Tap Get started to create one.')
+            : errorText(error),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      showMessage(context,
+          tr('Could not log in. ({error})', {'error': errorText(error)}));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// After login without restoring a backup: the profile from the account.
+  Future<void> _continueAfterLogin() {
+    final account = _account!;
+    final type =
+        UserType.values.asNameMap()[account['userType']] ?? UserType.contractor;
+    Set<Trade> trades;
+    try {
+      trades = Trade.decode(account['trades'] as String? ?? '');
+    } catch (_) {
+      trades = const {};
+    }
+    return _saveProfile(
+      userType: type,
+      name: account['name'] as String? ?? '',
+      phone: account['phone'] as String?,
+      trades: trades,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: _step == _Step.welcome,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
+        if (didPop || _saving) return;
         _go(_step == _Step.details ? _Step.type : _Step.welcome);
       },
       child: Scaffold(
         backgroundColor: AppColors.surface,
         body: SafeArea(
           child: switch (_step) {
-            _Step.welcome => _Welcome(onStart: () => _go(_Step.type)),
+            _Step.welcome => _Welcome(
+                onStart: () => _go(_Step.type),
+                onLogin: !_accountsEnabled || _saving ? null : _login,
+                loggingIn: _saving,
+              ),
+            _Step.welcomeBack => _WelcomeBack(
+                account: _account!,
+                busy: _saving,
+                onRestore: () => context.push(Routes.restore),
+                onContinue: _continueAfterLogin,
+              ),
             _Step.type => _TypeStep(
                 selected: _type,
                 onPick: (type) => setState(() => _type = type),
@@ -132,11 +312,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-/// A1: language, what the app does, Get started / Restore.
+/// A1: language, what the app does, Get started / Log in / Restore.
 class _Welcome extends StatelessWidget {
-  const _Welcome({required this.onStart});
+  const _Welcome({
+    required this.onStart,
+    required this.onLogin,
+    required this.loggingIn,
+  });
 
   final VoidCallback onStart;
+
+  /// Null when accounts are not set up in this build, or while busy.
+  final VoidCallback? onLogin;
+  final bool loggingIn;
 
   @override
   Widget build(BuildContext context) {
@@ -207,6 +395,22 @@ class _Welcome extends StatelessWidget {
                 children: [
                   FilledButton(
                       onPressed: onStart, child: Text(tr('Get started'))),
+                  if (_accountsEnabled) ...[
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, AppSizes.tapSecondary),
+                      ),
+                      onPressed: onLogin,
+                      icon: loggingIn
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.login, size: 20),
+                      label: Text(tr('Already registered? Log in')),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -222,6 +426,67 @@ class _Welcome extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// After "Log in": who the account is, then restore the data from a backup
+/// or continue with the profile from the account.
+class _WelcomeBack extends StatelessWidget {
+  const _WelcomeBack({
+    required this.account,
+    required this.busy,
+    required this.onRestore,
+    required this.onContinue,
+  });
+
+  final Map<String, dynamic> account;
+  final bool busy;
+  final VoidCallback onRestore;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = account['name'] as String? ?? '';
+    final email = account['email'] as String?;
+    final phone = account['phone'] as String?;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
+      children: [
+        Center(child: InitialsAvatar(name, size: 64)),
+        const SizedBox(height: 16),
+        ScreenHeading(
+          tr('Welcome back, {name}', {'name': name}),
+          subtitle: [
+            if (email != null) email,
+            if (phone != null) formatIndianPhone(phone),
+          ].join(' · '),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          tr('Your plan is linked to this phone. Restore your data from the backup, or continue with an empty app.'),
+          style: const TextStyle(
+            fontSize: 14,
+            height: 1.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.muted,
+          ),
+        ),
+        const SizedBox(height: 28),
+        FilledButton.icon(
+          onPressed: busy ? null : onRestore,
+          icon: const Icon(Icons.history),
+          label: Text(tr('Restore my data')),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, AppSizes.tapSecondary),
+          ),
+          onPressed: busy ? null : onContinue,
+          child: Text(tr('Continue without restoring')),
+        ),
+      ],
     );
   }
 }
@@ -551,10 +816,7 @@ class UserTypeTile extends StatelessWidget {
                           ),
                           if (type.isFree) ...[
                             const SizedBox(width: 8),
-                            StatusChip(
-                              label: tr('FREE'),
-                              color: AppColors.successText,
-                            ),
+                            AppBadge(tr('FREE'), tone: BadgeTone.success),
                           ],
                         ],
                       ),

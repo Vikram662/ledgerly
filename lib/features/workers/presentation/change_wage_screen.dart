@@ -188,11 +188,10 @@ class _ChangeWageScreenState extends ConsumerState<ChangeWageScreen> {
                       (26, '÷ 26'),
                       (0, tr('÷ days in month')),
                     ])
-                      ChoiceChip(
-                        showCheckmark: false,
-                        label: Text(label),
+                      AppChip(
+                        label: label,
                         selected: _divisor == value,
-                        onSelected: (_) => setState(() => _divisor = value),
+                        onTap: () => setState(() => _divisor = value),
                       ),
                   ],
                 ),
