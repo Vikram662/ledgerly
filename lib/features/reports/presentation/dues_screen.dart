@@ -46,17 +46,22 @@ final duesReportProvider = Provider<AsyncValue<DuesReport>>((ref) {
   ));
 });
 
-class DuesScreen extends ConsumerWidget {
+/// Lena / Dena (wireframe Dues): two total tabs, then the parties of the
+/// chosen side. Lena is green, Dena red, overdue red.
+class DuesScreen extends ConsumerStatefulWidget {
   const DuesScreen({super.key, this.initialTab = 0});
 
   /// 0 = Lena, 1 = Dena.
   final int initialTab;
 
-  Future<void> _sharePdf(
-    BuildContext context,
-    WidgetRef ref,
-    DuesReport report,
-  ) async {
+  @override
+  ConsumerState<DuesScreen> createState() => _DuesScreenState();
+}
+
+class _DuesScreenState extends ConsumerState<DuesScreen> {
+  late bool _receive = widget.initialTab == 0;
+
+  Future<void> _sharePdf(DuesReport report) async {
     final profile = await ref.read(businessProfileProvider.future);
     if (profile == null) return;
     final bytes = await buildDuesPdf(report, profile);
@@ -69,67 +74,7 @@ class DuesScreen extends ConsumerWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final report = ref.watch(duesReportProvider);
-    return DefaultTabController(
-      length: 2,
-      initialIndex: initialTab,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(tr('Lena / Dena')),
-          actions: [
-            if (report.hasValue)
-              IconButton(
-                tooltip: tr('Share PDF'),
-                icon: const Icon(Icons.picture_as_pdf),
-                onPressed: () => _sharePdf(context, ref, report.requireValue),
-              ),
-          ],
-          bottom: TabBar(
-            tabs: [
-              Tab(
-                text: report.hasValue
-                    ? tr('Lena {amount}', {'amount': formatPaise(report.requireValue.lenaTotal)})
-                    : tr('Lena'),
-              ),
-              Tab(
-                text: report.hasValue
-                    ? tr('Dena {amount}', {'amount': formatPaise(report.requireValue.denaTotal)})
-                    : tr('Dena'),
-              ),
-            ],
-          ),
-        ),
-        body: report.when(
-          loading: () => const ListSkeleton(),
-          error: (e, _) => Center(child: Text(errorText(e))),
-          data: (r) => TabBarView(
-            children: [
-              _DueList(
-                items: r.lena,
-                receive: true,
-                header: r.overdueTotal > 0
-                    ? tr('Overdue (due date passed): {amount}', {'amount': formatPaise(r.overdueTotal)})
-                    : null,
-              ),
-              _DueList(items: r.dena, receive: false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DueList extends ConsumerWidget {
-  const _DueList({required this.items, required this.receive, this.header});
-
-  final List<DueItem> items;
-  final bool receive;
-  final String? header;
-
-  Future<void> _remind(BuildContext context, WidgetRef ref, DueItem item) async {
+  Future<void> _remind(DueItem item) async {
     final profile = await ref.read(businessProfileProvider.future);
     final business = profile?.name ?? '';
     final upi = profile?.upiId?.trim();
@@ -153,142 +98,262 @@ class _DueList extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (items.isEmpty) {
-      return EmptyState(
-        icon: receive ? Icons.call_received : Icons.call_made,
-        title: receive ? tr('Nothing to receive') : tr('Nothing to pay'),
-        message: receive
-            ? tr('No client or worker owes you money right now.')
-            : tr('All workers and suppliers are paid up.'),
-      );
-    }
-    final color = receive ? AppColors.warningText : AppColors.successText;
-    final total = items.fold(0, (sum, i) => sum + i.amountPaise);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      children: [
-        Panel(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    final report = ref.watch(duesReportProvider);
+    final shop = ref.watch(userTypeProvider) == UserType.shop;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(tr('Lena / Dena')),
+        actions: [
+          AppIconButton(
+            icon: Icons.ios_share,
+            tooltip: tr('Share PDF'),
+            onPressed:
+                report.hasValue ? () => _sharePdf(report.requireValue) : null,
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
+      body: report.when(
+        loading: () => const ListSkeleton(),
+        error: (e, _) => Center(child: Text(errorText(e))),
+        data: (r) {
+          final items = _receive ? r.lena : r.dena;
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: [
-              Text(
-                receive ? tr('Lena (to receive)') : tr('Dena (to pay)'),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.muted,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TotalTab(
+                    label: tr('Lena (to receive)'),
+                    paise: r.lenaTotal,
+                    color: AppColors.successText,
+                    note: r.overdueTotal > 0
+                        ? tr('{amount} overdue',
+                            {'amount': formatPaise(r.overdueTotal)})
+                        : null,
+                    noteColor: AppColors.dangerText,
+                    selected: _receive,
+                    onTap: () => setState(() => _receive = true),
+                  ),
+                  const SizedBox(width: AppSizes.gap),
+                  _TotalTab(
+                    label: tr('Dena (to pay)'),
+                    paise: r.denaTotal,
+                    color: AppColors.dangerText,
+                    note: shop
+                        ? tr('Staff + suppliers')
+                        : tr('Workers + suppliers'),
+                    noteColor: AppColors.muted,
+                    selected: !_receive,
+                    onTap: () => setState(() => _receive = false),
+                  ),
+                ],
               ),
-              Text(
-                formatPaise(total),
-                style: AppText.tabular.copyWith(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.56,
-                  color: color,
+              const SizedBox(height: 12),
+              if (items.isEmpty)
+                EmptyState(
+                  icon: _receive ? Icons.call_received : Icons.call_made,
+                  title:
+                      _receive ? tr('Nothing to receive') : tr('Nothing to pay'),
+                  message: _receive
+                      ? tr('No client or worker owes you money right now.')
+                      : tr('All workers and suppliers are paid up.'),
+                )
+              else ...[
+                CardList(
+                  children: [
+                    for (final item in items)
+                      _DueRow(
+                        item: item,
+                        receive: _receive,
+                        onRemind: _receive && item.party == DueParty.client
+                            ? () => _remind(item)
+                            : null,
+                      ),
+                  ],
                 ),
-              ),
-              if (header != null) ...[
-                const SizedBox(height: 6),
-                AppBadge(header!, tone: BadgeTone.danger),
+                if (_receive) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    tr('Reminder opens WhatsApp with a ready message.'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
               ],
             ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Lena or Dena total as a selectable tab (wireframe Dues `.tab`).
+class _TotalTab extends StatelessWidget {
+  const _TotalTab({
+    required this.label,
+    required this.paise,
+    required this.color,
+    required this.note,
+    required this.noteColor,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int paise;
+  final Color color;
+  final String? note;
+  final Color noteColor;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      side: BorderSide(
+        color: selected ? AppColors.ink : AppColors.border,
+        width: selected ? 2 : 1,
+      ),
+    );
+    return Expanded(
+      child: Semantics(
+        selected: selected,
+        button: true,
+        child: Material(
+          color: AppColors.surface,
+          shape: shape,
+          child: InkWell(
+            customBorder: shape,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                  Text(
+                    formatPaise(paise),
+                    style: AppText.tabular.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                  ),
+                  Text(
+                    note ?? ' ',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.tabular.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: noteColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        CardList(
+      ),
+    );
+  }
+}
+
+/// One party: name, tags (party, overdue) and the amount, with "Send
+/// reminder" for clients who owe money.
+class _DueRow extends StatelessWidget {
+  const _DueRow({
+    required this.item,
+    required this.receive,
+    required this.onRemind,
+  });
+
+  final DueItem item;
+  final bool receive;
+  final VoidCallback? onRemind;
+
+  @override
+  Widget build(BuildContext context) {
+    final party = dueParty(item.party).label;
+    final tag = switch (item.party) {
+      DueParty.worker when receive => tr('{party} · advance', {'party': party}),
+      DueParty.client when !receive =>
+        tr('{party} · advance received', {'party': party}),
+      _ => party,
+    };
+    final amount = Text(
+      formatPaise(item.amountPaise),
+      style: AppText.tabular.copyWith(fontSize: 15, fontWeight: FontWeight.w800),
+    );
+    return InkWell(
+      onTap: () => context.push(switch (item.party) {
+        DueParty.client => Routes.client(item.id),
+        DueParty.worker => Routes.worker(item.id),
+        DueParty.supplier => Routes.supplier(item.id),
+      }),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
           children: [
-            for (final item in items)
-              InkWell(
-                onTap: () => context.push(switch (item.party) {
-                  DueParty.client => Routes.client(item.id),
-                  DueParty.worker => Routes.worker(item.id),
-                  DueParty.supplier => Routes.supplier(item.id),
-                }),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  child: Column(
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
-                      Row(
-                        children: [
-                          InitialsAvatar(item.name),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.name,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  [
-                                    dueParty(item.party).label,
-                                    if (!receive &&
-                                        item.party == DueParty.client)
-                                      tr('Advance received'),
-                                  ].join(' · '),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.muted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                formatPaise(item.amountPaise),
-                                style: AppText.tabular.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: color,
-                                ),
-                              ),
-                              if (item.overduePaise > 0)
-                                AppBadge(
-                                  tr('Overdue {amount}', {
-                                    'amount': formatPaise(item.overduePaise)
-                                  }),
-                                  tone: BadgeTone.danger,
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      if (receive && item.party == DueParty.client) ...[
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: SmallOutlinedButton(
-                            icon: Icons.send_outlined,
-                            label: tr('Send reminder'),
-                            onTap: () => _remind(context, ref, item),
-                          ),
+                      AppBadge(tag),
+                      if (item.overduePaise > 0)
+                        AppBadge(
+                          tr('Overdue {amount}',
+                              {'amount': formatPaise(item.overduePaise)}),
+                          tone: BadgeTone.danger,
                         ),
-                      ],
                     ],
                   ),
-                ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (onRemind == null)
+              amount
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  amount,
+                  const SizedBox(height: 6),
+                  MiniButton(label: tr('Send reminder'), onTap: onRemind),
+                ],
               ),
           ],
         ),
-        if (receive) ...[
-          const SizedBox(height: 12),
-          Text(
-            tr('Reminder opens WhatsApp with a ready message.'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: AppColors.muted),
-          ),
-        ],
-      ],
+      ),
     );
   }
 }
@@ -298,78 +363,3 @@ class _DueList extends ConsumerWidget {
       DueParty.worker => (label: tr('Worker'), icon: Icons.engineering),
       DueParty.supplier => (label: tr('Supplier'), icon: Icons.store),
     };
-
-/// Lena / Dena summary card for the dashboard.
-class DuesSummaryCard extends ConsumerWidget {
-  const DuesSummaryCard({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final report = ref.watch(duesReportProvider).valueOrNull;
-    Widget half({
-      required String label,
-      required int paise,
-      required Color color,
-      required IconData icon,
-      required int tab,
-      String? note,
-    }) =>
-        Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppSizes.radius),
-            onTap: () => context.push(Routes.dues(tab)),
-            child: Panel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(icon, size: 18, color: color),
-                      const SizedBox(width: 6),
-                      Text(label),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    report == null ? '…' : formatPaise(paise),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
-                  ),
-                  Text(
-                    note ?? ' ',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.dangerText),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-
-    return Row(
-      children: [
-        half(
-          label: tr('Lena (to receive)'),
-          paise: report?.lenaTotal ?? 0,
-          color: AppColors.warningText,
-          icon: Icons.call_received,
-          tab: 0,
-          note: (report?.overdueTotal ?? 0) > 0
-              ? tr('Overdue {amount}', {'amount': formatPaise(report!.overdueTotal)})
-              : null,
-        ),
-        const SizedBox(width: AppSizes.gap),
-        half(
-          label: tr('Dena (to pay)'),
-          paise: report?.denaTotal ?? 0,
-          color: AppColors.successText,
-          icon: Icons.call_made,
-          tab: 1,
-        ),
-      ],
-    );
-  }
-}

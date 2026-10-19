@@ -94,7 +94,8 @@ class _PieceWorkScreenState extends ConsumerState<PieceWorkScreen> {
   }
 
   Future<void> _measure() async {
-    final total = await showMeasurementSheet(context, const []);
+    final total = await showMeasurementSheet(context, const [],
+        unit: _unit?.code);
     if (total != null) _qty.text = formatMilli(total.totalMilli);
   }
 

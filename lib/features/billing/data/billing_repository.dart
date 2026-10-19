@@ -86,11 +86,15 @@ class DocumentListItem {
     required this.document,
     required this.clientName,
     required this.paidPaise,
+    this.jobTitle,
   });
 
   final BillDocument document;
   final String clientName;
   final int paidPaise;
+
+  /// Job / site the bill is for, if any.
+  final String? jobTitle;
 
   int get balancePaise => document.totalPaise - paidPaise;
 }
@@ -333,10 +337,11 @@ class BillingRepository {
   }) {
     return _db.customSelect(
       '''
-      SELECT d.*, c.name AS client_name,
+      SELECT d.*, c.name AS client_name, j.title AS job_title,
         COALESCE((SELECT SUM(p.amount_paise) FROM payments_received p
           WHERE p.document_id = d.id), 0) AS paid
       FROM documents d JOIN clients c ON c.id = d.client_id
+      LEFT JOIN jobs j ON j.id = d.job_id
       WHERE d.kind = ? ${clientId == null ? '' : 'AND d.client_id = ?'}
       ORDER BY d.date DESC, d.number DESC
       ''',
@@ -344,13 +349,14 @@ class BillingRepository {
         Variable.withString(kind.name),
         if (clientId != null) Variable.withString(clientId),
       ],
-      readsFrom: {_db.documents, _db.clients, _db.paymentsReceived},
+      readsFrom: {_db.documents, _db.clients, _db.paymentsReceived, _db.jobs},
     ).watch().map((rows) => [
           for (final row in rows)
             DocumentListItem(
               document: _db.documents.map(row.data),
               clientName: row.read<String>('client_name'),
               paidPaise: row.read<int>('paid'),
+              jobTitle: row.readNullable<String>('job_title'),
             ),
         ]);
   }

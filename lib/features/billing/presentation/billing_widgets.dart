@@ -57,7 +57,14 @@ class DocumentTile extends StatelessWidget {
                             fontSize: 15, fontWeight: FontWeight.w800),
                       ),
                       Text(
-                        '${doc.number} · ${DateFormat('d MMM', uiDateLocale).format(parseIsoDate(doc.date))}',
+                        [
+                          doc.number,
+                          if (item.jobTitle != null) item.jobTitle!,
+                          DateFormat('d MMM', uiDateLocale)
+                              .format(parseIsoDate(doc.date)),
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: muted,
                       ),
                     ],
@@ -99,6 +106,67 @@ class DocumentTile extends StatelessWidget {
                             {'amount': formatPaise(item.paidPaise)}),
                     style: AppText.tabular.merge(muted),
                   ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Short bill row on a client or job page: "#42 · Shop fit-out", date,
+/// amount and status (wireframes ClientDetail, JobDetail).
+class CompactDocumentRow extends StatelessWidget {
+  const CompactDocumentRow({super.key, required this.document, this.title});
+
+  final BillDocument document;
+
+  /// Shown after the number, e.g. the job title.
+  final String? title;
+
+  @override
+  Widget build(BuildContext context) {
+    final doc = document;
+    return InkWell(
+      onTap: () => context.push(Routes.document(doc.id)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    [doc.number, if (title != null) title!].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    DateFormat('d MMM', uiDateLocale)
+                        .format(parseIsoDate(doc.date)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  formatPaise(doc.totalPaise),
+                  style: AppText.tabular.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                DocumentPill(document: doc),
               ],
             ),
           ],
@@ -153,10 +221,14 @@ class ClientPickerField extends ConsumerWidget {
     super.key,
     required this.clientId,
     required this.onChanged,
+    this.labeled = false,
   });
 
   final String? clientId;
   final ValueChanged<String> onChanged;
+
+  /// Label above a plain "Choose a client" box (forms with [LabeledField]).
+  final bool labeled;
 
   Future<void> _newClient(BuildContext context, WidgetRef ref) async {
     final name = TextEditingController();
@@ -211,28 +283,41 @@ class ClientPickerField extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final clients = ref.watch(clientsProvider).valueOrNull ?? const [];
     final selected = clients.where((c) => c.client.id == clientId).firstOrNull;
+    Future<void> choose() async {
+      const newClient = '__new__';
+      final picked = await showPickerSheet<String>(
+        context,
+        title: tr('Choose client'),
+        options: [newClient, for (final c in clients) c.client.id],
+        label: (id) => id == newClient
+            ? tr('+ New client')
+            : clients.firstWhere((c) => c.client.id == id).client.name,
+        selected: clientId,
+      );
+      if (picked == null || !context.mounted) return;
+      if (picked == newClient) {
+        await _newClient(context, ref);
+      } else {
+        onChanged(picked);
+      }
+    }
+
+    if (labeled) {
+      return LabeledField(
+        label: tr('Client'),
+        child: TapField(
+          value: selected?.client.name,
+          placeholder: tr('Choose a client'),
+          icon: Icons.expand_more,
+          onTap: choose,
+        ),
+      );
+    }
     return PickerField(
       label: tr('Client'),
       icon: Icons.person_outline,
       value: selected?.client.name,
-      onTap: () async {
-        const newClient = '__new__';
-        final picked = await showPickerSheet<String>(
-          context,
-          title: tr('Choose client'),
-          options: [newClient, for (final c in clients) c.client.id],
-          label: (id) => id == newClient
-              ? tr('+ New client')
-              : clients.firstWhere((c) => c.client.id == id).client.name,
-          selected: clientId,
-        );
-        if (picked == null || !context.mounted) return;
-        if (picked == newClient) {
-          await _newClient(context, ref);
-        } else {
-          onChanged(picked);
-        }
-      },
+      onTap: choose,
     );
   }
 }

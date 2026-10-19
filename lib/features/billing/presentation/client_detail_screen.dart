@@ -11,42 +11,56 @@ import '../../../core/utils/money.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
 import '../../jobs/data/jobs_repository.dart';
+import '../../jobs/presentation/jobs_screens.dart';
 import '../data/billing_repository.dart';
 import 'billing_screen.dart';
 import 'billing_widgets.dart';
 
-/// Client ledger: billed, received, outstanding (PRD BL-01).
-class ClientDetailScreen extends ConsumerWidget {
+enum _Records { bills, payments, jobs }
+
+/// Client ledger (PRD BL-01, wireframe ClientDetail): billed, received,
+/// pending, quick actions, then bills / payments / jobs.
+class ClientDetailScreen extends ConsumerStatefulWidget {
   const ClientDetailScreen({super.key, required this.clientId});
 
   final String clientId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ClientDetailScreen> createState() => _ClientDetailScreenState();
+}
+
+class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
+  var _records = _Records.bills;
+
+  @override
+  Widget build(BuildContext context) {
+    final clientId = widget.clientId;
     final async = ref.watch(clientProvider(clientId));
     final balance = async.valueOrNull;
     if (balance == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: async.isLoading
-            ? const ListSkeleton()
-            : const NotFoundBody(),
+        body: async.isLoading ? const ListSkeleton() : const NotFoundBody(),
       );
     }
     final client = balance.client;
-    final bills = ref.watch(clientDocumentsProvider(clientId)).valueOrNull ?? const [];
-    final payments = ref.watch(paymentsProvider(clientId)).valueOrNull ?? const [];
+    final bills =
+        ref.watch(clientDocumentsProvider(clientId)).valueOrNull ?? const [];
+    final payments =
+        ref.watch(paymentsProvider(clientId)).valueOrNull ?? const [];
     final jobs = (ref.watch(jobsProvider).valueOrNull ?? const <JobListItem>[])
         .where((j) => j.job.clientId == clientId)
         .toList();
-
     final pending = balance.outstandingPaise;
     final phone = client.phone;
-    const grey = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: AppColors.muted,
-    );
+
+    const empty = TextStyle(fontWeight: FontWeight.w600, color: AppColors.muted);
+    Widget list(List<Widget> rows, String none) => rows.isEmpty
+        ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(none, textAlign: TextAlign.center, style: empty),
+          )
+        : CardList(children: rows);
 
     return Scaffold(
       appBar: AppBar(
@@ -54,7 +68,7 @@ class ClientDetailScreen extends ConsumerWidget {
           if (phone != null) ...[
             AppIconButton(
               icon: Icons.call_outlined,
-              tooltip: tr('Call'),
+              tooltip: tr('Call client'),
               onPressed: () => launchUrl(Uri.parse('tel:$phone')),
             ),
             const SizedBox(width: 8),
@@ -68,11 +82,11 @@ class ClientDetailScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           Row(
             children: [
-              InitialsAvatar(client.name, size: 56),
+              InitialsAvatar(client.name, size: 60),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -89,136 +103,103 @@ class ClientDetailScreen extends ConsumerWidget {
                     if (phone != null || client.address != null)
                       Text(
                         [
-                          if (phone != null) formatIndianPhone(phone),
+                          if (phone != null) '+91 ${formatIndianPhone(phone)}',
                           if (client.address != null) client.address!,
                         ].join(' · '),
-                        style: grey.copyWith(fontSize: 13),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
                       ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Panel(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(pending >= 0 ? tr('Pending') : tr('Advance with you'),
-                    style: grey),
-                Text(
-                  formatPaise(pending.abs()),
-                  style: AppText.tabular.copyWith(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.64,
+                Expanded(
+                  child: FigureColumn(
+                    label: tr('Billed'),
+                    value: formatPaise(balance.billedPaise),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FigureColumn(
+                    label: tr('Received'),
+                    value: formatPaise(balance.receivedPaise),
+                    color: AppColors.successText,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FigureColumn(
+                    label: pending >= 0 ? tr('Pending') : tr('Advance'),
+                    value: formatPaise(pending.abs()),
                     color: pending > 0
-                        ? AppColors.warningText
+                        ? AppColors.dangerText
                         : AppColors.successText,
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(tr('Billed'), style: grey),
-                          Text(
-                            formatPaise(balance.billedPaise),
-                            style: AppText.tabular.copyWith(
-                                fontSize: 16, fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(tr('Received'), style: grey),
-                          Text(
-                            formatPaise(balance.receivedPaise),
-                            style: AppText.tabular.copyWith(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.successText,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, AppSizes.tapSecondary),
-                        ),
-                        onPressed: () => context.push(Routes.newDocument(
-                            DocumentKind.invoice,
-                            clientId: clientId)),
-                        icon: const Icon(Icons.receipt_long_outlined),
-                        label: Text(tr('New bill')),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(0, AppSizes.tapSecondary),
-                        ),
-                        onPressed: () =>
-                            context.push(Routes.payment(clientId: clientId)),
-                        icon: const Icon(Icons.south_west),
-                        label: Text(tr('Payment')),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
-          SectionLabel(
-            tr('Jobs / sites'),
-            trailing: TextButton.icon(
-              onPressed: () => context.push(Routes.addJob(clientId: clientId)),
-              icon: const Icon(Icons.add),
-              label: Text(tr('New job')),
+          const SizedBox(height: 14),
+          ActionButtons(actions: [
+            (
+              label: tr('+ New bill'),
+              onTap: () => context.push(
+                  Routes.newDocument(DocumentKind.invoice, clientId: clientId)),
             ),
+            (
+              label: tr('+ Payment'),
+              onTap: () => context.push(Routes.payment(clientId: clientId)),
+            ),
+            (
+              label: tr('+ Job'),
+              onTap: () => context.push(Routes.addJob(clientId: clientId)),
+            ),
+          ]),
+          const SizedBox(height: 14),
+          UnderlineTabs<_Records>(
+            value: _records,
+            options: {
+              _Records.bills: tr('Bills · {count}', {'count': bills.length}),
+              _Records.payments:
+                  tr('Payments · {count}', {'count': payments.length}),
+              _Records.jobs: tr('Jobs · {count}', {'count': jobs.length}),
+            },
+            onChanged: (r) => setState(() => _records = r),
           ),
-          if (jobs.isEmpty)
-            Text(tr('No jobs yet.'), style: TextStyle(color: AppColors.muted))
-          else
-            CardList(
-              children: [
-                  for (final j in jobs)
-                    ListTile(
-                      title: Text(j.job.title),
-                      subtitle: Text(jobStatusLabel(j.job.status)),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push(Routes.job(j.job.id)),
+          const SizedBox(height: 14),
+          switch (_records) {
+            _Records.bills => list([
+                for (final b in bills)
+                  CompactDocumentRow(document: b.document, title: b.jobTitle),
+              ], tr('No bills yet.')),
+            _Records.payments => list([
+                for (final p in payments) PaymentTile(item: p),
+              ], tr('No payments yet.')),
+            _Records.jobs => list([
+                for (final j in jobs)
+                  ListTile(
+                    title: Text(
+                      j.job.title,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700),
                     ),
-              ],
-            ),
-          SectionLabel(tr('Bills')),
-          if (bills.isEmpty)
-            Text(tr('No bills yet.'), style: TextStyle(color: AppColors.muted))
-          else
-            CardList(children: [for (final b in bills) DocumentTile(item: b)]),
-          SectionLabel(tr('Payments')),
-          if (payments.isEmpty)
-            Text(tr('No payments yet.'),
-                style: TextStyle(color: AppColors.muted))
-          else
-            CardList(children: [for (final p in payments) PaymentTile(item: p)]),
-          const SizedBox(height: 32),
+                    subtitle: j.job.siteAddress == null
+                        ? null
+                        : Text(j.job.siteAddress!),
+                    trailing: JobStatusBadge(j.job.status),
+                    onTap: () => context.push(Routes.job(j.job.id)),
+                  ),
+              ], tr('No jobs yet.')),
+          },
         ],
       ),
     );

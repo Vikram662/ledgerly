@@ -11,7 +11,8 @@ import '../../../core/utils/money.dart';
 import '../../../core/widgets/common.dart';
 import '../data/calendar_repository.dart';
 
-DateFormat get _sheetDate => DateFormat('EEEE, d MMMM yyyy', uiDateLocale);
+DateFormat get _dayHeading => DateFormat('EEE, d MMM', uiDateLocale);
+DateFormat get _monthTitle => DateFormat('MMMM yyyy', uiDateLocale);
 
 /// Icon and colour for each kind of event.
 (IconData, Color) eventStyle(CalendarEventKind kind) => switch (kind) {
@@ -36,9 +37,23 @@ DateFormat get _sheetDate => DateFormat('EEEE, d MMMM yyyy', uiDateLocale);
       CalendarEventKind.dueDate => (Icons.event_busy, AppColors.dangerText),
     };
 
-/// Business calendar: every bill, payment, khata entry, expense, supplier
-/// entry, holiday and the day's attendance. View only; tap an entry to open
-/// its screen.
+/// Dot colour of an event in the month grid (wireframe legend): money in,
+/// money out, bill / quote, holiday. Null: no dot.
+Color? _dotColor(CalendarEvent e) {
+  if (e.kind == CalendarEventKind.holiday) return AppColors.amber500;
+  if (e.flow == MoneyFlow.incoming) return AppColors.successFill;
+  if (e.flow == MoneyFlow.outgoing) return AppColors.dangerFill;
+  return switch (e.kind) {
+    CalendarEventKind.bill ||
+    CalendarEventKind.quotation ||
+    CalendarEventKind.dueDate =>
+      AppColors.primary,
+    _ => null,
+  };
+}
+
+/// Business calendar (wireframe Calendar): month grid with dots, then the
+/// chosen day's attendance and entries. View only; tap an entry to open it.
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
@@ -47,10 +62,18 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime _day = dateOnly(DateTime.now());
 
-  void _shift(int months) =>
-      setState(() => _month = DateTime(_month.year, _month.month + months));
+  DateTime get _month => DateTime(_day.year, _day.month);
+
+  void _shift(int months) => setState(() {
+        final target = DateTime(_day.year, _day.month + months);
+        final now = DateTime.now();
+        // The 1st, or today when moving back to the current month.
+        _day = target.year == now.year && target.month == now.month
+            ? dateOnly(now)
+            : target;
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -64,89 +87,102 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: SmallOutlinedButton(
-              icon: Icons.today_outlined,
+            child: MiniButton(
               label: tr('Today'),
-              onTap: () => setState(() =>
-                  _month = DateTime(DateTime.now().year, DateTime.now().month)),
+              onTap: () => setState(() => _day = dateOnly(DateTime.now())),
             ),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          MonthSwitcher(month: _month, onShift: _shift),
-          const SizedBox(height: 12),
           Panel(
             padding: const EdgeInsets.all(12),
             child: Column(
               children: [
+                _MonthHeader(month: _month, onShift: _shift),
+                const SizedBox(height: 10),
                 if (data == null)
                   const SizedBox(
-                    height: 320,
+                    height: 300,
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else
                   _MonthGrid(
                     data: data,
-                    onTap: (date) => _showDay(context, data, date),
+                    selected: _day,
+                    onTap: (date) => setState(() => _day = date),
                   ),
-                if (data != null) ...[
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  const SizedBox(height: 10),
-                  const _Legend(),
-                ],
+                const SizedBox(height: 10),
+                const _Legend(),
               ],
             ),
           ),
           if (data != null) ...[
             const SizedBox(height: 12),
-            _MonthTotals(data: data),
+            _DayHeading(date: _day, attendance: data.attendance[isoDate(_day)]),
+            const SizedBox(height: 8),
+            _DayEvents(events: data.on(isoDate(_day))),
           ],
         ],
       ),
     );
   }
+}
 
-  void _showDay(BuildContext context, CalendarMonth data, DateTime date) {
-    final router = GoRouter.of(context);
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (sheetContext) => _DaySheet(
-        date: date,
-        events: data.on(isoDate(date)),
-        attendance: data.attendance[isoDate(date)],
-        inPaise: data.inPaise(isoDate(date)),
-        outPaise: data.outPaise(isoDate(date)),
-        onOpen: (route, {bool tab = false}) {
-          Navigator.of(sheetContext).pop();
-          if (tab) {
-            router.go(route);
-          } else {
-            router.push(route);
-          }
-        },
-      ),
+/// ‹  October 2026  › inside the calendar card.
+class _MonthHeader extends StatelessWidget {
+  const _MonthHeader({required this.month, required this.onShift});
+
+  final DateTime month;
+  final ValueChanged<int> onShift;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget arrow(IconData icon, String tooltip, int by) => IconButton(
+          tooltip: tooltip,
+          onPressed: () => onShift(by),
+          icon: Icon(icon, size: 20),
+          style: IconButton.styleFrom(
+            fixedSize: const Size.square(36),
+            minimumSize: const Size.square(36),
+            backgroundColor: AppColors.page,
+            foregroundColor: AppColors.ink,
+          ),
+        );
+    return Row(
+      children: [
+        arrow(Icons.chevron_left, tr('Previous month'), -1),
+        Expanded(
+          child: Text(
+            _monthTitle.format(month),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+          ),
+        ),
+        arrow(Icons.chevron_right, tr('Next month'), 1),
+      ],
     );
   }
 }
 
 class _MonthGrid extends StatelessWidget {
-  const _MonthGrid({required this.data, required this.onTap});
+  const _MonthGrid({
+    required this.data,
+    required this.selected,
+    required this.onTap,
+  });
 
   final CalendarMonth data;
-  final void Function(DateTime date) onTap;
+  final DateTime selected;
+  final ValueChanged<DateTime> onTap;
 
   @override
   Widget build(BuildContext context) {
     final month = data.month;
     final firstWeekday = DateTime(month.year, month.month).weekday; // Mon=1
     final days = daysInMonth(month);
-    final today = isoDate(DateTime.now());
 
     return Column(
       children: [
@@ -155,29 +191,35 @@ class _MonthGrid extends StatelessWidget {
             for (final d in weekdayLetters)
               Expanded(
                 child: Center(
-                  child: Text(d,
-                      style: const TextStyle(
-                          color: AppColors.muted, fontWeight: FontWeight.w600)),
+                  child: Text(
+                    d,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.muted,
+                    ),
+                  ),
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 6),
-        GridView.count(
-          crossAxisCount: 7,
+        const SizedBox(height: 4),
+        GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 4,
-          crossAxisSpacing: 4,
-          childAspectRatio: 0.92,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+            mainAxisExtent: 46,
+          ),
           children: [
             for (var i = 1; i < firstWeekday; i++) const SizedBox(),
             for (var day = 1; day <= days; day++)
               _DayCell(
                 date: DateTime(month.year, month.month, day),
-                isToday:
-                    isoDate(DateTime(month.year, month.month, day)) == today,
-                data: data,
+                selected: selected.day == day,
+                events: data.on(isoDate(DateTime(month.year, month.month, day))),
                 onTap: onTap,
               ),
           ],
@@ -190,136 +232,77 @@ class _MonthGrid extends StatelessWidget {
 class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.date,
-    required this.isToday,
-    required this.data,
+    required this.selected,
+    required this.events,
     required this.onTap,
   });
 
   final DateTime date;
-  final bool isToday;
-  final CalendarMonth data;
-  final void Function(DateTime date) onTap;
+  final bool selected;
+  final List<CalendarEvent> events;
+  final ValueChanged<DateTime> onTap;
 
   @override
   Widget build(BuildContext context) {
-    final iso = isoDate(date);
-    final events = data.on(iso);
-    final attendance = data.attendance[iso];
     final holiday = events.any((e) => e.kind == CalendarEventKind.holiday);
-    // One dot per kind, at most 4.
-    final kinds = <CalendarEventKind>{
+    final dots = <Color>{
       for (final e in events)
-        if (e.kind != CalendarEventKind.holiday) e.kind,
+        if (_dotColor(e) case final color?) color,
     }.take(4).toList();
-    final hasAnything = events.isNotEmpty || attendance != null;
-    final today = DateTime.now();
-    final isFuture = date.isAfter(DateTime(today.year, today.month, today.day));
+    final isFuture = date.isAfter(dateOnly(DateTime.now()));
+    final background = selected
+        ? AppColors.ink
+        : holiday
+            ? AppColors.warningSurface
+            : null;
+    final color = selected
+        ? Colors.white
+        : holiday
+            ? AppColors.warningText
+            : isFuture
+                ? AppColors.faint
+                : AppColors.ink;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: () => onTap(date),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          color: isToday
-              ? AppColors.ink
-              : holiday
-                  ? AppColors.warningSurface
-                  : hasAnything
-                      ? AppColors.page
-                      : null,
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: background ?? Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          border: holiday ? Border.all(color: AppColors.amber100) : null,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Text(
-              '${date.day}',
-              style: TextStyle(
-                fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                color: isToday
-                    ? Colors.white
-                    : holiday
-                        ? AppColors.warningText
-                        : isFuture
-                            ? AppColors.faint
-                            : AppColors.ink,
-              ),
-            ),
-            if (attendance != null && attendance.present + attendance.half > 0)
-              Text(
-                tr('P {count}',
-                    {'count': attendance.present + attendance.half}),
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.successText,
-                  fontWeight: FontWeight.w700,
-                ),
-              )
-            else
-              const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (final k in kinds)
-                  Container(
-                    width: 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 1),
-                    decoration: BoxDecoration(
-                      color: eventStyle(k).$2,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                if (kinds.isEmpty) const SizedBox(height: 6),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MonthTotals extends StatelessWidget {
-  const _MonthTotals({required this.data});
-
-  final CalendarMonth data;
-
-  @override
-  Widget build(BuildContext context) {
-    var inTotal = 0;
-    var outTotal = 0;
-    var entries = 0;
-    for (final date in data.events.keys) {
-      inTotal += data.inPaise(date);
-      outTotal += data.outPaise(date);
-      entries += data.on(date).length;
-    }
-    Widget stat(String label, String value, Color color) => Expanded(
+          onTap: () => onTap(date),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(label,
-                  style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(value,
-                  style: AppText.tabular.copyWith(
-                      color: color, fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(
+                '${date.day}',
+                style: AppText.tabular.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 3),
+              SizedBox(
+                height: 5,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (final dot in dots)
+                      Container(
+                        width: 5,
+                        height: 5,
+                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                        decoration:
+                            BoxDecoration(color: dot, shape: BoxShape.circle),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
-        );
-    return Panel(
-      child: Row(
-        children: [
-          stat(tr('Money in'), formatPaise(inTotal), AppColors.successText),
-          stat(tr('Money out'), formatPaise(outTotal), AppColors.dangerText),
-          stat(tr('Entries'), '$entries', AppColors.slate900),
-        ],
+        ),
       ),
     );
   }
@@ -330,191 +313,153 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget dot(Color color, String label) =>
-        LegendDot(color: color, label: label);
     return Wrap(
-      spacing: 14,
+      alignment: WrapAlignment.center,
+      spacing: 12,
       runSpacing: 6,
       children: [
-        dot(AppColors.successText, tr('Money in')),
-        dot(AppColors.dangerText, tr('Money out')),
-        dot(AppColors.primary, tr('Bill / quote')),
-        dot(AppColors.warningText, tr('Holiday')),
+        LegendDot(color: AppColors.successFill, label: tr('Money in')),
+        LegendDot(color: AppColors.dangerFill, label: tr('Money out')),
+        LegendDot(color: AppColors.primary, label: tr('Bill / quote')),
+        LegendDot(color: AppColors.amber500, label: tr('Holiday')),
       ],
     );
   }
 }
 
-/// Everything on one day, view only. Tapping a row opens its screen.
-class _DaySheet extends StatelessWidget {
-  const _DaySheet({
-    required this.date,
-    required this.events,
-    required this.attendance,
-    required this.inPaise,
-    required this.outPaise,
-    required this.onOpen,
-  });
+/// "Fri, 17 Oct" and that day's attendance; tap to open the attendance.
+class _DayHeading extends StatelessWidget {
+  const _DayHeading({required this.date, required this.attendance});
 
   final DateTime date;
-  final List<CalendarEvent> events;
   final DayAttendance? attendance;
-  final int inPaise;
-  final int outPaise;
-  final void Function(String route, {bool tab}) onOpen;
 
   @override
   Widget build(BuildContext context) {
     final att = attendance;
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.6,
-      minChildSize: 0.3,
-      maxChildSize: 0.95,
-      builder: (context, controller) => ListView(
-        controller: controller,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        children: [
-          Text(_sheetDate.format(date),
-              style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniStat(
-                  label: tr('In'),
-                  value: formatPaise(inPaise),
-                  color: AppColors.successText,
-                ),
+    final canMark = !date.isAfter(dateOnly(DateTime.now()));
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.small),
+      onTap: canMark ? () => context.go(Routes.attendance(date)) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Expanded(
+              child: Text(
+                _dayHeading.format(date),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MiniStat(
-                  label: tr('Out'),
-                  value: formatPaise(outPaise),
-                  color: AppColors.dangerText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Material(
-            color: AppColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              side: const BorderSide(color: AppColors.border),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              tileColor: Colors.transparent,
-              leading: const IconTile(Icons.fact_check_outlined,
-                  color: AppColors.successSurface,
-                  iconColor: AppColors.successText),
-              title: Text(tr('Attendance')),
-              subtitle: Text(att == null || att.isEmpty
+            Text(
+              att == null || att.isEmpty
                   ? tr('Not marked')
                   : tr('Present {present} · Half {half} · Absent {absent}', {
                       'present': att.present,
                       'half': att.half,
-                      'absent': att.absent
-                    })),
-              trailing: const Icon(Icons.chevron_right),
-              // Future days can't be marked yet.
-              onTap: date.isAfter(DateTime.now())
-                  ? null
-                  : () => onOpen(Routes.attendance(date), tab: true),
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (events.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: Text(tr('No bills, payments or expenses on this day'),
-                    style: TextStyle(color: AppColors.muted)),
+                      'absent': att.absent,
+                    }),
+              style: AppText.tabular.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.muted,
               ),
-            )
-          else
-            CardList(children: [
-              for (final e in events) _EventTile(event: e, onOpen: onOpen),
-            ]),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+class _DayEvents extends StatelessWidget {
+  const _DayEvents({required this.events});
 
-  final String label;
-  final String value;
-  final Color color;
+  final List<CalendarEvent> events;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withAlpha(20),
-          borderRadius: BorderRadius.circular(AppRadius.small),
-        ),
-        child: Row(
-          children: [
-            Text(label, style: TextStyle(color: color)),
-            const Spacer(),
-            Text(value,
-                style: AppText.tabular
-                    .copyWith(color: color, fontWeight: FontWeight.w800)),
-          ],
+  Widget build(BuildContext context) {
+    if (events.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Text(
+          tr('No bills, payments or expenses on this day'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+              fontWeight: FontWeight.w600, color: AppColors.muted),
         ),
       );
+    }
+    return CardList(children: [for (final e in events) _EventRow(event: e)]);
+  }
 }
 
-class _EventTile extends StatelessWidget {
-  const _EventTile({required this.event, required this.onOpen});
+/// One entry: coloured icon tile, title, detail and the signed amount.
+class _EventRow extends StatelessWidget {
+  const _EventRow({required this.event});
 
   final CalendarEvent event;
-  final void Function(String route, {bool tab}) onOpen;
 
   @override
   Widget build(BuildContext context) {
     final (icon, color) = eventStyle(event.kind);
     final amount = event.amountPaise;
-    final sign = switch (event.flow) {
-      MoneyFlow.incoming => '+ ',
-      MoneyFlow.outgoing => '- ',
-      MoneyFlow.none => '',
-    };
     final route = event.route;
-    return ListTile(
-      tileColor: Colors.transparent,
-      leading: IconTile(icon, color: color.withAlpha(28), iconColor: color),
-      title: Text(event.title,
-          style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: event.subtitle == null || event.subtitle!.isEmpty
-          ? null
-          : Text(event.subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis),
-      trailing: amount == null
-          ? (route == null ? null : const Icon(Icons.chevron_right))
-          : Text(
-              '$sign${formatPaise(amount)}',
-              style: AppText.tabular.copyWith(
-                fontWeight: FontWeight.w800,
-                color: switch (event.flow) {
-                  MoneyFlow.incoming => AppColors.successText,
-                  MoneyFlow.outgoing => AppColors.dangerText,
-                  MoneyFlow.none => AppColors.slate900,
-                },
+    final amountColor = switch (event.flow) {
+      MoneyFlow.incoming => AppColors.successText,
+      MoneyFlow.outgoing => AppColors.dangerText,
+      MoneyFlow.none => AppColors.ink,
+    };
+    return InkWell(
+      onTap: route == null ? null : () => context.push(route),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            IconTile(icon,
+                size: 36, color: color.withAlpha(28), iconColor: color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  if (event.subtitle != null && event.subtitle!.isNotEmpty)
+                    Text(
+                      event.subtitle!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                ],
               ),
             ),
-      onTap: route == null ? null : () => onOpen(route),
+            if (amount != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                formatPaise(amount),
+                style: AppText.tabular.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: amountColor,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

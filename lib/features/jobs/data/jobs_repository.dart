@@ -59,6 +59,7 @@ class JobDetail {
     required this.piecePaise,
     required this.bills,
     required this.expenses,
+    this.pieces = const [],
   });
 
   final Job job;
@@ -73,6 +74,9 @@ class JobDetail {
   final int piecePaise;
   final List<BillDocument> bills;
   final List<Expense> expenses;
+
+  /// Piece work booked against this job, newest first, with the worker.
+  final List<({PieceWork piece, String workerName})> pieces;
 
   /// Billed − expenses − piece work. Daily-wage labour is not included yet.
   int get profitPaise => billedPaise - expensesPaise - piecePaise;
@@ -157,6 +161,7 @@ class JobsRepository {
           _db.paymentsReceived,
           _db.expenses,
           _db.pieceWorks,
+          _db.workers,
         ],
         () async {
           final job = await (_db.select(_db.jobs)
@@ -186,18 +191,30 @@ class JobsRepository {
                 ..where((e) => e.jobId.equals(id))
                 ..orderBy([(e) => OrderingTerm.desc(e.date)]))
               .get();
-          final pieces = await (_db.select(_db.pieceWorks)
-                ..where((p) => p.jobId.equals(id)))
+          final pieceRows = await (_db.select(_db.pieceWorks).join([
+            innerJoin(
+                _db.workers, _db.workers.id.equalsExp(_db.pieceWorks.workerId)),
+          ])
+                ..where(_db.pieceWorks.jobId.equals(id))
+                ..orderBy([OrderingTerm.desc(_db.pieceWorks.date)]))
               .get();
+          final pieces = [
+            for (final row in pieceRows)
+              (
+                piece: row.readTable(_db.pieceWorks),
+                workerName: row.readTable(_db.workers).name,
+              ),
+          ];
           return JobDetail(
             job: job,
             client: client,
             billedPaise: counted.fold(0, (sum, b) => sum + b.totalPaise),
             receivedPaise: received,
             expensesPaise: expenses.fold(0, (sum, e) => sum + e.amountPaise),
-            piecePaise: pieces.fold(0, (sum, p) => sum + p.amountPaise),
+            piecePaise: pieces.fold(0, (sum, p) => sum + p.piece.amountPaise),
             bills: bills,
             expenses: expenses,
+            pieces: pieces,
           );
         },
       );

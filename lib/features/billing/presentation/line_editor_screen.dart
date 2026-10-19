@@ -144,7 +144,8 @@ class _LineEditorScreenState extends ConsumerState<_LineEditorScreen> {
   }
 
   Future<void> _measure() async {
-    final result = await showMeasurementSheet(context, _measurement);
+    final result = await showMeasurementSheet(context, _measurement,
+        unit: _unitCode);
     if (result == null) return;
     setState(() {
       _measurement = result.entries;

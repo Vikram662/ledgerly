@@ -911,6 +911,155 @@ class SmallOutlinedButton extends StatelessWidget {
   }
 }
 
+/// Underlined section tabs above the content of a page (wireframe `.under`):
+/// Billing, Client detail, Job detail. Styled by the app's TabBar theme.
+class UnderlineTabs<T> extends StatelessWidget {
+  const UnderlineTabs({
+    super.key,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final T value;
+  final Map<T, String> options;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final keys = options.keys.toList();
+    return DefaultTabController(
+      // A new controller when the set of tabs changes.
+      key: ValueKey(keys.length),
+      length: keys.length,
+      initialIndex: keys.indexOf(value).clamp(0, keys.length - 1),
+      child: TabBar(
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        labelPadding: const EdgeInsets.only(right: 20),
+        onTap: (i) => onChanged(keys[i]),
+        tabs: [for (final label in options.values) Tab(text: label)],
+      ),
+    );
+  }
+}
+
+/// Row of equal 48px action buttons; the first is the primary one
+/// (wireframe `.act`: "+ New bill", "+ Payment", "+ Job").
+class ActionButtons extends StatelessWidget {
+  const ActionButtons({super.key, required this.actions});
+
+  final List<({String label, VoidCallback onTap})> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = Size(0, 48);
+    const text = TextStyle(fontSize: 14, fontWeight: FontWeight.w800);
+    final shape =
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(14));
+    return Row(
+      children: [
+        for (var i = 0; i < actions.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppSizes.gap),
+          Expanded(
+            child: i == 0
+                ? FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: size,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: shape,
+                      textStyle: text,
+                    ),
+                    onPressed: actions[i].onTap,
+                    child: Text(actions[i].label, maxLines: 1),
+                  )
+                : OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: size,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      foregroundColor: AppColors.ink,
+                      backgroundColor: AppColors.surface,
+                      side: const BorderSide(color: AppColors.border),
+                      shape: shape,
+                      textStyle: text,
+                    ),
+                    onPressed: actions[i].onTap,
+                    child: Text(actions[i].label, maxLines: 1),
+                  ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Label over a figure, for a row of totals (Billed / Received / Pending).
+class FigureColumn extends StatelessWidget {
+  const FigureColumn({
+    super.key,
+    required this.label,
+    required this.value,
+    this.color = AppColors.ink,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.muted,
+          ),
+        ),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppText.tabular.copyWith(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 32px outlined button inside a row (wireframe `.mini`): Call, WhatsApp,
+/// Send reminder.
+class MiniButton extends StatelessWidget {
+  const MiniButton({super.key, required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        foregroundColor: AppColors.ink,
+        side: const BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+      ),
+      onPressed: onTap,
+      child: Text(label),
+    );
+  }
+}
+
 /// 36px round − / + button for steppers.
 class StepButton extends StatelessWidget {
   const StepButton({
@@ -967,6 +1116,108 @@ class SectionLabel extends StatelessWidget {
           ),
           if (trailing != null) trailing!,
         ],
+      ),
+    );
+  }
+}
+
+/// Dark summary card at the top of a list: label, big amount, note and
+/// an optional footer (wireframes Khata, Suppliers).
+class HeroPanel extends StatelessWidget {
+  const HeroPanel({
+    super.key,
+    required this.label,
+    required this.value,
+    this.note,
+    this.footer,
+  });
+
+  final String label;
+  final String value;
+  final String? note;
+  final Widget? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    const soft = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.inputBorder,
+    );
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: soft),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppText.tabular.copyWith(
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.6,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          if (note != null) ...[
+            const SizedBox(height: 4),
+            Text(note!, style: soft.copyWith(fontSize: 12)),
+          ],
+          if (footer != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.only(top: 12),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFF2E333B))),
+              ),
+              child: footer,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 36px rounded tag with a short text, e.g. "P" or "In" (wireframe `.tag`).
+class LetterTag extends StatelessWidget {
+  const LetterTag(
+    this.text, {
+    super.key,
+    this.color = AppColors.page,
+    this.textColor = AppColors.ink,
+  });
+
+  final String text;
+  final Color color;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: textColor,
+        ),
       ),
     );
   }
@@ -1095,7 +1346,7 @@ class TileGrid extends StatelessWidget {
 class SettingRow extends StatelessWidget {
   const SettingRow({
     super.key,
-    required this.icon,
+    this.icon,
     required this.label,
     this.subtitle,
     this.value,
@@ -1104,7 +1355,8 @@ class SettingRow extends StatelessWidget {
     this.onTap,
   });
 
-  final IconData icon;
+  /// Null for plain rows (wireframe App lock).
+  final IconData? icon;
   final String label;
   final String? subtitle;
   final String? value;
@@ -1122,8 +1374,10 @@ class SettingRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              IconTile(icon, size: 32),
-              const SizedBox(width: 12),
+              if (icon != null) ...[
+                IconTile(icon!, size: 32),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

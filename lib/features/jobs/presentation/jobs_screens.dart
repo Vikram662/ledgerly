@@ -49,9 +49,10 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
     final jobs = ref.watch(jobsProvider);
     return Scaffold(
       appBar: AppBar(title: Text(tr('Jobs / Sites'))),
-      bottomNavigationBar: BottomActionBar(
-        label: tr('New job'),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(Routes.addJob()),
+        icon: const Icon(Icons.add),
+        label: Text(tr('New job')),
       ),
       body: jobs.when(
         loading: () => const ListSkeleton(),
@@ -79,18 +80,27 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
             _JobFilter.all => list,
           };
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             children: [
-              SegmentedTabs<_JobFilter>(
-                value: _filter,
-                options: {
-                  _JobFilter.active:
-                      tr('Active · {count}', {'count': active.length}),
-                  _JobFilter.done:
-                      tr('Done · {count}', {'count': done.length}),
-                  _JobFilter.all: tr('All'),
-                },
-                onChanged: (f) => setState(() => _filter = f),
+              ChipRow(
+                children: [
+                  for (final (filter, label) in [
+                    (
+                      _JobFilter.active,
+                      tr('Active · {count}', {'count': active.length})
+                    ),
+                    (
+                      _JobFilter.done,
+                      tr('Done · {count}', {'count': done.length})
+                    ),
+                    (_JobFilter.all, tr('All')),
+                  ])
+                    AppChip(
+                      label: label,
+                      selected: _filter == filter,
+                      onTap: () => setState(() => _filter = filter),
+                    ),
+                ],
               ),
               const SizedBox(height: 12),
               if (shown.isEmpty)
@@ -124,26 +134,10 @@ class _JobCard extends StatelessWidget {
     final spent = item.expensesPaise + item.piecePaise;
     final profit = item.profitPaise;
     Widget figure(String label, int paise, Color color) => Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.muted,
-                ),
-              ),
-              Text(
-                formatPaise(paise),
-                style: AppText.tabular.copyWith(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                ),
-              ),
-            ],
+          child: FigureColumn(
+            label: label,
+            value: formatPaise(paise),
+            color: color,
           ),
         );
     return GestureDetector(
@@ -280,227 +274,268 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSizes.gutter),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
+            LabeledField(
+              label: tr('Job name'),
+              child: TextFormField(
+                controller: _title,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                    hintText: tr('e.g. Sharma ji 2BHK wiring')),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? tr('Enter job name')
+                    : null,
+              ),
+            ),
             ClientPickerField(
               clientId: _clientId,
+              labeled: true,
               onChanged: (id) => setState(() => _clientId = id),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _title,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: tr('Job name'),
-                hintText: tr('e.g. Sharma ji 2BHK wiring'),
+            LabeledField(
+              label: tr('Site address'),
+              optional: true,
+              child: TextFormField(
+                controller: _site,
+                decoration:
+                    InputDecoration(hintText: tr('Flat, building, area')),
               ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? tr('Enter job name') : null,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _site,
-              maxLines: 2,
-              decoration:
-                  InputDecoration(labelText: tr('Site address (optional)')),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _contract,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: tr('Contract value (optional)'),
-                prefixText: '₹ ',
+            LabeledField(
+              label: tr('Contract value'),
+              optional: true,
+              child: TextFormField(
+                controller: _contract,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  hintText: '0',
+                  prefixText: '₹ ',
+                ),
+                validator: (v) => v == null ||
+                        v.trim().isEmpty ||
+                        parseRupeesToPaise(v) != null
+                    ? null
+                    : tr('Enter a valid amount'),
               ),
-              validator: (v) => v == null ||
-                      v.trim().isEmpty ||
-                      parseRupeesToPaise(v) != null
-                  ? null
-                  : tr('Enter a valid amount'),
             ),
-            const SizedBox(height: 16),
-            SectionLabel(tr('Status')),
-            SegmentedTabs<JobStatus>(
-              value: _status,
-              options: {
-                for (final s in JobStatus.values) s: jobStatusLabel(s),
-              },
-              onChanged: (s) => setState(() => _status = s),
+            LabeledField(
+              label: tr('Status'),
+              child: Wrap(
+                spacing: AppSizes.gap,
+                runSpacing: AppSizes.gap,
+                children: [
+                  for (final s in JobStatus.values)
+                    AppChip(
+                      label: jobStatusLabel(s),
+                      selected: _status == s,
+                      onTap: () => setState(() => _status = s),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar:
-          BottomActionBar(label: tr('Save'), busy: _saving, onPressed: _save),
+      bottomNavigationBar: BottomActionBar(
+          label: tr('Save job'), busy: _saving, onPressed: _save),
     );
   }
 }
 
-/// PRD JB-01 / EX-03: one site with its bills, expenses and rough profit.
-class JobDetailScreen extends ConsumerWidget {
+enum _JobRecords { bills, expenses, pieces }
+
+/// PRD JB-01 / EX-03 (wireframe JobDetail): one site with its money summary,
+/// quick actions and its bills / expenses / piece work.
+class JobDetailScreen extends ConsumerStatefulWidget {
   const JobDetailScreen({super.key, required this.jobId});
 
   final String jobId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<JobDetailScreen> createState() => _JobDetailScreenState();
+}
+
+class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
+  var _records = _JobRecords.bills;
+
+  @override
+  Widget build(BuildContext context) {
+    final jobId = widget.jobId;
     final async = ref.watch(jobDetailProvider(jobId));
     final d = async.valueOrNull;
     if (d == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: async.isLoading
-            ? const ListSkeleton()
-            : const NotFoundBody(),
+        body: async.isLoading ? const ListSkeleton() : const NotFoundBody(),
       );
     }
     final job = d.job;
+    const grey = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: AppColors.muted,
+    );
+    Widget list(List<Widget> rows, String none) => rows.isEmpty
+        ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(none, textAlign: TextAlign.center, style: grey),
+          )
+        : CardList(children: rows);
+    Widget amount(int paise) => Text(
+          formatPaise(paise),
+          style: AppText.tabular.copyWith(fontWeight: FontWeight.w800),
+        );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(job.title),
         actions: [
           AppIconButton(
             icon: Icons.edit_outlined,
-            tooltip: tr('Edit'),
+            tooltip: tr('Edit job'),
             onPressed: () => context.push(Routes.editJob(jobId)),
           ),
           const SizedBox(width: 12),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          Row(
-            children: [
-              JobStatusBadge(job.status),
-              const SizedBox(width: 8),
-              Expanded(
-                child: InkWell(
-                  onTap: () => context.push(Routes.client(d.client.id)),
-                  child: Text(d.client.name,
-                      style: AppText.titleMedium),
-                ),
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: JobStatusBadge(job.status),
           ),
-          if (job.siteAddress != null) ...[
-            const SizedBox(height: 4),
-            Text(job.siteAddress!),
-          ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          Text(
+            job.title,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          ),
+          InkWell(
+            onTap: () => context.push(Routes.client(d.client.id)),
+            child: Text(
+              [
+                d.client.name,
+                if (job.siteAddress != null) job.siteAddress!,
+                if (job.contractValuePaise != null)
+                  tr('Contract {amount}',
+                      {'amount': formatPaise(job.contractValuePaise!)}),
+              ].join(' · '),
+              style: AppText.tabular.merge(grey),
+            ),
+          ),
+          const SizedBox(height: 14),
           Panel(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Column(
               children: [
-                if (job.contractValuePaise != null)
-                  AmountRow(label: tr('Contract value'), paise: job.contractValuePaise!),
                 AmountRow(label: tr('Billed'), paise: d.billedPaise),
                 AmountRow(
                   label: tr('Received'),
                   paise: d.receivedPaise,
                   color: AppColors.successText,
                 ),
-                const Divider(),
-                AmountRow(label: tr('Expenses'), paise: d.expensesPaise, prefix: '− '),
-                if (d.piecePaise > 0)
-                  AmountRow(label: tr('Piece work'), paise: d.piecePaise, prefix: '− '),
-                const Divider(),
                 AmountRow(
-                  label: d.profitPaise >= 0 ? tr('Profit') : tr('Loss'),
-                  paise: d.profitPaise.abs(),
-                  bold: true,
-                  color: d.profitPaise >= 0
-                      ? AppColors.successText
-                      : AppColors.dangerText,
+                    label: tr('Expenses'),
+                    paise: d.expensesPaise,
+                    prefix: '−'),
+                AmountRow(
+                    label: tr('Piece work'), paise: d.piecePaise, prefix: '−'),
+                const Divider(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        d.profitPaise >= 0 ? tr('Profit') : tr('Loss'),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Text(
+                      formatPaise(d.profitPaise.abs()),
+                      style: AppText.tabular.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: d.profitPaise >= 0
+                            ? AppColors.successText
+                            : AppColors.dangerText,
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     tr('Daily-wage labour is not counted here yet.'),
-                    style: TextStyle(fontSize: 12, color: AppColors.muted),
+                    style: grey,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(Routes.newDocument(
+          const SizedBox(height: 14),
+          ActionButtons(actions: [
+            (
+              label: tr('+ New bill'),
+              onTap: () => context.push(Routes.newDocument(
                     DocumentKind.invoice,
                     clientId: d.client.id,
                     jobId: jobId,
                   )),
-                  icon: const Icon(Icons.receipt_long),
-                  label: Text(tr('New bill')),
-                ),
-              ),
-              const SizedBox(width: AppSizes.gap),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(Routes.expenseForJob(jobId)),
-                  icon: const Icon(Icons.receipt),
-                  label: Text(tr('Expense')),
-                ),
-              ),
-            ],
+            ),
+            (
+              label: tr('+ Expense'),
+              onTap: () => context.push(Routes.expenseForJob(jobId)),
+            ),
+          ]),
+          const SizedBox(height: 14),
+          UnderlineTabs<_JobRecords>(
+            value: _records,
+            options: {
+              _JobRecords.bills:
+                  tr('Bills · {count}', {'count': d.bills.length}),
+              _JobRecords.expenses:
+                  tr('Expenses · {count}', {'count': d.expenses.length}),
+              _JobRecords.pieces:
+                  tr('Piece work · {count}', {'count': d.pieces.length}),
+            },
+            onChanged: (r) => setState(() => _records = r),
           ),
-          SectionLabel(tr('Bills')),
-          if (d.bills.isEmpty)
-            Text(tr('No bills linked to this job.'),
-                style: TextStyle(color: AppColors.muted))
-          else
-            Panel(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final b in d.bills)
-                    ListTile(
-                      title: Text(b.number),
-                      subtitle: Row(
-                        children: [
-                          DocumentPill(document: b),
-                          const SizedBox(width: 8),
-                          Text(dayFormat.format(parseIsoDate(b.date))),
-                        ],
-                      ),
-                      trailing: Text(formatPaise(b.totalPaise),
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                      onTap: () => context.push(Routes.document(b.id)),
-                    ),
-                ],
-              ),
-            ),
-          SectionLabel(tr('Expenses')),
-          if (d.expenses.isEmpty)
-            Text(tr('No expenses linked to this job.'),
-                style: TextStyle(color: AppColors.muted))
-          else
-            Panel(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final e in d.expenses)
-                    ListTile(
-                      leading: e.photoPath == null
-                          ? null
-                          : InkWell(
-                              onTap: () => showPhoto(context, e.photoPath!),
-                              child: PhotoThumb(name: e.photoPath!, size: 44),
-                            ),
-                      title: Text(e.remarks?.isNotEmpty == true
-                          ? e.remarks!
-                          : tr('Expense')),
-                      subtitle: Text(dayFormat.format(parseIsoDate(e.date))),
-                      trailing: Text(formatPaise(e.amountPaise),
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 14),
+          switch (_records) {
+            _JobRecords.bills => list([
+                for (final b in d.bills) CompactDocumentRow(document: b),
+              ], tr('No bills linked to this job.')),
+            _JobRecords.expenses => list([
+                for (final e in d.expenses)
+                  ListTile(
+                    leading: e.photoPath == null
+                        ? null
+                        : InkWell(
+                            onTap: () => showPhoto(context, e.photoPath!),
+                            child: PhotoThumb(name: e.photoPath!, size: 44),
+                          ),
+                    title: Text(e.remarks?.isNotEmpty == true
+                        ? e.remarks!
+                        : tr('Expense')),
+                    subtitle: Text(dayFormat.format(parseIsoDate(e.date))),
+                    trailing: amount(e.amountPaise),
+                  ),
+              ], tr('No expenses linked to this job.')),
+            _JobRecords.pieces => list([
+                for (final p in d.pieces)
+                  ListTile(
+                    title: Text(p.piece.description),
+                    subtitle: Text([
+                      p.workerName,
+                      dayFormat.format(parseIsoDate(p.piece.date)),
+                    ].join(' · ')),
+                    trailing: amount(p.piece.amountPaise),
+                    onTap: () => context.push(Routes.worker(p.piece.workerId)),
+                  ),
+              ], tr('No piece work on this job.')),
+          },
         ],
       ),
     );

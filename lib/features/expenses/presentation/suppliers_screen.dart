@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
+import '../../../core/db/database.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/utils/dates.dart';
@@ -18,7 +19,7 @@ import '../../../core/widgets/phone_field.dart';
 import '../../../core/widgets/pickers.dart';
 import '../data/expenses_repository.dart';
 
-/// PRD EX-02: suppliers with their due balance.
+/// PRD EX-02 (wireframe Suppliers): suppliers with their due balance.
 class SuppliersScreen extends ConsumerWidget {
   const SuppliersScreen({super.key});
 
@@ -27,9 +28,10 @@ class SuppliersScreen extends ConsumerWidget {
     final suppliers = ref.watch(suppliersProvider);
     return Scaffold(
       appBar: AppBar(title: Text(tr('Suppliers'))),
-      bottomNavigationBar: BottomActionBar(
-        label: tr('Add supplier'),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(Routes.addSupplier),
+        icon: const Icon(Icons.add),
+        label: Text(tr('Add supplier')),
       ),
       body: suppliers.when(
         loading: () => const ListSkeleton(),
@@ -49,41 +51,12 @@ class SuppliersScreen extends ConsumerWidget {
             (sum, s) => s.duePaise > 0 ? sum + s.duePaise : sum,
           );
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             children: [
-              Panel(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr('Total to pay suppliers'),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                    Text(
-                      formatPaise(totalDue),
-                      style: AppText.tabular.copyWith(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.56,
-                        color: totalDue > 0
-                            ? AppColors.warningText
-                            : AppColors.ink,
-                      ),
-                    ),
-                    Text(
-                      tr('Material bought on credit (udhaar)'),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
+              HeroPanel(
+                label: tr('Total to pay suppliers'),
+                value: formatPaise(totalDue),
+                note: tr('Material bought on credit (udhaar)'),
               ),
               const SizedBox(height: 12),
               CardList(
@@ -95,9 +68,7 @@ class SuppliersScreen extends ConsumerWidget {
                         s.supplier.name,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      subtitle: _lastEntryText(s) == null
-                          ? null
-                          : Text(_lastEntryText(s)!),
+                      subtitle: Text(_lastEntryText(s)),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -108,22 +79,21 @@ class SuppliersScreen extends ConsumerWidget {
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: s.duePaise > 0
-                                  ? AppColors.warningText
-                                  : AppColors.ink,
+                                  ? AppColors.dangerText
+                                  : s.duePaise < 0
+                                      ? AppColors.successText
+                                      : AppColors.ink,
                             ),
                           ),
-                          Text(
-                            s.duePaise == 0
-                                ? tr('Settled')
-                                : s.duePaise > 0
-                                    ? tr('due')
-                                    : tr('advance'),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.muted,
+                          if (s.duePaise != 0)
+                            Text(
+                              s.duePaise > 0 ? tr('due') : tr('advance'),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.muted,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                       onTap: () => context.push(Routes.supplier(s.supplier.id)),
@@ -138,11 +108,14 @@ class SuppliersScreen extends ConsumerWidget {
   }
 }
 
-/// "Last purchase 15 Oct" or "Paid 05 Oct", whichever entry is newer.
-String? _lastEntryText(SupplierBalance s) {
+/// "Last purchase 15 Oct", "Paid 05 Oct" (whichever is newer) or "Settled".
+String _lastEntryText(SupplierBalance s) {
   final purchase = s.lastPurchaseDate;
   final payment = s.lastPaymentDate;
-  if (purchase == null && payment == null) return null;
+  if (s.duePaise == 0 && (purchase != null || payment != null)) {
+    return tr('Settled');
+  }
+  if (purchase == null && payment == null) return tr('No entries yet.');
   // ISO dates compare correctly as strings.
   final paidLast =
       payment != null && (purchase == null || payment.compareTo(purchase) > 0);
@@ -245,7 +218,8 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
   }
 }
 
-/// Supplier khata: balance, purchases and payments.
+/// Supplier khata (wireframe SupplierDetail): totals, entries, and buttons
+/// for a purchase on credit or a payment.
 class SupplierDetailScreen extends ConsumerWidget {
   const SupplierDetailScreen({super.key, required this.supplierId});
 
@@ -264,29 +238,13 @@ class SupplierDetailScreen extends ConsumerWidget {
     final entries =
         ref.watch(supplierEntriesProvider(supplierId)).valueOrNull ?? const [];
     final due = balance.duePaise;
-
-    final phone = balance.supplier.phone;
+    final supplier = balance.supplier;
+    final phone = supplier.phone;
     const grey = TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w600,
       color: AppColors.muted,
     );
-    Widget figure(String label, int paise, Color color) => Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: grey),
-              Text(
-                formatPaise(paise),
-                style: AppText.tabular.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        );
 
     return Scaffold(
       appBar: AppBar(
@@ -294,14 +252,14 @@ class SupplierDetailScreen extends ConsumerWidget {
           if (phone != null) ...[
             AppIconButton(
               icon: Icons.call_outlined,
-              tooltip: tr('Call'),
+              tooltip: tr('Call supplier'),
               onPressed: () => launchUrl(Uri.parse('tel:$phone')),
             ),
             const SizedBox(width: 8),
           ],
           AppIconButton(
             icon: Icons.edit_outlined,
-            tooltip: tr('Edit'),
+            tooltip: tr('Edit supplier'),
             onPressed: () => context.push(Routes.editSupplier(supplierId)),
           ),
           const SizedBox(width: 12),
@@ -322,6 +280,8 @@ class SupplierDetailScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton(
+                  style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.successFill),
                   onPressed: () => context.push(Routes.supplierEntry(
                       supplierId, SupplierEntryType.payment)),
                   child: Text(tr('+ Payment')),
@@ -332,98 +292,116 @@ class SupplierDetailScreen extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          Row(
-            children: [
-              InitialsAvatar(balance.supplier.name, size: 56),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      balance.supplier.name,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.22,
-                      ),
-                    ),
-                    if (phone != null)
-                      Text(formatIndianPhone(phone),
-                          style: grey.copyWith(fontSize: 13)),
-                  ],
-                ),
-              ),
-            ],
+          Text(
+            supplier.name,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 16),
+          if (phone != null || supplier.address != null)
+            Text(
+              [
+                if (phone != null) formatIndianPhone(phone),
+                if (supplier.address != null) supplier.address!,
+              ].join(' · '),
+              style: grey,
+            ),
+          const SizedBox(height: 14),
           Panel(
             child: Row(
               children: [
-                figure(tr('Purchased'), balance.purchasedPaise, AppColors.ink),
-                figure(tr('Paid'), balance.paidPaise, AppColors.successText),
-                figure(
-                  due >= 0 ? tr('Due') : tr('Advance'),
-                  due.abs(),
-                  due > 0 ? AppColors.warningText : AppColors.ink,
+                Expanded(
+                  child: FigureColumn(
+                    label: tr('Purchased'),
+                    value: formatPaise(balance.purchasedPaise),
+                  ),
+                ),
+                Expanded(
+                  child: FigureColumn(
+                    label: tr('Paid'),
+                    value: formatPaise(balance.paidPaise),
+                    color: AppColors.successText,
+                  ),
+                ),
+                Expanded(
+                  child: FigureColumn(
+                    label: due >= 0 ? tr('Due') : tr('Advance'),
+                    value: formatPaise(due.abs()),
+                    color: due > 0 ? AppColors.dangerText : AppColors.ink,
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           SectionLabel(tr('Entries')),
           if (entries.isEmpty)
-            Text(tr('No entries yet.'),
-                style: TextStyle(color: AppColors.muted))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(tr('No entries yet.'),
+                  textAlign: TextAlign.center, style: grey),
+            )
           else
             CardList(
               children: [
-                for (final e in entries)
-                  ListTile(
-                    leading: IconTile(
-                      e.entryType == SupplierEntryType.purchase
-                          ? Icons.shopping_cart_outlined
-                          : Icons.currency_rupee,
-                    ),
-                    title: Text(e.entryType == SupplierEntryType.purchase
-                        ? (e.billNo == null
-                            ? tr('Purchase')
-                            : tr('Purchase · Bill {billNo}',
-                                {'billNo': e.billNo}))
-                        : tr('Payment')),
-                    subtitle: Text([
-                      dayFormat.format(parseIsoDate(e.date)),
-                      if (e.mode != null) paymentModeLabel(e.mode!),
-                      if (e.remarks != null && e.remarks!.isNotEmpty)
-                        e.remarks!,
-                    ].join(' · ')),
-                    trailing: Text(
-                      '${e.entryType == SupplierEntryType.purchase ? '+' : '−'}'
-                      '${formatPaise(e.amountPaise)}',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    onLongPress: () async {
-                      final ok = await confirmDialog(
-                        context,
-                        title: tr('Delete this entry?'),
-                        message: formatPaise(e.amountPaise),
-                        confirmLabel: tr('Delete'),
-                        destructive: true,
-                      );
-                      if (ok) {
-                        await ref
-                            .read(expensesRepositoryProvider)
-                            .deleteSupplierEntry(e.id);
-                      }
-                    },
-                  ),
+                for (final e in entries) _SupplierEntryRow(entry: e),
               ],
             ),
-          const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+}
+
+/// P (purchase, red) or ₹ (payment, green) row; long-press to delete.
+class _SupplierEntryRow extends ConsumerWidget {
+  const _SupplierEntryRow({required this.entry});
+
+  final SupplierEntry entry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final e = entry;
+    final purchase = e.entryType == SupplierEntryType.purchase;
+    final color = purchase ? AppColors.dangerText : AppColors.successText;
+    return ListTile(
+      leading: LetterTag(
+        purchase ? 'P' : '₹',
+        color: purchase ? AppColors.dangerSurface : AppColors.successSurface,
+        textColor: color,
+      ),
+      title: Text(
+        purchase
+            ? (e.billNo == null
+                ? tr('Purchase')
+                : tr('Purchase · Bill {billNo}', {'billNo': e.billNo}))
+            : [tr('Payment'), if (e.mode != null) paymentModeLabel(e.mode!)]
+                .join(' · '),
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text([
+        if (e.remarks != null && e.remarks!.isNotEmpty) e.remarks!,
+        dayFormat.format(parseIsoDate(e.date)),
+      ].join(' · ')),
+      trailing: Text(
+        formatPaise(e.amountPaise),
+        style: AppText.tabular.copyWith(
+          fontWeight: FontWeight.w800,
+          color: color,
+        ),
+      ),
+      onLongPress: () async {
+        final ok = await confirmDialog(
+          context,
+          title: tr('Delete this entry?'),
+          message: formatPaise(e.amountPaise),
+          confirmLabel: tr('Delete'),
+          destructive: true,
+        );
+        if (ok) {
+          await ref.read(expensesRepositoryProvider).deleteSupplierEntry(e.id);
+        }
+      },
     );
   }
 }
@@ -491,64 +469,66 @@ class _SupplierEntryScreenState extends ConsumerState<SupplierEntryScreen> {
     final supplier =
         ref.watch(supplierProvider(widget.supplierId)).valueOrNull?.supplier;
     final isPayment = _type == SupplierEntryType.payment;
+    final paise = parseRupeesToPaise(_amount) ?? 0;
     return Scaffold(
       appBar: AppBar(title: Text(supplier?.name ?? tr('Supplier'))),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSizes.gutter),
+      body: Column(
         children: [
-          SegmentedButton<SupplierEntryType>(
-            segments: [
-              ButtonSegment(
-                value: SupplierEntryType.purchase,
-                label: Text(tr('Purchase (udhaar)')),
-              ),
-              ButtonSegment(
-                value: SupplierEntryType.payment,
-                label: Text(tr('Payment')),
-              ),
-            ],
-            selected: {_type},
-            onSelectionChanged: (s) => setState(() => _type = s.first),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              children: [
+                ChipRow(
+                  children: [
+                    for (final (type, label) in [
+                      (SupplierEntryType.purchase, tr('Purchase (udhaar)')),
+                      (SupplierEntryType.payment, tr('Payment')),
+                    ])
+                      AppChip(
+                        label: label,
+                        selected: _type == type,
+                        onTap: () => setState(() => _type = type),
+                      ),
+                  ],
+                ),
+                AmountDisplay(text: _amount, label: tr('Amount')),
+                if (isPayment) ...[
+                  SectionLabel(tr('Paid by')),
+                  PaymentModeChips(
+                    value: _mode,
+                    onChanged: (m) => setState(() => _mode = m),
+                  ),
+                ] else
+                  TextField(
+                    controller: _billNo,
+                    decoration: InputDecoration(
+                        hintText: tr('Supplier bill no. (optional)')),
+                  ),
+                const SizedBox(height: 12),
+                NoteDateField(
+                  controller: _note,
+                  hint: tr('e.g. 20 bags cement'),
+                  dateLabel: dayButtonLabel(_date),
+                  onPickDate: () async {
+                    final picked = await pickDate(context,
+                        initial: _date, last: DateTime.now());
+                    if (picked != null) setState(() => _date = dateOnly(picked));
+                  },
+                ),
+              ],
+            ),
           ),
-          AmountDisplay(text: _amount),
-          AmountPad(
+          AmountPadFooter(
             value: _amount,
             onChanged: (v) => setState(() => _amount = v),
-          ),
-          if (isPayment)
-            PaymentModeChips(
-              value: _mode,
-              onChanged: (m) => setState(() => _mode = m),
-            )
-          else
-            TextField(
-              controller: _billNo,
-              decoration: InputDecoration(
-                  labelText: tr('Supplier bill no. (optional)')),
-            ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _note,
-            decoration: InputDecoration(
-              labelText: tr('Note (optional)'),
-              hintText: tr('e.g. 20 bags cement'),
-            ),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(dayFormat.format(_date)),
-            trailing: Text(tr('Change')),
-            onTap: () async {
-              final picked =
-                  await pickDate(context, initial: _date, last: DateTime.now());
-              if (picked != null) setState(() => _date = dateOnly(picked));
-            },
+            saving: _saving,
+            onSave: _save,
+            saveLabel: paise > 0
+                ? tr('Save {amount}', {'amount': formatPaise(paise)})
+                : tr('Save'),
           ),
         ],
       ),
-      bottomNavigationBar:
-          BottomActionBar(label: tr('Save'), busy: _saving, onPressed: _save),
     );
   }
 }

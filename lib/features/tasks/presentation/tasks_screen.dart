@@ -323,11 +323,11 @@ class _TaskRow extends StatelessWidget {
                         ),
                         if (item.jobTitle != null) AppBadge(item.jobTitle!),
                         if (phone != null) ...[
-                          _MiniButton(
+                          MiniButton(
                             label: tr('Call'),
                             onTap: () => launchUrl(Uri.parse('tel:$phone')),
                           ),
-                          _MiniButton(
+                          MiniButton(
                             label: tr('WhatsApp'),
                             onTap: () => launchUrl(
                               Uri.parse('https://wa.me/$phone?text=Hello'),
@@ -356,28 +356,6 @@ class _TaskRow extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _MiniButton extends StatelessWidget {
-  const _MiniButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-      ),
-      onPressed: onTap,
-      child: Text(label),
     );
   }
 }

@@ -113,56 +113,18 @@ class _KhataHero extends ConsumerWidget {
           ),
         );
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.ink,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return HeroPanel(
+      label: personal
+          ? tr('Net pending to people')
+          : (shop ? tr('Net pending to staff') : tr('Net pending to workers')),
+      value: balances == null ? '…' : formatPaise(net),
+      footer: Row(
         children: [
-          Text(
-            personal
-                ? tr('Net pending to people')
-                : (shop
-                    ? tr('Net pending to staff')
-                    : tr('Net pending to workers')),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.inputBorder,
-            ),
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              balances == null ? '…' : formatPaise(net),
-              style: AppText.tabular.copyWith(
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.6,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.only(top: 12),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0xFF2E333B))),
-            ),
-            child: Row(
-              children: [
-                stat(tr('Earned'), earned),
-                const SizedBox(width: 8),
-                stat(tr('Advance / paid'), advance, AppColors.amberLogo),
-                const SizedBox(width: 8),
-                stat(tr('To recover'), recover),
-              ],
-            ),
-          ),
+          stat(tr('Earned'), earned),
+          const SizedBox(width: 8),
+          stat(tr('Advance / paid'), advance, AppColors.amberLogo),
+          const SizedBox(width: 8),
+          stat(tr('To recover'), recover),
         ],
       ),
     );
