@@ -69,7 +69,13 @@ class _LoanFormScreenState extends ConsumerState<LoanFormScreen> {
     super.dispose();
   }
 
-  void _refresh() => setState(() {});
+  /// True while [_load] fills the fields during build, where setState is
+  /// not allowed (the build already shows the new values).
+  bool _filling = false;
+
+  void _refresh() {
+    if (!_filling) setState(() {});
+  }
 
   int? get _principal => parseRupeesToPaise(_amount.text);
   int? get _termCount => int.tryParse(_term.text.trim());
@@ -102,12 +108,17 @@ class _LoanFormScreenState extends ConsumerState<LoanFormScreen> {
     _start = parseIsoDate(loan.startDate);
     _period = loan.period;
     _rateKind = loan.rateKind;
-    _amount.text = paiseToInputText(loan.principalPaise);
-    _term.text = '${loan.termCount}';
-    _rate.text = loan.rateKind == LoanRateKind.fixed
-        ? paiseToInputText(loan.rateValue)
-        : formatScaled(loan.rateValue, 2);
-    _note.text = loan.note ?? '';
+    _filling = true;
+    try {
+      _amount.text = paiseToInputText(loan.principalPaise);
+      _term.text = '${loan.termCount}';
+      _rate.text = loan.rateKind == LoanRateKind.fixed
+          ? paiseToInputText(loan.rateValue)
+          : formatScaled(loan.rateValue, 2);
+      _note.text = loan.note ?? '';
+    } finally {
+      _filling = false;
+    }
   }
 
   Future<void> _pickParty(List<LoanParty> parties) async {

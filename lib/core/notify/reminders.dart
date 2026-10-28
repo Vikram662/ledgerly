@@ -177,7 +177,7 @@ class ReminderService {
     // Principal only; the Loans screen shows the interest on top.
     final loans = await db.customSelect(
       '''
-      SELECT COUNT(*) AS n, COALESCE(SUM(bal), 0) AS total FROM (
+      SELECT COUNT(*) AS n, COALESCE(SUM(MAX(bal, 0)), 0) AS total FROM (
         SELECT l.principal_paise - COALESCE((SELECT SUM(p.amount_paise)
             FROM loan_payments p WHERE p.loan_id = l.id), 0) AS bal
         FROM loans l
