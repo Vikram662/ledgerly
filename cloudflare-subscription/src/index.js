@@ -25,6 +25,10 @@ export default {
         response = await login(request, env);
       } else if (request.method === 'POST' && path === '/v1/account/google') {
         response = await linkGoogle(request, env);
+      } else if (request.method === 'POST' && path === '/v1/sync/push') {
+        response = await syncPush(request, env);
+      } else if (request.method === 'GET' && path === '/v1/sync/pull') {
+        response = await syncPull(request, env);
       } else if (request.method === 'POST' && path === '/v1/notifications/token') {
         response = await updateNotificationToken(request, env);
       } else if (
@@ -113,11 +117,12 @@ async function install(request, env) {
     });
     await env.DB.prepare(
       `INSERT INTO installs
-       (install_id, customer_id, name, phone, user_type, trades, email,
-        google_sub, fcm_token, platform, notification_updated_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'android', ?, ?)`,
+       (install_id, account_id, customer_id, name, phone, user_type, trades,
+        email, google_sub, fcm_token, platform, notification_updated_at,
+        updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'android', ?, ?)`,
     )
-      .bind(installId, customer.id, name, phone, userType, trades,
+      .bind(installId, installId, customer.id, name, phone, userType, trades,
         google?.email ?? null, google?.sub ?? null, fcmToken,
         fcmToken ? epoch() : null, epoch())
       .run();
@@ -318,6 +323,119 @@ function parseUserType(value) {
     throw new ApiError(400, 'invalid_user_type', 'Invalid user type.');
   }
   return type;
+}
+
+// ─── Cloud sync of app data ─────────────────────────────────────────────────
+
+// App tables copied to the cloud (lib/core/sync/sync_schema.dart).
+const SYNC_TABLES = new Set([
+  'business_profiles', 'roles', 'units', 'expense_categories', 'item_masters',
+  'bill_templates', 'workers', 'wage_histories', 'holidays', 'clients', 'jobs',
+  'attendances', 'settlements', 'piece_works', 'ledger_entries', 'documents',
+  'document_lines', 'payments_received', 'expenses', 'suppliers',
+  'supplier_ledger', 'task_reminders', 'audit_logs',
+]);
+const SYNC_PUSH_LIMIT = 200;
+const SYNC_PULL_LIMIT = 500;
+const SYNC_ROW_MAX_BYTES = 256 * 1024;
+
+function accountId(user) {
+  return user.account_id || user.install_id;
+}
+
+// Saves changed rows. Each row is keyed by its app UUID, so pushing the same
+// row again (a retry, or after a Drive restore) updates it instead of adding
+// a copy. The newer `at` wins; an older change only bumps `seq`, so the
+// phone pulls the newer cloud version back.
+async function syncPush(request, env) {
+  const user = await authenticated(request, env);
+  const account = accountId(user);
+  const body = await bodyJson(request);
+  const changes = Array.isArray(body.changes) ? body.changes : null;
+  if (!changes || changes.length > SYNC_PUSH_LIMIT) {
+    throw new ApiError(400, 'invalid_changes',
+      `changes must be a list of at most ${SYNC_PUSH_LIMIT} rows.`);
+  }
+  const statement = env.DB.prepare(
+    `INSERT INTO sync_rows
+       (account_id, tbl, row_id, data, deleted, changed_at, seq)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6,
+       (SELECT COALESCE(MAX(seq), 0) + 1 FROM sync_rows WHERE account_id = ?1))
+     ON CONFLICT (account_id, tbl, row_id) DO UPDATE SET
+       data = CASE WHEN excluded.changed_at >= sync_rows.changed_at
+         THEN excluded.data ELSE sync_rows.data END,
+       deleted = CASE WHEN excluded.changed_at >= sync_rows.changed_at
+         THEN excluded.deleted ELSE sync_rows.deleted END,
+       changed_at = MAX(excluded.changed_at, sync_rows.changed_at),
+       seq = excluded.seq`,
+  );
+  const statements = changes.map((change) => {
+    const { table, id, deleted, data, at } = parseSyncChange(change);
+    return statement.bind(account, table, id, data, deleted ? 1 : 0, at);
+  });
+  if (statements.length) await env.DB.batch(statements);
+  return ok({ account, saved: statements.length });
+}
+
+// Rows changed after `after` (a `seq` from an earlier pull), oldest first.
+async function syncPull(request, env) {
+  const user = await authenticated(request, env);
+  const account = accountId(user);
+  const url = new URL(request.url);
+  const after = Number.parseInt(url.searchParams.get('after') || '0', 10);
+  if (!Number.isSafeInteger(after) || after < 0) {
+    throw new ApiError(400, 'invalid_cursor', 'after must be a sequence number.');
+  }
+  const result = await env.DB.prepare(
+    `SELECT tbl, row_id, data, deleted, changed_at, seq FROM sync_rows
+     WHERE account_id = ? AND seq > ? ORDER BY seq LIMIT ?`,
+  )
+    .bind(account, after, SYNC_PULL_LIMIT + 1)
+    .all();
+  const rows = result.results || [];
+  const more = rows.length > SYNC_PULL_LIMIT;
+  const page = rows.slice(0, SYNC_PULL_LIMIT);
+  return ok({
+    account,
+    rows: page.map((row) => ({
+      table: row.tbl,
+      id: row.row_id,
+      deleted: row.deleted === 1,
+      data: row.data == null ? null : JSON.parse(row.data),
+      at: row.changed_at,
+      seq: row.seq,
+    })),
+    next: page.length ? page.at(-1).seq : after,
+    more,
+  });
+}
+
+function parseSyncChange(change) {
+  if (!change || typeof change !== 'object') {
+    throw new ApiError(400, 'invalid_change', 'Each change must be an object.');
+  }
+  const table = String(change.table || '');
+  if (!SYNC_TABLES.has(table)) {
+    throw new ApiError(400, 'invalid_table', `Unknown table ${table}.`);
+  }
+  const id = requiredString(change.id, 'id', 80);
+  const at = Number(change.at);
+  if (!Number.isSafeInteger(at) || at < 0) {
+    throw new ApiError(400, 'invalid_change', 'at must be epoch milliseconds.');
+  }
+  const deleted = change.deleted === true;
+  let data = null;
+  if (!deleted) {
+    if (!change.data || typeof change.data !== 'object' ||
+        Array.isArray(change.data)) {
+      throw new ApiError(400, 'invalid_change', 'data must be an object.');
+    }
+    data = JSON.stringify(change.data);
+    if (data.length > SYNC_ROW_MAX_BYTES) {
+      throw new ApiError(413, 'row_too_large', `Row ${table}/${id} is too large.`);
+    }
+  }
+  return { table, id, deleted, data, at };
 }
 
 async function updateNotificationToken(request, env) {

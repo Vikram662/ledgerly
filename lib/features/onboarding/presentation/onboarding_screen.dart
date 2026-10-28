@@ -9,7 +9,10 @@ import '../../../app/theme.dart';
 import '../../../core/backup/backup_providers.dart';
 import '../../../core/config.dart';
 import '../../../core/db/enums.dart';
+import '../../../core/db/providers.dart';
 import '../../../core/i18n/i18n.dart';
+import '../../../core/sync/sync_engine.dart';
+import '../../../core/sync/sync_providers.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/language_picker.dart';
@@ -24,7 +27,8 @@ import '../data/onboarding_repository.dart';
 /// Accounts: a new user signs in with Google and is registered online before
 /// anything is saved, so a phone number that is already registered is sent
 /// to "Log in" instead of becoming a second user. "Log in" finds the account
-/// by its Google account and brings back the profile and the plan.
+/// by its Google account and brings back the plan and the data saved in the
+/// cloud.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -215,6 +219,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final session =
           await ref.read(subscriptionServiceProvider).login(google.idToken);
       if (!mounted) return;
+      if (await _restoreFromCloud()) return;
+      if (!mounted) return;
       setState(() {
         _account = {
           ...(session['user'] as Map<String, dynamic>? ?? const {}),
@@ -237,6 +243,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// Brings the account's data down from the cloud. True when it had a
+  /// profile and the app is open on it; false when the cloud is empty
+  /// (or out of reach) and the user picks Drive restore or a fresh start.
+  Future<bool> _restoreFromCloud() async {
+    final result = await ref.read(syncEngineProvider).run();
+    final db = ref.read(databaseProvider);
+    final profile = await db.select(db.businessProfiles).getSingleOrNull();
+    if (!mounted) return true;
+    if (profile == null) {
+      if (result.outcome == SyncOutcome.failed) {
+        showMessage(
+          context,
+          tr('Could not get your data from the cloud. ({error})',
+              {'error': result.error ?? ''}),
+        );
+      }
+      return false;
+    }
+    unawaited(ref.read(subscriptionControllerProvider.notifier).refresh());
+    showMessage(context, tr('Your data is back from the cloud'));
+    context.go(Routes.dashboard);
+    return true;
   }
 
   /// After login without restoring a backup: the profile from the account.

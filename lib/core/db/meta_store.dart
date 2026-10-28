@@ -30,6 +30,13 @@ abstract final class MetaKeys {
   /// over 10 minutes. Removed once the clock is right again.
   static const clockSkewSeconds = 'clock_skew_seconds';
 
+  // Cloud sync (lib/core/sync). The pull position and account are cleared
+  // by `queueAllForSync`, so keep these names in step with it.
+  static const syncPullAfter = 'sync_pull_after';
+  static const syncAccount = 'sync_account';
+  static const lastSyncAt = 'last_sync_at';
+  static const lastSyncError = 'last_sync_error';
+
   // Reminders (PRD DB-07)
   static const consecutiveBackupFailures = 'backup_consecutive_failures';
   static const notificationsAsked = 'notifications_asked';

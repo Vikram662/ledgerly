@@ -21,6 +21,7 @@ import '../../../core/settings/settings_providers.dart';
 import '../../../core/widgets/common.dart';
 import '../../lock/app_lock_controller.dart';
 import '../../lock/lock_screens.dart';
+import 'cloud_sync_panel.dart';
 
 String backupResultMessage(BackupResult result) => switch (result.outcome) {
       BackupOutcome.success => tr('Backup done ✓'),
@@ -97,7 +98,8 @@ class _NotAvailable extends StatelessWidget {
             tr('Google Drive backup is not switched on in this app build yet. It needs the Google Cloud OAuth client id (PRD D-7). Your data is only on this phone until then.'),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
+        const CloudSyncPanel(),
         OutlinedButton.icon(
           onPressed: () => context.push(Routes.restore),
           icon: const Icon(Icons.file_open),
@@ -657,6 +659,7 @@ class _BackupDashboard extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
+        const CloudSyncPanel(),
         SectionLabel(tr('Settings')),
         CardList(
           children: [

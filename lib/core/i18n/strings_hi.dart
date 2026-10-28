@@ -1979,6 +1979,19 @@ const hindiStrings = <String, String>{
       'पहले से रजिस्टर्ड',
   'Already registered? Log in':
       'पहले से रजिस्टर्ड हैं? लॉग इन करें',
+  'Could not get your data from the cloud. ({error})':
+      'क्लाउड से आपका डेटा नहीं मिल सका। ({error})',
+  'Your data is back from the cloud': 'आपका डेटा क्लाउड से वापस आ गया',
+  'Cloud sync': 'क्लाउड सिंक',
+  'Cloud sync done ✓': 'क्लाउड सिंक हो गया ✓',
+  'Cloud sync failed. ({error})': 'क्लाउड सिंक नहीं हो सका। ({error})',
+  'Register or log in to sync with the cloud':
+      'क्लाउड सिंक के लिए रजिस्टर या लॉग इन करें',
+  'Last sync: never': 'आखिरी सिंक: कभी नहीं',
+  'Last sync: {date}': 'आखिरी सिंक: {date}',
+  'Saved on this phone first, then in the cloud every few minutes when online.':
+      'पहले इस फ़ोन में सेव होता है, फिर इंटरनेट होने पर हर कुछ मिनट में क्लाउड में।',
+  'Sync now': 'अभी सिंक करें',
   'Continue without restoring':
       'बिना रिस्टोर किए आगे बढ़ें',
   'Could not log in. ({error})':

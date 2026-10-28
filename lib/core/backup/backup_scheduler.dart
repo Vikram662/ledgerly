@@ -10,11 +10,14 @@ import '../i18n/i18n.dart';
 import '../notify/notifications.dart';
 import '../notify/reminders.dart';
 import '../settings/app_settings.dart';
+import '../sync/sync_engine.dart';
 import 'backup_engine.dart';
 
 const pendingBackupTask = 'backup-pending';
 const scheduledBackupTask = 'backup-scheduled';
 const reminderTask = 'reminders';
+const pendingSyncTask = 'sync-pending';
+const periodicSyncTask = 'sync-periodic';
 
 /// WorkManager entry point, runs in a background isolate even when the app
 /// is closed (PRD D3, D3.1 layer 1).
@@ -32,6 +35,12 @@ void backupCallbackDispatcher() {
       if (task == reminderTask) {
         await ReminderService(db).run();
         return true;
+      }
+      if (task == pendingSyncTask || task == periodicSyncTask) {
+        final result = await SyncEngine(db: db).run();
+        // false → WorkManager retries the pending job with backoff
+        return result.outcome != SyncOutcome.failed ||
+            task == periodicSyncTask;
       }
       final engine = BackupEngine(db: db);
       // App closed: show the % in a notification, updated every 5%.
@@ -135,6 +144,32 @@ class BackupScheduler {
       reminderTask,
       reminderTask,
       frequency: const Duration(hours: 1),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    );
+  }
+
+  /// Cloud sync of changes left when the app went to the background; held
+  /// by Android until there is internet. KEEP: one in the queue at most.
+  Future<void> scheduleSyncPending() async {
+    await initialize();
+    await Workmanager().registerOneOffTask(
+      pendingSyncTask,
+      pendingSyncTask,
+      constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingWorkPolicy.keep,
+      backoffPolicy: BackoffPolicy.exponential,
+      backoffPolicyDelay: const Duration(minutes: 1),
+    );
+  }
+
+  /// Hourly cloud sync while the app is closed (pulls and pushes).
+  Future<void> scheduleSyncPeriodic() async {
+    await initialize();
+    await Workmanager().registerPeriodicTask(
+      periodicSyncTask,
+      periodicSyncTask,
+      frequency: const Duration(hours: 1),
+      constraints: Constraints(networkType: NetworkType.connected),
       existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );
   }

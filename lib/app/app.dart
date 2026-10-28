@@ -8,6 +8,7 @@ import '../core/db/enums.dart';
 import '../core/db/providers.dart';
 import '../core/i18n/i18n.dart';
 import '../core/notify/notifications.dart';
+import '../core/sync/sync_providers.dart';
 import '../core/update/app_update.dart';
 import '../features/lock/lock_screens.dart';
 import '../features/subscription/subscription_controller.dart';
@@ -63,6 +64,7 @@ class _ThekedaarAppState extends ConsumerState<ThekedaarApp> {
     // Auto backup triggers live as long as this app scope (PRD D3.1).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(backupCoordinatorProvider).start();
+      ref.read(syncCoordinatorProvider).start();
       ref.read(subscriptionControllerProvider.notifier).refresh();
       ref.read(subscriptionServiceProvider).startFcmTokenSync();
       const AppUpdateChecker().check(context);

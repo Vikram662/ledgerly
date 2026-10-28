@@ -54,6 +54,24 @@ Use Razorpay Test Mode keys first. Configure the Flutter build with
 Run `npm run db:remote` after pulling: migration `0005_google_account.sql`
 adds the `email`, `google_sub` and `trades` columns.
 
+## Cloud sync of app data
+
+The app keeps its own SQLite database (works offline) and syncs every table
+except `app_meta` and `backup_logs` here, so data comes back after a
+reinstall or on a new phone. Migration `0006_cloud_sync.sql` adds the
+`sync_rows` table and a stable `installs.account_id` (it stays the same when
+login moves the account to a new install).
+
+- `POST /v1/sync/push` (authorized) `{"changes": [{"table", "id", "at",
+  "data"} | {"table", "id", "at", "deleted": true}]}`, at most 200 rows.
+  Rows are keyed by account, table and the app's UUID, so a retry or a Drive
+  restore updates the same row instead of adding a copy. The newer `at`
+  (phone time of the change, ms) wins; an older change only bumps `seq` so
+  the phone pulls the newer cloud version back.
+- `GET /v1/sync/pull?after=<seq>` (authorized) returns up to 500 rows changed
+  after `seq`, oldest first, with `next` and `more` for the next page.
+  Deleted rows come back with `deleted: true`.
+
 ## Complimentary access (owner/admin)
 
 This protected endpoint gives one registered user permanent free access or

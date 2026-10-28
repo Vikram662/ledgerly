@@ -20,7 +20,8 @@ npm ci                      # once, installs wrangler
 npx wrangler login          # once, opens the browser to sign in to Cloudflare
 npx wrangler whoami         # check the right Cloudflare account
 
-# 1. Database migrations (adds email / google_sub / trades in 0005)
+# 1. Database migrations (0005: email / google_sub / trades;
+#    0006: cloud sync table sync_rows + installs.account_id)
 npm run db:remote
 
 # 2. Google login: the Web OAuth client id, same value as the
@@ -39,8 +40,8 @@ curl https://<worker>.workers.dev/health
 
 It should answer `{"service":"thekedaar-subscription-api"}`. Then on a phone:
 uninstall the app, install again, tap **Already registered? Log in** and sign
-in with the same Google account. The plan should come back without a new
-registration.
+in with the same Google account. The plan and the app data (from cloud
+sync) should come back without a new registration.
 
 Existing secrets (`RAZORPAY_*`, `APP_TOKEN_SECRET`, `ADMIN_API_SECRET`) are
 already set and do not need to be entered again. See

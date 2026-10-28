@@ -7,6 +7,7 @@ import '../db/database.dart';
 import '../db/meta_store.dart';
 import '../i18n/i18n.dart';
 import '../security/secure_store.dart';
+import '../sync/sync_schema.dart';
 import '../utils/photo_store.dart';
 import 'backup_engine.dart';
 import 'backup_format.dart';
@@ -249,6 +250,10 @@ class RestoreService {
     await meta.setInt(MetaKeys.pendingChanges, 0);
     await meta.setInt(MetaKeys.lastBackupAt,
         restore.manifest.createdAt.millisecondsSinceEpoch);
+    // Merge with the cloud: every restored row is sent with its own
+    // last-change time and matched by id, so nothing is duplicated and rows
+    // changed in the cloud after this backup keep the newer version.
+    await db.transaction(() => queueAllForSync(db));
   }
 
   /// Downloads photos missing on this phone (PRD D6 step 7). Returns how

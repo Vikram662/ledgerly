@@ -3,6 +3,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../sync/sync_schema.dart';
 import 'enums.dart';
 import 'tables.dart';
 
@@ -51,14 +52,18 @@ class AppDatabase extends _$AppDatabase {
   /// v1: first release. v2: suppliers + supplier khata. v3: task reminders.
   /// v4: subscription cache moved from SQLite to secure storage.
   /// v5: business profile user type (contractor / shop / personal).
-  static const currentSchemaVersion = 5;
+  /// v6: cloud sync outbox and change triggers (lib/core/sync).
+  static const currentSchemaVersion = 6;
 
   @override
   int get schemaVersion => currentSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
+        onCreate: (m) async {
+          await m.createAll();
+          await createSyncSchema(this);
+        },
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(suppliers);
@@ -76,6 +81,11 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await m.addColumn(businessProfiles, businessProfiles.userType);
+          }
+          if (from < 6) {
+            // Everything already on the phone goes to the cloud once.
+            await createSyncSchema(this);
+            await queueAllForSync(this);
           }
         },
         beforeOpen: (details) async {
