@@ -1,4 +1,6 @@
 // Secure Razorpay boundary for the Thekedaar Android app.
+import { MIRROR_TABLES } from './mirror_tables.js';
+
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8' };
 
 export default {
@@ -327,15 +329,10 @@ function parseUserType(value) {
 
 // ─── Cloud sync of app data ─────────────────────────────────────────────────
 
-// App tables copied to the cloud (lib/core/sync/sync_schema.dart).
-const SYNC_TABLES = new Set([
-  'business_profiles', 'roles', 'units', 'expense_categories', 'item_masters',
-  'bill_templates', 'workers', 'wage_histories', 'holidays', 'clients', 'jobs',
-  'attendances', 'settlements', 'piece_works', 'ledger_entries', 'documents',
-  'document_lines', 'payments_received', 'expenses', 'suppliers',
-  'supplier_ledger', 'task_reminders', 'audit_logs', 'loan_parties', 'loans',
-  'loan_payments',
-]);
+// App tables copied to the cloud (lib/core/sync/sync_schema.dart). Each has
+// a table of the same name in D1 with the same columns (mirror_tables.js).
+const SYNC_TABLES = new Set(Object.keys(MIRROR_TABLES));
+// Each row is three statements in one D1 batch (sync_rows + the copy).
 const SYNC_PUSH_LIMIT = 200;
 const SYNC_PULL_LIMIT = 500;
 const SYNC_ROW_MAX_BYTES = 256 * 1024;
@@ -370,12 +367,15 @@ async function syncPush(request, env) {
        changed_at = MAX(excluded.changed_at, sync_rows.changed_at),
        seq = excluded.seq`,
   );
-  const statements = changes.map((change) => {
+  const statements = changes.flatMap((change) => {
     const { table, id, deleted, data, at } = parseSyncChange(change);
-    return statement.bind(account, table, id, data, deleted ? 1 : 0, at);
+    return [
+      statement.bind(account, table, id, data, deleted ? 1 : 0, at),
+      ...mirrorStatements(env, table).map((s) => s.bind(account, id)),
+    ];
   });
   if (statements.length) await env.DB.batch(statements);
-  return ok({ account, saved: statements.length });
+  return ok({ account, saved: changes.length });
 }
 
 // Rows changed after `after` (a `seq` from an earlier pull), oldest first.
@@ -409,6 +409,25 @@ async function syncPull(request, env) {
     next: page.length ? page.at(-1).seq : after,
     more,
   });
+}
+
+// Keeps the table-by-table copy equal to the winning row in sync_rows: the
+// row is removed, then copied back unless it is deleted. Columns the D1
+// table does not have yet stay in sync_rows only.
+function mirrorStatements(env, table) {
+  const columns = MIRROR_TABLES[table].filter((c) => c !== 'id');
+  return [
+    env.DB.prepare(`DELETE FROM ${table} WHERE account_id = ?1 AND id = ?2`),
+    env.DB.prepare(
+      `INSERT INTO ${table} (account_id, id, ${columns.join(', ')})
+       SELECT account_id, row_id, ${columns
+         .map((c) => `json_extract(data, '$.${c}')`)
+         .join(', ')}
+       FROM sync_rows
+       WHERE account_id = ?1 AND tbl = '${table}' AND row_id = ?2
+         AND deleted = 0`,
+    ),
+  ];
 }
 
 function parseSyncChange(change) {

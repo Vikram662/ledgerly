@@ -68,6 +68,12 @@ login moves the account to a new install).
   restore updates the same row instead of adding a copy. The newer `at`
   (phone time of the change, ms) wins; an older change only bumps `seq` so
   the phone pulls the newer cloud version back.
+- Every synced app table also has a table of the same name in D1 with the
+  same columns plus `account_id` (migration `0007_mirror_tables.sql`), kept
+  equal to `sync_rows` on every push, so the data can be read table by table:
+  `SELECT * FROM workers WHERE account_id = '...'`. After an app schema
+  change run `node scripts/mirror-tables.mjs` (updates `src/mirror_tables.js`)
+  and add a migration for the new table or column (`--sql` prints the DDL).
 - `GET /v1/sync/pull?after=<seq>` (authorized) returns up to 500 rows changed
   after `seq`, oldest first, with `next` and `more` for the next page.
   Deleted rows come back with `deleted: true`.
