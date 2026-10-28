@@ -64,7 +64,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     final items = ref.watch(
       monthExpensesProvider((year: _month.year, month: _month.month)),
     );
-    final personal = ref.watch(userTypeProvider) == UserType.personal;
+    final personal = ref.watch(userTypeProvider).personalLike;
     final actions = [
       if (!personal)
         Padding(

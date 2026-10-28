@@ -28,6 +28,8 @@ const _expenses =
     AppTab('/expenses', Icons.receipt_outlined, Icons.receipt, 'Expenses');
 const _tasks =
     AppTab('/tasks', Icons.task_alt_outlined, Icons.task_alt, 'Reminders');
+const _loans = AppTab('/loans', Icons.handshake_outlined, Icons.handshake,
+    'Loans');
 
 /// Bottom tabs per user type (PRD C10). router.dart builds one shell branch
 /// per tab, in this order.
@@ -42,6 +44,8 @@ List<AppTab> tabsFor(UserType type) => switch (type) {
       UserType.shop => const [_home, _billing, _expenses, _khata, _staff],
       // Personal mode is free, but still needs a complete ledger surface.
       UserType.personal => const [_home, _expenses, _tasks],
+      // Personal's tabs plus loans.
+      UserType.lender => const [_home, _loans, _expenses, _tasks],
     };
 
 class HomeShell extends StatelessWidget {

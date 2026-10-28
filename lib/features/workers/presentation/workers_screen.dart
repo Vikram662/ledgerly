@@ -48,7 +48,7 @@ class _WorkersScreenState extends ConsumerState<WorkersScreen> {
     }.toList()
       ..sort();
 
-    final personal = ref.watch(userTypeProvider) == UserType.personal;
+    final personal = ref.watch(userTypeProvider).personalLike;
     final title =
         personal ? tr('People') : (shop ? tr('Staff') : tr('Workers'));
     final addLabel = personal

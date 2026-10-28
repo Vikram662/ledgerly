@@ -17,6 +17,7 @@ import '../../attendance/data/attendance_repository.dart';
 import '../../backup/presentation/backup_screen.dart';
 import '../../calendar/data/calendar_repository.dart';
 import '../../expenses/data/expenses_repository.dart';
+import '../../loans/data/loans_repository.dart';
 import '../../reports/presentation/dues_screen.dart';
 import '../../tasks/data/tasks_repository.dart';
 
@@ -28,7 +29,8 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final backup = ref.watch(backupStateProvider).valueOrNull;
-    final personal = ref.watch(userTypeProvider) == UserType.personal;
+    final type = ref.watch(userTypeProvider);
+    final personal = type.personalLike;
 
     return Scaffold(
       body: SafeArea(
@@ -39,7 +41,11 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             const _BackupProgressCard(),
             if (backup != null) _BackupStrip(state: backup),
-            personal ? const _SpendingCard() : const _DuesCard(),
+            switch (type) {
+              UserType.lender => const _LoansCard(),
+              UserType.personal => const _SpendingCard(),
+              _ => const _DuesCard(),
+            },
             const SizedBox(height: 16),
             const _QuickActions(),
             if (!personal) ...[
@@ -497,6 +503,39 @@ class _SpendingCard extends ConsumerWidget {
   }
 }
 
+/// Lender: money out with borrowers and owed back, profit this month.
+class _LoansCard extends ConsumerWidget {
+  const _LoansCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(loansSummaryProvider);
+    final due = (summary?.dueToday ?? 0) + (summary?.overdue ?? 0);
+    return _TwoFigureCard(
+      title: tr('Loans'),
+      link: tr('Profit {amount}', {
+        'amount':
+            summary == null ? '…' : formatPaise(summary.profitThisMonthPaise)
+      }),
+      onLink: () => openRoute(context, Routes.loans),
+      left: _Figure(
+        label: tr('Given out'),
+        value: summary == null ? '…' : formatPaise(summary.givenOutPaise),
+        badge: due > 0
+            ? trPlural(due, '1 due / late', '{count} due / late')
+            : null,
+        onTap: () => openRoute(context, Routes.loansTab(0)),
+      ),
+      right: _Figure(
+        label: tr('To pay back'),
+        value: summary == null ? '…' : formatPaise(summary.takenOutPaise),
+        note: tr('Money taken from others'),
+        onTap: () => openRoute(context, Routes.loansTab(1)),
+      ),
+    );
+  }
+}
+
 /// Four big square shortcuts; the main one is blue, Advance amber.
 class _QuickActions extends ConsumerWidget {
   const _QuickActions();
@@ -504,6 +543,30 @@ class _QuickActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final actions = switch (ref.watch(userTypeProvider)) {
+      UserType.lender => [
+          _QuickAction(
+            icon: Icons.call_made,
+            label: tr('Loan given'),
+            style: _QuickStyle.primary,
+            onTap: () => context.push(Routes.newLoan(LoanDirection.given)),
+          ),
+          _QuickAction(
+            icon: Icons.call_received,
+            label: tr('Loan taken'),
+            style: _QuickStyle.amber,
+            onTap: () => context.push(Routes.newLoan(LoanDirection.taken)),
+          ),
+          _QuickAction(
+            icon: Icons.people_outline,
+            label: tr('People'),
+            onTap: () => openRoute(context, Routes.loansTab(2)),
+          ),
+          _QuickAction(
+            icon: Icons.receipt_outlined,
+            label: tr('Expense'),
+            onTap: () => context.push(Routes.addExpense),
+          ),
+        ],
       UserType.personal => [
           _QuickAction(
             icon: Icons.receipt_outlined,

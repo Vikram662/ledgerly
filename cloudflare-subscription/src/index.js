@@ -319,7 +319,7 @@ function parseInstallId(value) {
 
 function parseUserType(value) {
   const type = optionalString(value, 20) || 'contractor';
-  if (!['contractor', 'shop', 'personal'].includes(type)) {
+  if (!['contractor', 'shop', 'personal', 'lender'].includes(type)) {
     throw new ApiError(400, 'invalid_user_type', 'Invalid user type.');
   }
   return type;
@@ -333,7 +333,8 @@ const SYNC_TABLES = new Set([
   'bill_templates', 'workers', 'wage_histories', 'holidays', 'clients', 'jobs',
   'attendances', 'settlements', 'piece_works', 'ledger_entries', 'documents',
   'document_lines', 'payments_received', 'expenses', 'suppliers',
-  'supplier_ledger', 'task_reminders', 'audit_logs',
+  'supplier_ledger', 'task_reminders', 'audit_logs', 'loan_parties', 'loans',
+  'loan_payments',
 ]);
 const SYNC_PUSH_LIMIT = 200;
 const SYNC_PULL_LIMIT = 500;

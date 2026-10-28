@@ -98,7 +98,7 @@ class _KhataHero extends ConsumerWidget {
     final balances = ref.watch(allWorkerBalancesProvider).valueOrNull;
     final type = ref.watch(userTypeProvider);
     final shop = type == UserType.shop;
-    final personal = type == UserType.personal;
+    final personal = type.personalLike;
     int sum(int Function(WorkerBalance b) pick) =>
         balances?.fold<int>(0, (s, b) => s + pick(b)) ?? 0;
     final net = sum((b) => b.balancePaise);

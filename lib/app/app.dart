@@ -104,6 +104,7 @@ class _ThekedaarAppState extends ConsumerState<ThekedaarApp> {
       NotificationKind.monthEnd => Routes.khataTab(0),
       NotificationKind.holiday => Routes.attendanceMonth,
       NotificationKind.taskReminder => Routes.tasks,
+      NotificationKind.loanDue => Routes.loans,
     };
     // Tabs are switched with go; others open on top.
     if (Routes.isTab(route)) {

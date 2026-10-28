@@ -387,6 +387,72 @@ class SupplierLedger extends Table with Timestamps {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+// ─── Loans (lender user type, schema v7) ────────────────────────────────────
+
+/// A borrower (money given to them) or a source (money taken from them).
+/// The same person can be both; the loan's direction says which.
+@DataClassName('LoanParty')
+class LoanParties extends Table with Timestamps {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get phone => text().nullable()();
+  TextColumn get address => text().nullable()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// One loan. Interest is simple and taken at the end: ₹1 lakh for 5 days at
+/// ₹400 a day comes back as ₹1,02,000. After the due date interest keeps
+/// running at the same rate until it is paid (loan_calculator.dart).
+@DataClassName('Loan')
+class Loans extends Table with Timestamps {
+  TextColumn get id => text()();
+  TextColumn get direction => textEnum<LoanDirection>()();
+  TextColumn get partyId => text().references(LoanParties, #id)();
+  IntColumn get principalPaise => integer()();
+  TextColumn get startDate => text()();
+
+  /// Term: [termCount] days or months from [startDate].
+  IntColumn get termCount => integer()();
+  TextColumn get period => textEnum<LoanPeriod>()();
+
+  /// start + term, kept for lists and reminders.
+  TextColumn get dueDate => text()();
+  TextColumn get rateKind => textEnum<LoanRateKind>()();
+
+  /// Paise per period on the whole principal ([LoanRateKind.fixed]), or
+  /// basis points per period ([LoanRateKind.percent], 2% = 200).
+  IntColumn get rateValue => integer()();
+
+  /// For a given loan: the taken loan whose money was lent on, so the deal's
+  /// profit can be shown.
+  TextColumn get sourceLoanId => text().nullable()();
+  TextColumn get status => textEnum<LoanStatus>()();
+
+  /// Interest stops on this day; anything still unpaid is written off.
+  TextColumn get closedDate => text().nullable()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Money received on a given loan, or paid back on a taken loan.
+@DataClassName('LoanPayment')
+class LoanPayments extends Table with Timestamps {
+  TextColumn get id => text()();
+  TextColumn get loanId => text().references(Loans, #id)();
+  TextColumn get date => text()();
+  IntColumn get amountPaise => integer()();
+  TextColumn get mode => textEnum<PaymentMode>()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 // ─── Audit & backup ─────────────────────────────────────────────────────────
 
 @DataClassName('AuditLog')

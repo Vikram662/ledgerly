@@ -33,7 +33,9 @@ class SeedService {
       switch (type) {
         UserType.contractor => applyTrades(trades),
         UserType.shop => _apply(const ['shop'], withCommonPack: false),
-        UserType.personal => _apply(const ['personal'], withCommonPack: false),
+        UserType.personal ||
+        UserType.lender =>
+          _apply(const ['personal'], withCommonPack: false),
       };
 
   Future<void> applyTrades(Iterable<Trade> trades) => _apply(

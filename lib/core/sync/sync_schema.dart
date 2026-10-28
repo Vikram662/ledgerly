@@ -105,6 +105,9 @@ const syncTables = <SyncTable>[
   SyncTable('suppliers'),
   SyncTable('supplier_ledger'),
   SyncTable('task_reminders'),
+  SyncTable('loan_parties'),
+  SyncTable('loans'),
+  SyncTable('loan_payments'),
   SyncTable('audit_logs', changedColumn: 'at'),
 ];
 

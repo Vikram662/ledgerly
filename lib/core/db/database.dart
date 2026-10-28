@@ -42,6 +42,9 @@ Future<String> databaseFilePath() async =>
   AuditLogs,
   BackupLogs,
   TaskReminders,
+  LoanParties,
+  Loans,
+  LoanPayments,
 ])
 class AppDatabase extends _$AppDatabase {
   /// Pass an [executor] (e.g. `NativeDatabase.memory()`) in tests.
@@ -53,7 +56,8 @@ class AppDatabase extends _$AppDatabase {
   /// v4: subscription cache moved from SQLite to secure storage.
   /// v5: business profile user type (contractor / shop / personal).
   /// v6: cloud sync outbox and change triggers (lib/core/sync).
-  static const currentSchemaVersion = 6;
+  /// v7: loans for the lender user type.
+  static const currentSchemaVersion = 7;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -82,10 +86,19 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) {
             await m.addColumn(businessProfiles, businessProfiles.userType);
           }
+          // Before the sync schema: it puts triggers on every synced table.
+          if (from < 7) {
+            await m.createTable(loanParties);
+            await m.createTable(loans);
+            await m.createTable(loanPayments);
+          }
           if (from < 6) {
             // Everything already on the phone goes to the cloud once.
             await createSyncSchema(this);
             await queueAllForSync(this);
+          } else if (from < 7) {
+            // Triggers for the loan tables (IF NOT EXISTS skips the rest).
+            await createSyncSchema(this);
           }
         },
         beforeOpen: (details) async {

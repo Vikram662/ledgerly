@@ -27,6 +27,8 @@ class ReminderFacts {
     this.backupConfigured = false,
     this.dirtySince,
     this.clockSkewSeconds,
+    this.loansDue = 0,
+    this.loansDuePaise = 0,
   });
 
   final int overdueBills;
@@ -36,6 +38,10 @@ class ReminderFacts {
   final bool backupConfigured;
   final DateTime? dirtySince;
   final int? clockSkewSeconds;
+
+  /// Open given loans due today or late (lender), and the amount on them.
+  final int loansDue;
+  final int loansDuePaise;
 }
 
 /// Reminders are shown between 9 am and 9 pm only.
@@ -76,6 +82,18 @@ List<Reminder> computeReminders(
         '1 bill is past its due date: {amount} to collect. Send a reminder from Lena / Dena.',
         '{count} bills are past their due date: {amount} to collect. Send reminders from Lena / Dena.',
         {'amount': formatPaise(f.overduePaise)},
+      ),
+    ));
+  }
+  if (settings.overdueBills && f.loansDue > 0) {
+    out.add(Reminder(
+      NotificationKind.loanDue,
+      tr('Loan money to collect'),
+      trPlural(
+        f.loansDue,
+        '1 loan is due today or late: {amount}. Open Loans to call or send the statement.',
+        '{count} loans are due today or late: {amount}. Open Loans to call or send statements.',
+        {'amount': formatPaise(f.loansDuePaise)},
       ),
     ));
   }
@@ -156,8 +174,22 @@ class ReminderService {
     final holiday = await (db.select(db.holidays)
           ..where((h) => h.date.equals(tomorrow)))
         .getSingleOrNull();
+    // Principal only; the Loans screen shows the interest on top.
+    final loans = await db.customSelect(
+      '''
+      SELECT COUNT(*) AS n, COALESCE(SUM(bal), 0) AS total FROM (
+        SELECT l.principal_paise - COALESCE((SELECT SUM(p.amount_paise)
+            FROM loan_payments p WHERE p.loan_id = l.id), 0) AS bal
+        FROM loans l
+        WHERE l.direction = 'given' AND l.status = 'open' AND l.due_date <= ?
+      )
+      ''',
+      variables: [Variable.withString(today)],
+    ).getSingle();
     final dirty = await _meta.getInt(MetaKeys.dirtySince);
     return ReminderFacts(
+      loansDue: loans.read<int>('n'),
+      loansDuePaise: loans.read<int>('total').clamp(0, 1 << 52).toInt(),
       overdueBills: overdue.read<int>('n'),
       overduePaise: overdue.read<int>('total'),
       activeWorkers: workers.read<int>('n'),

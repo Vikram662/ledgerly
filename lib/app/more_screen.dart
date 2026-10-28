@@ -28,7 +28,7 @@ class MoreScreen extends ConsumerWidget {
     final profile = ref.watch(businessProfileProvider).valueOrNull;
     final type = ref.watch(userTypeProvider);
     final contractor = type == UserType.contractor;
-    final personal = type == UserType.personal;
+    final personal = type.personalLike;
     final backup = ref.watch(backupStateProvider).valueOrNull;
     final lock = ref.watch(appLockProvider);
     final access = ref.watch(subscriptionControllerProvider).valueOrNull;

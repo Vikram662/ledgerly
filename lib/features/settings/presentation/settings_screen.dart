@@ -79,7 +79,7 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               tile(
                   Icons.storefront_outlined,
-                  type == UserType.personal
+                  type.personalLike
                       ? tr('My profile')
                       : tr('Business profile'),
                   profile?.name,
@@ -93,7 +93,7 @@ class SettingsScreen extends ConsumerWidget {
               if (type.usesTrades)
                 tile(Icons.handyman_outlined, tr('Trades'),
                     trades.map((t) => t.label).join(', '), Routes.trades),
-              if (!type.isFree)
+              if (!type.personalLike)
                 tile(Icons.rule, tr('Work rules'),
                     tr('Weekly off: {day}', {'day': weekDay}), Routes.rules),
             ],

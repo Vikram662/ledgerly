@@ -17,7 +17,8 @@ enum NotificationKind {
   monthEnd(5, 'khata', 'Khata reminders'),
   holiday(6, 'khata', 'Khata reminders'),
   backupProgress(7, 'backup_progress', 'Backup progress'),
-  taskReminder(8, 'tasks', 'Tasks & Site Visits');
+  taskReminder(8, 'tasks', 'Tasks & Site Visits'),
+  loanDue(9, 'payments', 'Payment reminders');
 
   const NotificationKind(this.id, this.channelId, this._channelName);
 

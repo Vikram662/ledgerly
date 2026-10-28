@@ -214,7 +214,7 @@ class _WorkerFormScreenState extends ConsumerState<WorkerFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final personal = ref.watch(userTypeProvider).isFree;
+    final personal = ref.watch(userTypeProvider).personalLike;
     if (_isEdit) {
       final item = ref.watch(workerProvider(widget.workerId!)).valueOrNull;
       if (item == null) {

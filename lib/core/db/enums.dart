@@ -13,7 +13,9 @@ enum UserType {
   shop('Shopkeeper', 'Cloth, kirana, medical or any shop',
       Icons.storefront_outlined),
   personal('Personal', 'Salary, home expenses and savings',
-      Icons.person_outline);
+      Icons.person_outline),
+  lender('Lender', 'Loans given and taken, interest and profit',
+      Icons.handshake_outlined);
 
   const UserType(this._label, this._description, this.icon);
 
@@ -29,6 +31,10 @@ enum UserType {
 
   /// Contractors choose trades; the other types have one seed pack each.
   bool get usesTrades => this == UserType.contractor;
+
+  /// A lender has everything a personal user has (expenses, reminders,
+  /// people), plus loans. Lender is paid, so this is not [isFree].
+  bool get personalLike => this == UserType.personal || this == UserType.lender;
 }
 
 /// Trades a contractor can work in (PRD C0). [seedFile] is the JSON file in
@@ -97,6 +103,19 @@ enum JobStatus { planned, inProgress, completed }
 
 /// Supplier khata (PRD EX-02): material on credit, or money paid.
 enum SupplierEntryType { purchase, payment }
+
+/// Loans (lender user type): money given to a borrower, or taken from
+/// someone to lend on.
+enum LoanDirection { given, taken }
+
+/// A loan's term and interest run per day or per month.
+enum LoanPeriod { day, month }
+
+/// Interest as fixed rupees per period (₹400 a day on ₹1 lakh) or a percent
+/// per period (2% a month).
+enum LoanRateKind { fixed, percent }
+
+enum LoanStatus { open, closed }
 
 enum AuditAction { create, update, reverse, delete }
 

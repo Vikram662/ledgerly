@@ -24,6 +24,10 @@ import '../features/khata/presentation/khata_screen.dart';
 import '../features/khata/presentation/ledger_entry_screen.dart';
 import '../features/khata/presentation/piece_work_screen.dart';
 import '../features/khata/presentation/settlement_screen.dart';
+import '../features/loans/presentation/loan_detail_screen.dart';
+import '../features/loans/presentation/loan_form_screen.dart';
+import '../features/loans/presentation/loan_party_screens.dart';
+import '../features/loans/presentation/loans_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/reports/presentation/dues_screen.dart';
 import '../features/settings/presentation/app_lock_settings_screen.dart';
@@ -118,6 +122,21 @@ abstract final class Routes {
   static String supplierEntry(String id, SupplierEntryType type) =>
       '/supplier/$id/entry?type=${type.name}';
 
+  // Loans (lender user type)
+  static const loans = '/loans';
+
+  /// Loans tab on a sub-tab: 0 given, 1 taken, 2 people.
+  static String loansTab(int tab) => '/loans?tab=$tab';
+  static String newLoan(LoanDirection direction, {String? partyId}) =>
+      '/loan/new?direction=${direction.name}'
+      '${partyId == null ? '' : '&partyId=$partyId'}';
+  static String loan(String id) => '/loan/$id';
+  static String editLoan(String id) => '/loan/$id/edit';
+  static String loanPayment(String id) => '/loan/$id/payment';
+  static const addLoanParty = '/loan-party/new';
+  static String loanParty(String id) => '/loan-party/$id';
+  static String editLoanParty(String id) => '/loan-party/$id/edit';
+
   /// Lena / Dena report; tab 0 = to receive, 1 = to pay.
   static String dues([int tab = 0]) => '/dues?tab=$tab';
   static const calendar = '/calendar';
@@ -210,6 +229,13 @@ GoRouter buildRouter({
     Routes.tasks: GoRoute(
       path: Routes.tasks,
       builder: (context, state) => const TasksScreen(),
+    ),
+    Routes.loans: GoRoute(
+      path: Routes.loans,
+      builder: (context, state) => LoansScreen(
+        tab: int.tryParse(q(state, 'tab') ?? ''),
+        showMenu: tabPaths.contains(Routes.loans),
+      ),
     ),
   };
 
@@ -372,6 +398,45 @@ GoRouter buildRouter({
         ],
       ),
       GoRoute(
+        path: '/loan/new',
+        builder: (context, state) => LoanFormScreen(
+          direction: q(state, 'direction') == LoanDirection.taken.name
+              ? LoanDirection.taken
+              : LoanDirection.given,
+          partyId: q(state, 'partyId'),
+        ),
+      ),
+      GoRoute(
+        path: '/loan/:id',
+        builder: (context, state) => LoanDetailScreen(loanId: id(state)),
+        routes: [
+          GoRoute(
+            path: 'edit',
+            builder: (context, state) => LoanFormScreen(loanId: id(state)),
+          ),
+          GoRoute(
+            path: 'payment',
+            builder: (context, state) => LoanPaymentScreen(loanId: id(state)),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Routes.addLoanParty,
+        builder: (context, state) => const LoanPartyFormScreen(),
+      ),
+      GoRoute(
+        path: '/loan-party/:id',
+        builder: (context, state) =>
+            LoanPartyDetailScreen(partyId: id(state)),
+        routes: [
+          GoRoute(
+            path: 'edit',
+            builder: (context, state) =>
+                LoanPartyFormScreen(partyId: id(state)),
+          ),
+        ],
+      ),
+      GoRoute(
         path: '/dues',
         builder: (context, state) => DuesScreen(
           initialTab: int.tryParse(q(state, 'tab') ?? '') == 1 ? 1 : 0,
@@ -443,11 +508,13 @@ bool _isDataEntryPath(String path) {
     '/job/new',
     '/supplier/new',
     '/tasks/new',
+    '/loan/new',
+    '/loan-party/new',
   }.contains(path)) {
     return true;
   }
   return RegExp(
-    r'^/(worker/[^/]+/(edit|wage)|khata/settle/[^/]+|doc/[^/]+/edit|client/[^/]+/edit|job/[^/]+/edit|supplier/[^/]+/(edit|entry)|tasks/[^/]+/edit)$',
+    r'^/(worker/[^/]+/(edit|wage)|khata/settle/[^/]+|doc/[^/]+/edit|client/[^/]+/edit|job/[^/]+/edit|supplier/[^/]+/(edit|entry)|tasks/[^/]+/edit|loan/[^/]+/(edit|payment)|loan-party/[^/]+/edit)$',
   ).hasMatch(path);
 }
 

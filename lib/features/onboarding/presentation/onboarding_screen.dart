@@ -610,7 +610,7 @@ class _TypeStep extends StatelessWidget {
                   ],
                   const SizedBox(height: 10),
                   Text(
-                    tr('Contractor and Shopkeeper: ₹99/month after a 5-day free trial.'),
+                    tr('Contractor, Shopkeeper and Lender: ₹99/month after a 5-day free trial.'),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -649,9 +649,10 @@ class _DetailsStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final personal = type == UserType.personal;
+    final personal = type.personalLike;
     final (nameLabel, nameHint) = switch (type) {
       UserType.personal => (tr('Your name'), tr('e.g. Priya Sharma')),
+      UserType.lender => (tr('Your name or firm'), tr('e.g. Sharma Finance')),
       UserType.shop => (tr('Shop name'), tr('e.g. Sharma Cloth House')),
       UserType.contractor => (
           tr('Business name'),
@@ -728,7 +729,7 @@ class _DetailsStep extends StatelessWidget {
           const SizedBox(height: 10),
           TradeGrid(selected: trades, onToggle: onToggle),
         ],
-        if (personal) ...[
+        if (type.isFree) ...[
           const SizedBox(height: 16),
           Text(
             tr('Free for personal use.'),
