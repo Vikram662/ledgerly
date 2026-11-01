@@ -54,4 +54,15 @@ Google Cloud ke **Android OAuth client** mein dono SHA-1 daalne honge:
 2. Naya app banayein. Package name `com.ledgerly.app` hai, **Pehla upload ke baad package name kabhi nahi badal sakta.**
 3. **Play App Signing** on rakhein (default).
 4. `ledgerly-release-aab` wali `app-release.aab` upload karein.
-5. Har naye version se pehle `pubspec.yaml` mein `version: 0.1.0+1` ka `+1` wala number badhayein (`+2`, `+3`…), warna Play Store upload nahi lega.
+5. Har naye version se pehle `pubspec.yaml` mein `version: 1.0.0+1` ka `+1` wala number badhayein (`+2`, `+3`…), warna Play Store upload nahi lega. `lib/core/config.dart` mein `appVersion` / `appBuildNumber` bhi wahi rakhein.
+
+## Naya version release karna
+
+1. Version badhayein (upar step 5), commit karke `main` par push karein.
+2. Tag banakar push karein:
+   ```bash
+   git tag -a v1.0.1 -m "Ledgerly 1.0.1"
+   git push origin v1.0.1
+   ```
+3. CI build karke GitHub **Releases** page par wahi version bana deta hai, jisme release APKs aur `app-release.aab` lage hote hain (sirf jab signing secrets lage hon).
+4. Purane app mein update popup ke liye worker ke `wrangler.jsonc` mein `APP_LATEST_BUILD` naya build number karke `npm run deploy` karein.

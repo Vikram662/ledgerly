@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Creating the GitHub release on a version tag needs write access.
+    permissions:
+      contents: write
     env:
       # Release signing is used only when these secrets exist (docs/RELEASE.md).
       HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
@@ -134,3 +137,14 @@ jobs:
         with:
           name: ledgerly-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+
+      # A pushed tag like v1.0.0 becomes a GitHub release with the APKs and
+      # the Play Store bundle attached. Only with the real signing key.
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v') && env.HAS_SIGNING == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/app/outputs/flutter-apk/app-*-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+          generate_release_notes: true
