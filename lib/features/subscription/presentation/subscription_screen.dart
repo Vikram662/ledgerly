@@ -10,6 +10,7 @@ import '../../../core/config.dart';
 import '../../../core/db/providers.dart';
 import '../../../core/i18n/i18n.dart';
 import '../../../core/widgets/common.dart';
+import '../../account/account_dialogs.dart';
 import '../subscription_controller.dart';
 
 Future<bool> requirePro(BuildContext context, WidgetRef ref) async {
@@ -217,12 +218,18 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     }
   }
 
-  Future<void> _linkGoogle() async {
+  Future<void> _setPassword(String? email) async {
+    final phone = ref.read(businessProfileProvider).valueOrNull?.phone;
+    final input = await showSetPasswordDialog(context,
+        email: email != null && email.contains('@') ? email : null,
+        hasPhone: phone != null && phone.isNotEmpty);
+    if (input == null) return;
     try {
-      final email =
-          await ref.read(subscriptionControllerProvider.notifier).linkGoogle();
-      _say(tr('Linked to {email}. Use it to log in on a new phone.',
-          {'email': email}));
+      final login = await ref
+          .read(subscriptionControllerProvider.notifier)
+          .setPassword(input.password, email: input.email);
+      _say(tr('Password saved. Log in on a new phone with {login}.',
+          {'login': login}));
     } catch (error) {
       _say(errorText(error));
     }
@@ -372,11 +379,14 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               ),
             ],
             if (access != null &&
-                AppConfig.driveConfigured &&
+                access.kind != AccessKind.free &&
                 access.kind != AccessKind.setupRequired &&
                 access.kind != AccessKind.loading) ...[
               const SizedBox(height: 16),
-              _AccountTile(email: access.accountEmail, onLink: _linkGoogle),
+              _AccountTile(
+                login: access.canLogIn ? access.accountEmail : null,
+                onSetPassword: () => _setPassword(access.accountEmail),
+              ),
             ],
             if (value.isLoading) ...[
               const SizedBox(height: 20),
@@ -427,27 +437,29 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
 }
 
-/// Google account used to log in again after a reinstall or on a new phone.
+/// Email or mobile number + password used to log in again after a
+/// reinstall or on a new phone.
 class _AccountTile extends StatelessWidget {
-  const _AccountTile({required this.email, required this.onLink});
+  const _AccountTile({required this.login, required this.onSetPassword});
 
-  final String? email;
-  final VoidCallback onLink;
+  /// Null until the account has a password.
+  final String? login;
+  final VoidCallback onSetPassword;
 
   @override
   Widget build(BuildContext context) {
     return Panel(
       child: Row(
         children: [
-          Icon(email == null ? Icons.link_off : Icons.account_circle_outlined,
-              color: email == null ? AppColors.warningText : AppColors.primary),
+          Icon(login == null ? Icons.link_off : Icons.account_circle_outlined,
+              color: login == null ? AppColors.warningText : AppColors.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  email ?? tr('Google account not linked'),
+                  login ?? tr('No login password yet'),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 Text(
@@ -460,8 +472,10 @@ class _AccountTile extends StatelessWidget {
               ],
             ),
           ),
-          if (email == null)
-            TextButton(onPressed: onLink, child: Text(tr('Link'))),
+          TextButton(
+            onPressed: onSetPassword,
+            child: Text(login == null ? tr('Set') : tr('Change')),
+          ),
         ],
       ),
     );

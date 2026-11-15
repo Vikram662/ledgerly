@@ -27,6 +27,18 @@ export default {
         response = await login(request, env);
       } else if (request.method === 'POST' && path === '/v1/account/google') {
         response = await linkGoogle(request, env);
+      } else if (request.method === 'POST' && path === '/v1/account/password') {
+        response = await setPassword(request, env);
+      } else if (
+        request.method === 'POST' &&
+        path === '/v1/account/verify-password'
+      ) {
+        response = await verifyPassword(request, env);
+      } else if (
+        request.method === 'POST' &&
+        path === '/v1/admin/reset-password'
+      ) {
+        response = await adminResetPassword(request, env);
       } else if (request.method === 'POST' && path === '/v1/sync/push') {
         response = await syncPush(request, env);
       } else if (request.method === 'GET' && path === '/v1/sync/pull') {
@@ -89,6 +101,16 @@ async function install(request, env) {
   const google = googleIdToken ? await verifyGoogle(googleIdToken, env) : null;
 
   let row = await installRow(env, installId);
+  // Email + password account. Credentials are only set once per install;
+  // a phone that already has a password changes it with /v1/account/password.
+  const credentials =
+    !google && body.password != null && !row?.password_hash
+      ? await parseCredentials(body, phone)
+      : null;
+  if (credentials?.email) {
+    const owner = await emailOwner(env, credentials.email, installId);
+    if (owner) throw accountExists(owner);
+  }
   if (google) {
     const owner = await env.DB.prepare(
       'SELECT * FROM installs WHERE google_sub = ?',
@@ -120,13 +142,14 @@ async function install(request, env) {
     await env.DB.prepare(
       `INSERT INTO installs
        (install_id, account_id, customer_id, name, phone, user_type, trades,
-        email, google_sub, fcm_token, platform, notification_updated_at,
-        updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'android', ?, ?)`,
+        email, google_sub, password_hash, fcm_token, platform,
+        notification_updated_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'android', ?, ?)`,
     )
       .bind(installId, installId, customer.id, name, phone, userType, trades,
-        google?.email ?? null, google?.sub ?? null, fcmToken,
-        fcmToken ? epoch() : null, epoch())
+        google?.email ?? credentials?.email ?? null, google?.sub ?? null,
+        credentials?.hash ?? null, fcmToken, fcmToken ? epoch() : null,
+        epoch())
       .run();
   } else {
     if (
@@ -143,43 +166,59 @@ async function install(request, env) {
       `UPDATE installs SET name = ?, phone = ?, user_type = ?,
        trades = COALESCE(?, trades),
        email = COALESCE(?, email), google_sub = COALESCE(?, google_sub),
+       password_hash = COALESCE(password_hash, ?),
        fcm_token = COALESCE(?, fcm_token),
        notification_updated_at = CASE WHEN ? IS NULL
          THEN notification_updated_at ELSE ? END,
        updated_at = ? WHERE install_id = ?`,
     )
-      .bind(name, phone, userType, trades, google?.email ?? null,
-        google?.sub ?? null, fcmToken, fcmToken, epoch(), epoch(), installId)
+      .bind(name, phone, userType, trades,
+        google?.email ?? credentials?.email ?? null, google?.sub ?? null,
+        credentials?.hash ?? null, fcmToken, fcmToken, epoch(), epoch(),
+        installId)
       .run();
   }
   row = await installRow(env, installId);
   return ok(await session(row, env));
 }
 
-// A user who reinstalled or changed phones signs in with the Google account
-// they registered with. The account moves to this install, keeping its
-// Razorpay customer and subscription, so no duplicate user is created.
+// A user who reinstalled or changed phones logs in with their email or
+// mobile number and password (or the Google account they registered with).
+// The account moves to this install, keeping its Razorpay customer and
+// subscription, so no duplicate user is created.
 async function login(request, env) {
   const body = await bodyJson(request);
   const installId = parseInstallId(body.installId);
   const fcmToken = optionalString(body.fcmToken, 4096);
-  const google = await verifyGoogle(
-    requiredString(body.googleIdToken, 'googleIdToken', 4096),
-    env,
-  );
-  const account = await env.DB.prepare(
-    'SELECT * FROM installs WHERE google_sub = ?',
-  )
-    .bind(google.sub)
-    .first();
-  if (!account) {
-    throw new ApiError(404, 'account_not_found',
-      'No account is registered with this Google account.');
+  let account;
+  let email = null;
+  if (body.login != null) {
+    account = await passwordAccount(env, body);
+  } else {
+    const google = await verifyGoogle(
+      requiredString(body.googleIdToken, 'googleIdToken', 4096),
+      env,
+    );
+    account = await env.DB.prepare(
+      'SELECT * FROM installs WHERE google_sub = ?',
+    )
+      .bind(google.sub)
+      .first();
+    if (!account) {
+      throw new ApiError(404, 'account_not_found',
+        'No account is registered with this Google account.');
+    }
+    email = google.email;
   }
   if (account.install_id !== installId) {
     const here = await installRow(env, installId);
     if (here) {
-      if (here.subscription_id || here.subscription_created_at || here.google_sub) {
+      if (
+        here.subscription_id ||
+        here.subscription_created_at ||
+        here.google_sub ||
+        here.password_hash
+      ) {
         throw new ApiError(409, 'install_in_use',
           'This phone already has another account.');
       }
@@ -195,12 +234,235 @@ async function login(request, env) {
       .run();
   }
   await env.DB.prepare(
-    `UPDATE installs SET email = ?, fcm_token = COALESCE(?, fcm_token),
-     updated_at = ? WHERE install_id = ?`,
+    `UPDATE installs SET email = COALESCE(?, email),
+     fcm_token = COALESCE(?, fcm_token), updated_at = ? WHERE install_id = ?`,
   )
-    .bind(google.email, fcmToken, epoch(), installId)
+    .bind(email, fcmToken, epoch(), installId)
     .run();
   return ok(await session(await installRow(env, installId), env));
+}
+
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_LOCK_SECONDS = 15 * 60;
+
+// The account for a login (email or mobile number) and password, or a 401.
+// After five wrong passwords the account is locked for 15 minutes.
+async function passwordAccount(env, body) {
+  const login = requiredString(body.login, 'login', 254);
+  const password = requiredString(body.password, 'password', 200);
+  const account = await loginOwner(env, login);
+  const wrong = new ApiError(401, 'invalid_login',
+    'Wrong email / mobile number or password.');
+  if (!account) {
+    // Same work as a real check, so an unknown login is not faster.
+    await hashPassword(password);
+    throw wrong;
+  }
+  await checkAccountPassword(env, account, password, wrong);
+  return account;
+}
+
+// Checks [password] against [account], counting wrong tries; throws [wrong]
+// or `login_locked`.
+async function checkAccountPassword(env, account, password, wrong) {
+  if (Number(account.login_locked_until) > epoch()) {
+    throw new ApiError(429, 'login_locked',
+      'Too many wrong passwords. Try again in 15 minutes.');
+  }
+  if (!(await checkPassword(password, account.password_hash))) {
+    const failures = Number(account.login_failures || 0) + 1;
+    const locked = failures >= LOGIN_MAX_FAILURES;
+    await env.DB.prepare(
+      `UPDATE installs SET login_failures = ?, login_locked_until = ?
+       WHERE install_id = ?`,
+    )
+      .bind(locked ? 0 : failures, locked ? epoch() + LOGIN_LOCK_SECONDS : null,
+        account.install_id)
+      .run();
+    throw wrong;
+  }
+  if (account.login_failures || account.login_locked_until) {
+    await env.DB.prepare(
+      `UPDATE installs SET login_failures = 0, login_locked_until = NULL
+       WHERE install_id = ?`,
+    )
+      .bind(account.install_id)
+      .run();
+  }
+}
+
+// Checks the password of this phone's own account, e.g. before resetting a
+// forgotten PIN. Unlike login it never moves another account here.
+async function verifyPassword(request, env) {
+  const user = await authenticated(request, env);
+  const body = await bodyJson(request);
+  const password = requiredString(body.password, 'password', 200);
+  if (!user.password_hash) {
+    throw new ApiError(409, 'no_password',
+      'This account has no password yet.');
+  }
+  await checkAccountPassword(env, user, password,
+    new ApiError(401, 'invalid_login', 'Wrong password.'));
+  return ok({ verified: true });
+}
+
+// The password account for an email ("a@b.c") or a mobile number.
+async function loginOwner(env, login) {
+  if (login.includes('@')) {
+    return env.DB.prepare(
+      `SELECT * FROM installs WHERE email = ? AND password_hash IS NOT NULL
+       ORDER BY updated_at DESC LIMIT 1`,
+    )
+      .bind(login.trim().toLowerCase())
+      .first();
+  }
+  const phone = digits(login);
+  if (phone.length !== 10) return null;
+  const rows = await env.DB.prepare(
+    `SELECT * FROM installs WHERE phone IS NOT NULL
+     AND password_hash IS NOT NULL ORDER BY updated_at DESC`,
+  ).all();
+  return (rows.results || []).find((row) => digits(row.phone) === phone);
+}
+
+// Sets or changes the password (and optional email) of the registered
+// install, e.g. for a user who registered before password login existed.
+async function setPassword(request, env) {
+  const user = await authenticated(request, env);
+  const body = await bodyJson(request);
+  const credentials = await parseCredentials(body, user.phone);
+  if (credentials.email) {
+    const owner = await emailOwner(env, credentials.email, user.install_id);
+    if (owner) {
+      throw new ApiError(409, 'email_in_use',
+        'This email is already used by another account.');
+    }
+  }
+  await env.DB.prepare(
+    `UPDATE installs SET email = COALESCE(?, email), password_hash = ?,
+     login_failures = 0, login_locked_until = NULL, updated_at = ?
+     WHERE install_id = ?`,
+  )
+    .bind(credentials.email, credentials.hash, epoch(), user.install_id)
+    .run();
+  const row = await installRow(env, user.install_id);
+  return ok({ email: row.email, phone: row.phone });
+}
+
+// Admin: a new password for a user who forgot theirs (there is no email or
+// SMS service for a reset link). Finds the user by email or mobile number.
+async function adminResetPassword(request, env) {
+  await adminAuthenticated(request, env);
+  const body = await bodyJson(request);
+  const password = parsePassword(body.password);
+  const login = requiredString(body.login, 'login', 254);
+  let row;
+  if (login.includes('@')) {
+    row = await env.DB.prepare(
+      'SELECT * FROM installs WHERE email = ? ORDER BY updated_at DESC LIMIT 1',
+    )
+      .bind(login.toLowerCase())
+      .first();
+  } else {
+    row = await phoneOwner(env, login, '');
+  }
+  if (!row) {
+    throw new ApiError(404, 'user_not_found', 'No registered user matched.');
+  }
+  await env.DB.prepare(
+    `UPDATE installs SET password_hash = ?, login_failures = 0,
+     login_locked_until = NULL, updated_at = ? WHERE install_id = ?`,
+  )
+    .bind(await hashPassword(password), epoch(), row.install_id)
+    .run();
+  return ok({ installId: row.install_id, email: row.email, phone: row.phone });
+}
+
+// Password plus at least one login: the email, or the mobile number.
+async function parseCredentials(body, phone) {
+  const email = body.email == null || body.email === ''
+    ? null
+    : parseEmail(body.email);
+  const password = parsePassword(body.password);
+  if (!email && !digits(phone)) {
+    throw new ApiError(400, 'login_required',
+      'Enter an email or a mobile number to log in with.');
+  }
+  return { email, hash: await hashPassword(password) };
+}
+
+function parseEmail(value) {
+  const email = requiredString(value, 'email', 254).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ApiError(400, 'invalid_email', 'Enter a valid email address.');
+  }
+  return email;
+}
+
+function parsePassword(value) {
+  if (typeof value !== 'string' || value.length < 6 || value.length > 200) {
+    throw new ApiError(400, 'weak_password',
+      'Password must be at least 6 characters.');
+  }
+  return value;
+}
+
+function emailOwner(env, email, exceptInstallId) {
+  return env.DB.prepare(
+    'SELECT * FROM installs WHERE email = ? AND install_id != ? LIMIT 1',
+  )
+    .bind(email, exceptInstallId)
+    .first();
+}
+
+function canLogIn(user) {
+  return Boolean(user.password_hash || user.google_sub);
+}
+
+// What the account logs in with (email, else mobile number); null when it
+// has no password or Google account yet.
+function loginEmail(user) {
+  return canLogIn(user) ? user.email || user.phone || null : null;
+}
+
+// PBKDF2-SHA256 (100k iterations, the most Workers allow), stored as
+// pbkdf2$<iterations>$<salt hex>$<hash hex>.
+const PBKDF2_ITERATIONS = 100000;
+
+async function hashPassword(password, saltHex, iterations = PBKDF2_ITERATIONS) {
+  const salt = saltHex
+    ? hexBytes(saltHex)
+    : crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    key,
+    256,
+  );
+  return `pbkdf2$${iterations}$${bytesHex(salt)}$${bytesHex(new Uint8Array(bits))}`;
+}
+
+async function checkPassword(password, stored) {
+  const [scheme, iterations, salt] = String(stored || '').split('$');
+  if (scheme !== 'pbkdf2' || !salt) return false;
+  return safeEqual(
+    await hashPassword(password, salt, Number(iterations)),
+    stored,
+  );
+}
+
+function bytesHex(bytes) {
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function hexBytes(hex) {
+  return Uint8Array.from(hex.match(/../g) || [], (pair) => parseInt(pair, 16));
 }
 
 // Links a Google account to an already registered install, so a user who
@@ -273,10 +535,18 @@ function accountExists(owner) {
   return new ApiError(
     409,
     'account_exists',
-    owner.google_sub
-      ? 'You are already registered. Log in with your Google account.'
-      : 'This mobile number is already registered.',
-    { email: maskEmail(owner.email), canLogin: Boolean(owner.google_sub) },
+    owner.password_hash
+      ? 'You are already registered. Log in with your password.'
+      : owner.google_sub
+        ? 'You are already registered. Log in with your Google account.'
+        : 'This mobile number is already registered.',
+    {
+      email: maskEmail(owner.email),
+      canLogin: Boolean(owner.password_hash),
+      loginMethod: owner.password_hash
+        ? 'password'
+        : owner.google_sub ? 'google' : null,
+    },
   );
 }
 
@@ -528,7 +798,8 @@ async function subscriptionStatus(request, env) {
       ...complimentary,
       subscriptionId: user.subscription_id,
       trialEligible,
-      accountEmail: user.email,
+      accountEmail: loginEmail(user),
+      canLogIn: canLogIn(user),
     });
   }
   if (!user.subscription_id) {
@@ -538,7 +809,8 @@ async function subscriptionStatus(request, env) {
       status: 'none',
       active: false,
       trialEligible,
-      accountEmail: user.email,
+      accountEmail: loginEmail(user),
+      canLogIn: canLogIn(user),
     });
   }
   const subscription = await razorpay(
@@ -555,7 +827,8 @@ async function subscriptionStatus(request, env) {
   return ok({
     ...statusPayload(subscription),
     trialEligible: false,
-    accountEmail: user.email,
+    accountEmail: loginEmail(user),
+    canLogIn: canLogIn(user),
   });
 }
 

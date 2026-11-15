@@ -34,12 +34,16 @@ class SubscriptionService {
 
   Uri _uri(String path) => Uri.parse('${AppConfig.subscriptionApiUrl}$path');
 
-  /// Registers this install. With [googleIdToken] the account can later log
-  /// in on another phone. Throws `account_exists` when the phone number or
-  /// Google account already belongs to a user.
+  /// Registers this install. With a [password] the account can later log in
+  /// on another phone with its [email] or mobile number. Throws
+  /// `account_exists` when the phone number or email already belongs to a
+  /// user.
   Future<Map<String, dynamic>> register(
       String name, String? phone, String userType,
-      {String? fcmToken, String? googleIdToken, String? trades}) async {
+      {String? fcmToken,
+      String? email,
+      String? password,
+      String? trades}) async {
     _configured();
     fcmToken ??= await _fcmToken();
     final response = await _client.post(_uri('/v1/install'),
@@ -51,31 +55,44 @@ class SubscriptionService {
           if (phone != null) 'phone': phone,
           if (trades != null) 'trades': trades,
           if (fcmToken != null) 'fcmToken': fcmToken,
-          if (googleIdToken != null) 'googleIdToken': googleIdToken,
+          if (email != null) 'email': email,
+          if (password != null) 'password': password,
         }));
     return _startSession(_decode(response));
   }
 
-  /// Logs in an existing user on this install with their Google account.
-  /// Returns the session including `user` (name, phone, userType, trades).
-  Future<Map<String, dynamic>> login(String googleIdToken) async {
+  /// Logs in an existing user on this install with their email or mobile
+  /// number ([login]) and password. Returns the session including `user`
+  /// (name, phone, userType, trades, email).
+  Future<Map<String, dynamic>> login(String login, String password) async {
     _configured();
     final fcmToken = await _fcmToken();
     final response = await _client.post(_uri('/v1/login'),
         headers: _headers(),
         body: jsonEncode({
           'installId': await _secure.deviceId(),
-          'googleIdToken': googleIdToken,
+          'login': login,
+          'password': password,
           if (fcmToken != null) 'fcmToken': fcmToken,
         }));
     return _startSession(_decode(response));
   }
 
-  /// Links a Google account to the registered install. Returns the email.
-  Future<String> linkGoogle(String googleIdToken) async {
-    final data = _decode(await _authorized(
-        'POST', '/v1/account/google', {'googleIdToken': googleIdToken}));
-    return data['email'] as String;
+  /// Sets or changes the password (and optional email) of the registered
+  /// install. Returns what it logs in with: the email, else the phone.
+  Future<String> setPassword(String password, {String? email}) async {
+    final data = _decode(await _authorized('POST', '/v1/account/password', {
+      'password': password,
+      if (email != null) 'email': email,
+    }));
+    return (data['email'] ?? data['phone'] ?? '') as String;
+  }
+
+  /// Checks the password of this phone's own account (forgotten PIN).
+  /// Throws `invalid_login`, `login_locked` or `no_password`.
+  Future<void> verifyPassword(String password) async {
+    _decode(await _authorized(
+        'POST', '/v1/account/verify-password', {'password': password}));
   }
 
   Future<Map<String, dynamic>> _startSession(Map<String, dynamic> data) async {

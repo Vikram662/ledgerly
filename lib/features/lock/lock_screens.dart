@@ -5,11 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../core/backup/google_drive_auth.dart';
+import '../../core/config.dart';
 import '../../core/db/meta_store.dart';
 import '../../core/db/providers.dart';
 import '../../core/i18n/i18n.dart';
 import '../../core/security/pin.dart';
 import '../../core/widgets/common.dart';
+import '../account/account_dialogs.dart';
+import '../subscription/data/subscription_service.dart';
+import '../subscription/subscription_controller.dart';
 import 'app_lock_controller.dart';
 import 'pin_pad.dart';
 
@@ -152,6 +156,37 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   }
 
   Future<void> _forgotPin() async {
+    if (AppConfig.subscriptionConfigured) {
+      final password = await showPasswordCheckDialog(context);
+      if (password == null || !mounted) return;
+      try {
+        await ref.read(subscriptionServiceProvider).verifyPassword(password);
+        if (!mounted) return;
+        _resetPin();
+        return;
+      } on SubscriptionApiException catch (error) {
+        // An account from before passwords, or a phone not registered
+        // online: fall back to Google below.
+        if (error.code != null && error.code != 'no_password') {
+          if (mounted) setState(() => _error = errorText(error));
+          return;
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => _error = tr('No internet. Connect to the internet to reset the PIN.'));
+        }
+        return;
+      }
+    }
+    await _forgotPinWithGoogle();
+  }
+
+  void _resetPin() {
+    ref.read(appLockProvider).startPinReset();
+    if (widget.confirmOnly) Navigator.of(context).pop(false);
+  }
+
+  Future<void> _forgotPinWithGoogle() async {
     final email = await MetaStore(ref.read(databaseProvider))
         .get(MetaKeys.driveEmail);
     if (!mounted) return;
@@ -169,8 +204,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       final verified = await GoogleDriveAuth().verifyAccount();
       if (!mounted) return;
       if (verified.toLowerCase() == email.toLowerCase()) {
-        ref.read(appLockProvider).startPinReset();
-        if (widget.confirmOnly) Navigator.of(context).pop(false);
+        _resetPin();
       } else {
         setState(() => _error = tr('Please choose the account {email}', {'email': email}));
       }

@@ -2180,4 +2180,72 @@ const hindiStrings = <String, String>{
   'Send test': 'टेस्ट भेजें',
   'Share register PDF': 'रजिस्टर PDF भेजें',
   'Share statement': 'स्टेटमेंट भेजें',
+  'Use at least {count} characters':
+      'कम से कम {count} अक्षर रखें',
+  'At least {count} characters':
+      'कम से कम {count} अक्षर',
+  'Password':
+      'पासवर्ड',
+  'Show password':
+      'पासवर्ड दिखाएँ',
+  'Hide password':
+      'पासवर्ड छुपाएँ',
+  'Email':
+      'ईमेल',
+  'Email or mobile number':
+      'ईमेल या मोबाइल नंबर',
+  'name@gmail.com':
+      'name@gmail.com',
+  'name@gmail.com or 98765 43210':
+      'name@gmail.com या 98765 43210',
+  'Enter a valid email address.':
+      'सही ईमेल डालें।',
+  'Enter your email or 10-digit mobile number':
+      'अपना ईमेल या 10 अंकों का मोबाइल नंबर डालें',
+  'Enter your password':
+      'अपना पासवर्ड डालें',
+  'Forgot your password? Contact support with your registered mobile number.':
+      'पासवर्ड भूल गए? अपने रजिस्टर्ड मोबाइल नंबर के साथ सपोर्ट से संपर्क करें।',
+  'Set login password':
+      'लॉग इन पासवर्ड बनाएँ',
+  'Log in on a new phone with your email or mobile number and this password.':
+      'नए फ़ोन पर अपने ईमेल या मोबाइल नंबर और इस पासवर्ड से लॉग इन करें।',
+  'Enter an email or a mobile number to log in with.':
+      'लॉग इन के लिए ईमेल या मोबाइल नंबर डालें।',
+  'New password':
+      'नया पासवर्ड',
+  'Enter your account password. Then set a new PIN. Your data stays as it is.':
+      'अपने अकाउंट का पासवर्ड डालें। फिर नया PIN बनाएँ। आपका डेटा वैसा ही रहेगा।',
+  'No internet. Connect to the internet to create your account.':
+      'इंटरनेट नहीं है। अकाउंट बनाने के लिए इंटरनेट चालू करें।',
+  'No internet. Connect to the internet to reset the PIN.':
+      'इंटरनेट नहीं है। PIN बदलने के लिए इंटरनेट चालू करें।',
+  'This mobile number is already registered. On your old phone, open Subscription and set a login password, then log in here.':
+      'यह मोबाइल नंबर पहले से रजिस्टर्ड है। पुराने फ़ोन में सब्सक्रिप्शन खोलकर लॉग इन पासवर्ड बनाएँ, फिर यहाँ लॉग इन करें।',
+  'Use your mobile number or email with this password to log in on a new phone. On this phone the app opens with your PIN or fingerprint.':
+      'नए फ़ोन पर लॉग इन करने के लिए अपना मोबाइल नंबर या ईमेल और यह पासवर्ड इस्तेमाल करें। इस फ़ोन पर ऐप PIN या फ़िंगरप्रिंट से खुलेगा।',
+  'Password saved. Log in on a new phone with {login}.':
+      'पासवर्ड सेव हो गया। नए फ़ोन पर {login} से लॉग इन करें।',
+  'No login password yet':
+      'अभी लॉग इन पासवर्ड नहीं बना',
+  'Set':
+      'बनाएँ',
+  'Wrong email / mobile number or password.':
+      'ईमेल / मोबाइल नंबर या पासवर्ड गलत है।',
+  'Wrong password.':
+      'पासवर्ड गलत है।',
+  'Too many wrong passwords. Try again in 15 minutes.':
+      'कई बार गलत पासवर्ड डाला गया। 15 मिनट बाद फिर कोशिश करें।',
+  'Password must be at least 6 characters.':
+      'पासवर्ड कम से कम 6 अक्षर का होना चाहिए।',
+  'This email is already used by another account.':
+      'यह ईमेल किसी दूसरे अकाउंट में इस्तेमाल हो रहा है।',
+  'You are already registered. Log in with your password.':
+      'आप पहले से रजिस्टर्ड हैं। अपने पासवर्ड से लॉग इन करें।',
+  'This phone already has another account.':
+      'इस फ़ोन पर पहले से दूसरा अकाउंट है।',
+  'This account has no password yet.':
+      'इस अकाउंट का अभी कोई पासवर्ड नहीं है।',
+  'Enter a valid email address':
+      'सही ईमेल डालें',
 };

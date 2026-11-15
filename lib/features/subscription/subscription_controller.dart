@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/backup/backup_providers.dart';
-import '../../core/backup/google_drive_auth.dart';
 import '../../core/config.dart';
 import '../../core/db/database.dart';
 import '../../core/db/providers.dart';
@@ -19,7 +17,8 @@ class SubscriptionAccess {
       this.message,
       this.trialEndsAt,
       this.trialEligible = false,
-      this.accountEmail});
+      this.accountEmail,
+      this.canLogIn = false});
   final AccessKind kind;
   final String status;
   final String? subscriptionId;
@@ -27,8 +26,12 @@ class SubscriptionAccess {
   final int? trialEndsAt;
   final bool trialEligible;
 
-  /// Google account used to log in on another phone; null if not linked.
+  /// Email (else mobile number) used to log in on another phone; null
+  /// until the account has a password.
   final String? accountEmail;
+
+  /// The account has a password (or Google login) for a new phone.
+  final bool canLogIn;
   bool get isTrial => status == 'authenticated';
   bool get canWrite =>
       kind == AccessKind.active ||
@@ -42,16 +45,15 @@ final subscriptionServiceProvider = Provider<SubscriptionService>(
 final subscriptionControllerProvider = StateNotifierProvider<
         SubscriptionController, AsyncValue<SubscriptionAccess>>(
     (ref) => SubscriptionController(ref.watch(subscriptionServiceProvider),
-        ref.watch(databaseProvider), ref.watch(googleDriveAuthProvider)));
+        ref.watch(databaseProvider)));
 
 class SubscriptionController
     extends StateNotifier<AsyncValue<SubscriptionAccess>> {
-  SubscriptionController(this._service, this._db, this._google)
+  SubscriptionController(this._service, this._db)
       : super(const AsyncData(SubscriptionAccess(AccessKind.loading)));
 
   final SubscriptionService _service;
   final AppDatabase _db;
-  final GoogleDriveAuth _google;
 
   Future<BusinessProfile?> _profile() =>
       _db.select(_db.businessProfiles).getSingleOrNull();
@@ -120,13 +122,12 @@ class SubscriptionController
     await refresh();
   }
 
-  /// Links a Google account so this user can log in on a new phone.
-  /// Returns the linked email.
-  Future<String> linkGoogle() async {
-    final google = await _google.accountToken();
-    final email = await _service.linkGoogle(google.idToken);
+  /// Sets the password (and optional email) this user logs in with on a
+  /// new phone. Returns the login: the email, else the mobile number.
+  Future<String> setPassword(String password, {String? email}) async {
+    final login = await _service.setPassword(password, email: email);
     await refresh();
-    return email;
+    return login;
   }
 
   Future<CheckoutSession> createCheckout() => _service.createSubscription();
@@ -155,6 +156,7 @@ class SubscriptionController
         subscriptionId: data['subscriptionId'] as String?,
         trialEndsAt: data['trialEndsAt'] as int?,
         trialEligible: data['trialEligible'] == true,
-        accountEmail: data['accountEmail'] as String?);
+        accountEmail: data['accountEmail'] as String?,
+        canLogIn: data['canLogIn'] == true);
   }
 }

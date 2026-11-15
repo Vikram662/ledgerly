@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
 import '../../../app/theme.dart';
-import '../../../core/backup/backup_providers.dart';
 import '../../../core/config.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/db/providers.dart';
@@ -16,6 +15,7 @@ import '../../../core/sync/sync_providers.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/language_picker.dart';
+import '../../account/account_dialogs.dart';
 import '../../subscription/data/subscription_service.dart';
 import '../../subscription/subscription_controller.dart';
 import '../data/onboarding_repository.dart';
@@ -24,11 +24,12 @@ import '../data/onboarding_repository.dart';
 /// (PRD C10), then name, phone and, for a contractor, trades (C0 TR-01).
 /// Step 3, the PIN, is the lock gate's PIN setup screen.
 ///
-/// Accounts: a new user signs in with Google and is registered online before
-/// anything is saved, so a phone number that is already registered is sent
-/// to "Log in" instead of becoming a second user. "Log in" finds the account
-/// by its Google account and brings back the plan and the data saved in the
-/// cloud.
+/// Accounts: a new user picks a password (with an email and / or mobile
+/// number) and is registered online before anything is saved, so a phone
+/// number or email that is already registered is sent to "Log in" instead of
+/// becoming a second user. "Log in" takes the email or mobile number and the
+/// password and brings back the plan and the data saved in the cloud. After
+/// that the app opens with the PIN or fingerprint, not the password.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -38,21 +39,19 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 enum _Step { welcome, type, details, welcomeBack }
 
-/// Accounts need Google sign-in and the subscription server in this build.
-bool get _accountsEnabled =>
-    AppConfig.driveConfigured && AppConfig.subscriptionConfigured;
+/// Accounts need the subscription server in this build.
+bool get _accountsEnabled => AppConfig.subscriptionConfigured;
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _phone = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   final _trades = <Trade>{};
   var _step = _Step.welcome;
   UserType? _type;
   bool _saving = false;
-
-  /// Google ID token from this session, reused if registration is retried.
-  String? _idToken;
 
   /// Account found by "Log in" (name, phone, userType, trades, email).
   Map<String, dynamic>? _account;
@@ -67,6 +66,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void dispose() {
     _name.dispose();
     _phone.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -131,53 +132,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   /// Registers the new user online before saving on the phone. False when
-  /// onboarding must stop: Google sign-in was cancelled, or the number or
-  /// Google account is already registered (then "Log in" is offered).
-  /// Without internet it continues; the app registers later.
+  /// onboarding must stop: the number or email is already registered (then
+  /// "Log in" is offered), the server refused the details, or there is no
+  /// internet (the password is only kept by the server).
   Future<bool> _registerOnline(String? phone) async {
-    try {
-      _idToken ??=
-          (await ref.read(googleDriveAuthProvider).accountToken()).idToken;
-    } catch (_) {
-      if (mounted) {
-        showMessage(context,
-            tr('Sign in with Google to create your account. It lets you log in again on a new phone.'));
-      }
-      return false;
-    }
     final service = ref.read(subscriptionServiceProvider);
     final chosen = _type!.usesTrades ? _trades : const <Trade>{};
-    Future<void> register(String? idToken) => service.register(
-          _name.text.trim(),
-          phone,
-          _type!.name,
-          googleIdToken: idToken,
-          trades: Trade.encode(chosen),
-        );
+    final email = _email.text.trim();
     try {
-      await register(_idToken);
+      await service.register(
+        _name.text.trim(),
+        phone,
+        _type!.name,
+        email: email.isEmpty ? null : email.toLowerCase(),
+        password: _password.text,
+        trades: Trade.encode(chosen),
+      );
       return true;
     } on SubscriptionApiException catch (error) {
-      var failure = error;
-      if (error.code == 'google_not_configured') {
-        // Server without Google login yet: register by phone only.
-        try {
-          await register(null);
-          return true;
-        } on SubscriptionApiException catch (retry) {
-          failure = retry;
-        }
-      }
-      if (failure.code == 'invalid_google_login') _idToken = null;
-      if (failure.code == 'account_exists') {
-        await _offerLogin(failure);
+      if (error.code == 'account_exists') {
+        await _offerLogin(error);
       } else if (mounted) {
-        showMessage(context, errorText(failure));
+        showMessage(context, errorText(error));
       }
       return false;
     } catch (_) {
-      // No internet: keep working offline; registration retries on refresh.
-      return true;
+      // No internet: an account needs the server, so stop here; the user
+      // can try again when online.
+      if (mounted) {
+        showMessage(context,
+            tr('No internet. Connect to the internet to create your account.'));
+      }
+      return false;
     }
   }
 
@@ -194,7 +180,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ? tr('You already have an account. Log in to get your plan and data back.')
                 : tr('You already have an account ({email}). Log in to get your plan and data back.',
                     {'email': email}))
-            : tr('This mobile number is already registered. On your old phone, open Subscription and link a Google account, then log in here.')),
+            : tr('This mobile number is already registered. On your old phone, open Subscription and set a login password, then log in here.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -211,31 +197,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (login == true) await _login();
   }
 
-  /// "Log in": Google account → existing account and plan on this phone.
+  /// "Log in": email or mobile number + password -> existing account and
+  /// plan on this phone.
   Future<void> _login() async {
+    final input = await showLoginDialog(context);
+    if (input == null || !mounted) return;
     setState(() => _saving = true);
     try {
-      final google = await ref.read(googleDriveAuthProvider).accountToken();
-      final session =
-          await ref.read(subscriptionServiceProvider).login(google.idToken);
+      final session = await ref
+          .read(subscriptionServiceProvider)
+          .login(input.login, input.password);
       if (!mounted) return;
       if (await _restoreFromCloud()) return;
       if (!mounted) return;
       setState(() {
-        _account = {
-          ...(session['user'] as Map<String, dynamic>? ?? const {}),
-          'email': google.email,
-        };
+        _account = session['user'] as Map<String, dynamic>? ?? const {};
         _step = _Step.welcomeBack;
       });
     } on SubscriptionApiException catch (error) {
       if (!mounted) return;
-      showMessage(
-        context,
-        error.code == 'account_not_found'
-            ? tr('No account found for this Google account. Tap Get started to create one.')
-            : errorText(error),
-      );
+      showMessage(context, errorText(error));
     } catch (error) {
       if (!mounted) return;
       showMessage(context,
@@ -323,6 +304,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   type: _type!,
                   name: _name,
                   phone: _phone,
+                  email: _email,
+                  password: _password,
                   trades: _trades,
                   onToggle: _toggle,
                   onBack: () => _go(_Step.type),
@@ -635,6 +618,8 @@ class _DetailsStep extends StatelessWidget {
     required this.type,
     required this.name,
     required this.phone,
+    required this.email,
+    required this.password,
     required this.trades,
     required this.onToggle,
     required this.onBack,
@@ -643,6 +628,8 @@ class _DetailsStep extends StatelessWidget {
   final UserType type;
   final TextEditingController name;
   final TextEditingController phone;
+  final TextEditingController email;
+  final TextEditingController password;
   final Set<Trade> trades;
   final ValueChanged<Trade> onToggle;
   final VoidCallback onBack;
@@ -696,6 +683,44 @@ class _DetailsStep extends StatelessWidget {
               ? null
               : tr('Enter a valid 10-digit mobile number'),
         ),
+        if (_accountsEnabled) ...[
+          const SizedBox(height: 20),
+          FieldLabel(tr('Email'), optional: true),
+          TextFormField(
+            controller: email,
+            autocorrect: false,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            decoration: InputDecoration(hintText: tr('name@gmail.com')),
+            validator: (value) {
+              final text = (value ?? '').trim();
+              if (text.isEmpty) {
+                return phone.text.trim().isEmpty
+                    ? tr('Enter an email or a mobile number to log in with.')
+                    : null;
+              }
+              return isValidEmail(text)
+                  ? null
+                  : tr('Enter a valid email address.');
+            },
+          ),
+          const SizedBox(height: 20),
+          FieldLabel(tr('Password')),
+          PasswordField(
+            controller: password,
+            hint: tr('At least {count} characters',
+                {'count': minPasswordLength}),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            tr('Use your mobile number or email with this password to log in on a new phone. On this phone the app opens with your PIN or fingerprint.'),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted,
+            ),
+          ),
+        ],
         if (type.usesTrades) ...[
           const SizedBox(height: 24),
           Row(

@@ -22,9 +22,9 @@ subscription state.
    npx wrangler secret put ADMIN_API_SECRET
    ```
 
-   Google login (log in again after a reinstall or on a new phone) needs the
-   same **Web OAuth client id** the app is built with
-   (`GOOGLE_SERVER_CLIENT_ID`). It is not secret, but keep it with the others:
+   Optional: Google login (only for accounts made with Google; the app now
+   uses email / mobile + password) needs the same **Web OAuth client id** the
+   app is built with (`GOOGLE_SERVER_CLIENT_ID`):
 
    ```text
    npx wrangler secret put GOOGLE_CLIENT_ID
@@ -40,19 +40,41 @@ Use Razorpay Test Mode keys first. Configure the Flutter build with
 
 ## Accounts and login (no OTP)
 
-- `POST /v1/install` registers a new install. With `googleIdToken` the account
-  is tied to that verified Google account. It answers `409 account_exists`
-  when the phone number or the Google account already belongs to a user, so
-  a reinstall never creates a second user or a second free trial.
-- `POST /v1/login` (`installId`, `googleIdToken`) finds the account by its
-  Google account and moves it to the new install. The Razorpay customer and
-  subscription stay the same, so the plan comes back automatically. The old
-  install is signed out (one phone per account).
-- `POST /v1/account/google` (authorized) links a Google account to a user
-  who registered before Google login existed.
+The app logs in with **email or mobile number + password** (Google sign-in
+needs a verified OAuth app, so the app no longer uses it for accounts). On
+the phone itself the app then opens with the PIN or fingerprint.
 
+- `POST /v1/install` registers a new install. With `password` (6+ characters)
+  and an `email` and / or `phone`, the account can log in on another phone.
+  It answers `409 account_exists` when the phone number or email already
+  belongs to a user, so a reinstall never creates a second user or a second
+  free trial. A password is set only once here; later changes go through
+  `/v1/account/password`.
+- `POST /v1/login` (`installId`, `login`, `password`) finds the account by
+  its email or mobile number and moves it to the new install. The Razorpay
+  customer and subscription stay the same, so the plan comes back
+  automatically. The old install is signed out (one phone per account).
+  Five wrong passwords lock the account for 15 minutes. (`googleIdToken`
+  instead of `login` still works for accounts made with Google.)
+- `POST /v1/account/password` (authorized; `password`, optional `email`) sets
+  or changes the password, e.g. for a user who registered before passwords.
+- `POST /v1/account/verify-password` (authorized; `password`) checks this
+  phone's own password; the app uses it for **Forgot PIN**.
+- `POST /v1/admin/reset-password` (admin; `login` = email or mobile number,
+  `password`) gives a user who forgot the password a new one, because there
+  is no email or SMS service for a reset link:
+
+  ```bash
+  curl -X POST https://<worker>.workers.dev/v1/admin/reset-password \
+    -H "authorization: Bearer $ADMIN_API_SECRET" \
+    -H "content-type: application/json" \
+    -d '{"login":"9876543210","password":"new-password"}'
+  ```
+
+Passwords are stored as PBKDF2-SHA256 hashes (100k iterations, random salt).
 Run `npm run db:remote` after pulling: migration `0005_google_account.sql`
-adds the `email`, `google_sub` and `trades` columns.
+adds the `email`, `google_sub` and `trades` columns, and
+`0008_password_login.sql` adds `password_hash` and the lockout columns.
 
 ## Cloud sync of app data
 

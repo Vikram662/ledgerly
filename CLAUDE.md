@@ -21,14 +21,11 @@ npx wrangler login          # once, opens the browser to sign in to Cloudflare
 npx wrangler whoami         # check the right Cloudflare account
 
 # 1. Database migrations (0005: email / google_sub / trades;
-#    0006: cloud sync table sync_rows + installs.account_id)
+#    0006: cloud sync table sync_rows + installs.account_id;
+#    0008: password_hash + login lockout for email/mobile + password login)
 npm run db:remote
 
-# 2. Google login: the Web OAuth client id, same value as the
-#    GOOGLE_SERVER_CLIENT_ID GitHub secret (xxx.apps.googleusercontent.com)
-npx wrangler secret put GOOGLE_CLIENT_ID
-
-# 3. Deploy
+# 2. Deploy
 npm run deploy
 ```
 
@@ -39,9 +36,14 @@ curl https://<worker>.workers.dev/health
 ```
 
 It should answer `{"service":"thekedaar-subscription-api"}`. Then on a phone:
-uninstall the app, install again, tap **Already registered? Log in** and sign
-in with the same Google account. The plan and the app data (from cloud
-sync) should come back without a new registration.
+uninstall the app, install again, tap **Already registered? Log in** and
+enter the same email or mobile number and password. The plan and the app
+data (from cloud sync) should come back without a new registration. After
+that the app opens with the PIN / fingerprint, not the password.
+
+Accounts use email or mobile number + password (Google sign-in needs a
+verified OAuth app). A forgotten password is reset by the admin with
+`POST /v1/admin/reset-password` (see `cloudflare-subscription/README.md`).
 
 Existing secrets (`RAZORPAY_*`, `APP_TOKEN_SECRET`, `ADMIN_API_SECRET`) are
 already set and do not need to be entered again. See
